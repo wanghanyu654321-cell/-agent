@@ -9,6 +9,7 @@ import {
 	SessionManager,
 } from "@earendil-works/pi-coding-agent";
 import { type Static, Type } from "typebox";
+import { decideSafety, detectSafetyRisk, type SafetyDecision, type SafetyEvidence } from "./safety.ts";
 
 export interface SupportRequest {
 	conversationId: string;
@@ -24,6 +25,7 @@ export interface SupportRequest {
 export interface RetrievalEvidence {
 	id: string;
 	text: string;
+	safety?: SafetyEvidence;
 }
 
 export interface RetrievalService {
@@ -276,6 +278,10 @@ export class SupportAgentRuntime {
 		let toolFailed = false;
 		let noKnowledgeEvidence = false;
 		let verifiedKnowledgeEvidence = false;
+		const safetyRisk = detectSafetyRisk(request.text);
+		let safetyEvidence: SafetyEvidence[] = [];
+		let safetyRetrievalQuery: string | undefined;
+		let safetyDecision: SafetyDecision | undefined;
 		const reservedTicketKeys = new Set<string>();
 		let reservedHandoff = false;
 		const abortController = new AbortController();
@@ -302,6 +308,10 @@ export class SupportAgentRuntime {
 			},
 			() => {
 				verifiedKnowledgeEvidence = true;
+			},
+			(query, evidence) => {
+				safetyRetrievalQuery = query;
+				safetyEvidence = evidence.flatMap((item) => (item.safety ? [item.safety] : []));
 			},
 			abortController.signal,
 		);
@@ -403,6 +413,7 @@ export class SupportAgentRuntime {
 				| undefined;
 		}
 		clearTimeout(timeout);
+		if (safetyRisk) safetyDecision = decideSafety(safetyRisk, safetyEvidence, false, "pause");
 
 		const piSessionId = sessionManager.getSessionId();
 		const finish = (result: SupportResult): SupportResult => {
@@ -434,6 +445,17 @@ export class SupportAgentRuntime {
 				limitReached,
 				escalationRequested,
 				toolFailed,
+				safety: safetyRisk
+					? {
+							riskCategory: safetyRisk,
+							retrievalQuery: safetyRetrievalQuery,
+							evidenceIds: safetyEvidence.map((item) => item.id),
+							evidenceApprovalStatus: safetyEvidence.map((item) => item.status),
+							disposition: safetyDecision?.disposition,
+							handoffResult: this.options.store.findHandoff(request.conversationId) ? "created" : "not_created",
+							guardResult: safetyDecision?.reason,
+						}
+					: undefined,
 			});
 			this.options.store.setSession({
 				conversationId: request.conversationId,
@@ -465,6 +487,40 @@ export class SupportAgentRuntime {
 					sessionEvents,
 				),
 			);
+		}
+		if (safetyDecision?.disposition === "escalate") {
+			if (
+				!this.options.store.findHandoff(request.conversationId) &&
+				this.options.store.reserveHandoff(request.conversationId)
+			) {
+				this.options.store.createHandoff(
+					request.conversationId,
+					`qualified_professional_required:${safetyDecision.riskCategory}:${safetyDecision.reason}`,
+				);
+			}
+			escalationRequested = true;
+			return finish({
+				type: "escalation",
+				text: "当前存在需要专业确认的安全风险，请暂停当前操作并由合格专业人员跟进。",
+				piSessionId,
+				toolsCalled,
+				sessionEvents,
+			});
+		}
+		if (safetyDecision?.disposition === "supported") {
+			const options = safetyDecision.options
+				.map(
+					(option, index) =>
+						`${index + 1}. ${option.action}（风险：${option.risk}；预期：${option.likelyResult}）`,
+				)
+				.join("\n");
+			return finish({
+				type: "answer",
+				text: `以下仅为已批准资料覆盖的选项：\n${options}`,
+				piSessionId,
+				toolsCalled,
+				sessionEvents,
+			});
 		}
 		if (escalationRequested) {
 			return finish({
@@ -565,6 +621,7 @@ export class SupportAgentRuntime {
 		onEscalate: () => void,
 		onNoKnowledgeEvidence: () => void,
 		onVerifiedKnowledgeEvidence: () => void,
+		onSafetyEvidence: (query: string, evidence: RetrievalEvidence[]) => void,
 		overallSignal: AbortSignal,
 	): AgentTool[] {
 		const withToolTimeout = async <T>(operation: (signal: AbortSignal) => Promise<T>): Promise<T> => {
@@ -618,6 +675,7 @@ export class SupportAgentRuntime {
 					if (signal.aborted) throw new Error("Knowledge search aborted.");
 					if (evidence.length === 0) onNoKnowledgeEvidence();
 					else onVerifiedKnowledgeEvidence();
+					onSafetyEvidence(params.query, evidence);
 					return {
 						content: [
 							{
@@ -714,6 +772,7 @@ export class SupportAgentRuntime {
 		if (normalizedText.includes("退款")) matchingSkillNames.add("refund");
 		if (normalizedText.includes("人工") || normalizedText.includes("升级")) matchingSkillNames.add("escalation");
 		if (normalizedText.includes("你好") || normalizedText.includes("您好")) matchingSkillNames.add("greeting");
+		if (detectSafetyRisk(text)) matchingSkillNames.add("safety-escalation");
 		const matchingInstructions = loaded.skills
 			.filter((skill) => matchingSkillNames.has(skill.name))
 			.map((skill) => readFileSync(skill.filePath, "utf8"));

@@ -9,6 +9,7 @@
 	"scripts": {
 		"build": "tsgo -p tsconfig.json",
 		"check": "biome check --error-on-warnings . && tsgo --noEmit",
+		"eval:safety": "node evals/safety/runner.ts",
 		"test": "vitest --run"
 	},
 	"dependencies": {

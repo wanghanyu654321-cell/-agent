@@ -1,0 +1,8 @@
+{
+	"type": "object",
+	"required": ["id", "domain", "riskCategory", "status", "version", "updatedAt", "scope", "evidenceText", "allowedOptions", "requiresEscalation"],
+	"properties": {
+		"status": { "enum": ["approved", "synthetic_test_only", "unapproved"] },
+		"domain": { "const": "safety" }
+	}
+}

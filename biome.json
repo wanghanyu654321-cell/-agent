@@ -17,7 +17,7 @@
 		}
 	},
 	"files": {
-		"includes": ["src/**/*.ts", "tests/**/*.ts", "*.json", "!**/node_modules/**/*", "!**/dist/**/*"]
+		"includes": ["src/**/*.ts", "tests/**/*.ts", "evals/**/*.ts", "*.json", "!**/node_modules/**/*", "!**/dist/**/*"]
 	},
 	"formatter": {
 		"enabled": true,
