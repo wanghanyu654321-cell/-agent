@@ -1,0 +1,13 @@
+{
+	"compilerOptions": {
+		"noEmit": true,
+		"module": "NodeNext",
+		"moduleResolution": "NodeNext",
+		"target": "ES2024",
+		"allowImportingTsExtensions": true,
+		"strict": true,
+		"skipLibCheck": true,
+		"types": ["node", "vitest"]
+	},
+	"include": ["src/**/*.ts", "tests/**/*.ts"]
+}
