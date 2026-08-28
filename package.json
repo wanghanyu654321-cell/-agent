@@ -13,6 +13,7 @@
 		"eval:safety:holdout": "node evals/safety/holdout/runner.ts",
 		"eval:safety:robustness": "node evals/safety/robustness/runner.ts",
 		"eval:knowledge": "node evals/knowledge/runner.ts",
+		"eval:retrieval:public": "node evals/retrieval/public-runner.ts",
 		"test": "vitest --run"
 	},
 	"dependencies": {

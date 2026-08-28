@@ -21,7 +21,11 @@ V2.0.1 FAQ Admission Hardening is additive work on `fix/v2.0.1-faq-admission` ab
 
 CUSTOMER SUPPORT AGENT V2.0.1
 FAQ ADMISSION HARDENING
-BASELINE FREEZE CANDIDATE — FINAL EXACT CLEAN-RUNNER GATE REQUIRED BEFORE TAGGING
+INDEPENDENT REPOSITORY BASELINE FROZEN
+
+The historical V2.0.1 result is now recorded forward: `customer-support-agent-v2.0.1-faq-admission` is an annotated tag that peels to `f8a5498ddae424246a9e32fcc430d186573d9d55`; the final exact GitHub Actions clean-runner [run 33182655801](https://github.com/wanghanyu654321-cell/-agent/actions/runs/33182655801) passed before that tag was created. The Knowledge Governance Foundation is CLOSED.
+
+V2.1 Real Knowledge & Retrieval Quality is preparing a private-safe corpus and public retrieval-regression boundary on `feat/v2.1-real-knowledge-retrieval`. It is blocked before the Real Knowledge Gate because no authoritative business source material is present; its blocker and non-sensitive evidence are recorded in [docs/v2.1-retrieval](../v2.1-retrieval/).
 
 The product source of truth is `wanghanyu654321-cell/-agent`. The Pi working tree at source commit `6026a439cc345969f708a820990dd3fe8d88f0b7` remains historical frozen evidence and a read-only reference implementation checkpoint.
 
