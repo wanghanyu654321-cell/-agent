@@ -17,4 +17,8 @@
 - Result: **PASS**. The single gate job `98752955349` completed checkout, Node `22.19.0` verification, clean `npm ci --ignore-scripts`, integrity verification, tests, build, check, V1 eval, V1.1 robustness eval, V1.2 holdout eval, and artifact upload without an allowed failure.
 - GitHub displayed an advisory about the internal Node 20 runtime used by the third-party v4 action implementations. This does not change the product job runtime: the workflow explicitly selected and verified Node `22.19.0`, and all required gate commands passed.
 
-The final documentation-only checkpoint is required to receive the same clean-runner gate before the immutable V1.2 tag is created.
+The final documentation-only checkpoint also passed the same clean-runner gate at [run 33141608880](https://github.com/wanghanyu654321-cell/-agent/actions/runs/33141608880), validating commit `ac626eb51bd783cad53ef13abb0557854510fb4d`. The immutable V1.2 tag is created only after the final report checkpoint receives this result.
+
+## Gate conclusion
+
+**PASS.** The V1.2 holdout, immutable first-run evidence, architecture and dependency integrity checks, and independent clean-runner CI Gate satisfy the V1.2 validation contract.
