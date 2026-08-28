@@ -23,6 +23,8 @@ The repository contains **zero real approved production business-knowledge entri
 
 A new short-path temporary clone was created from local commit `582bb50`, then `npm ci --ignore-scripts --no-audit` completed from the lockfile. In that clone `npm test`, `npm run build`, `npm run check`, all three safety evaluations, `npm run eval:knowledge`, and `node scripts/verify-integrity.mjs` passed. No Pi source checkout, old workspace `node_modules`, undeclared path, or uncommitted source was required. The temporary clones were removed after validation.
 
-## Acceptance result before remote confirmation
+## GitHub Actions clean-runner confirmation
 
-The product code, local regression suite, controlled evaluations, and clean clone satisfy the local V2.0 Gate. The GitHub Actions clean-runner result for the final documentation commit is the remaining release condition; the V2.0 tag must not be created until that run is green.
+GitHub Actions [run 33178620290](https://github.com/wanghanyu654321-cell/-agent/actions/runs/33178620290) passed for commit `9be7c49c9c81de89998365849ef31118fe1f9405`. Its single clean Ubuntu runner completed Node `22.19.0` verification, lockfile installation, immutable-tag/Pi/architecture integrity, tests, build, check, V1, V1.1, V1.2, and V2 evaluations, plus evaluation-artifact upload, with no allowed failure.
+
+The final freeze commit is required to pass the same workflow before the annotated `customer-support-agent-v2.0-knowledge` tag is created. This report contains no claim that synthetic controlled fixtures are real approved production knowledge.
