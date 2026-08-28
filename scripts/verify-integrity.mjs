@@ -8,6 +8,7 @@ export const EXPECTED_TAG_PEELS = {
 	"customer-support-agent-v1-safety": "9c60fe9a0764bd22a595d13a463b5665899d7c35",
 	"customer-support-agent-v1.1-robustness": "16fbf073f096e8eda443ddcad79e3666aec5ec09",
 	"customer-support-agent-v1.2-validation": "932cdf5543f996c63157c00750cdb597d0f547bd",
+	"customer-support-agent-v2.0-knowledge": "98cca9b92c13c2639beb958177923b3c09b42ed9",
 };
 
 const PI_PACKAGES = [

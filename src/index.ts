@@ -708,27 +708,31 @@ export class SupportAgentRuntime {
 			execute: async (_id, params: Static<typeof querySchema>) =>
 				withToolTimeout(async (signal) => {
 					if (signal.aborted) throw new Error("FAQ search aborted.");
-					const match = this.options.faq.find(
-						(item) => item.question.includes(params.query) || params.query.includes(item.question),
-					);
-					if (match) {
-						onKnowledgeEvidence(params.query, [
-							{
-								id: match.id,
-								text: match.answer,
-								knowledge: {
-									kind: "faq",
-									status: match.status,
-									version: match.version,
-									sourceRef: match.sourceRef,
-									...(match.tenantScope ? { tenantScope: match.tenantScope } : {}),
-									...(match.storeScope ? { storeScope: match.storeScope } : {}),
-								},
+					const match = this.options.faq
+						.filter((item) => item.question.includes(params.query) || params.query.includes(item.question))
+						.map<RetrievalEvidence>((item) => ({
+							id: item.id,
+							text: item.answer,
+							knowledge: {
+								kind: "faq",
+								status: item.status,
+								version: item.version,
+								sourceRef: item.sourceRef,
+								...(item.tenantScope ? { tenantScope: item.tenantScope } : {}),
+								...(item.storeScope ? { storeScope: item.storeScope } : {}),
 							},
-						]);
-					} else onNoKnowledgeEvidence();
+						}))
+						.find((item) =>
+							isAdmissibleKnowledgeEvidence(
+								item.knowledge,
+								{ tenantId: request.tenantId, storeId: request.storeId },
+								this.options.allowSyntheticTestKnowledge ?? false,
+							),
+						);
+					if (match) onKnowledgeEvidence(params.query, [match]);
+					else onNoKnowledgeEvidence();
 					return {
-						content: [{ type: "text" as const, text: match ? match.answer : "No FAQ evidence found." }],
+						content: [{ type: "text" as const, text: match?.text ?? "No FAQ evidence found." }],
 						details: { found: Boolean(match) },
 					};
 				}),

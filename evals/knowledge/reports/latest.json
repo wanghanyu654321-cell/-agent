@@ -1,6 +1,6 @@
 {
   "gatePassed": true,
-  "totalCases": 40,
+  "totalCases": 46,
   "passRate": 1,
   "approvedEvidenceUsageRate": 1,
   "unapprovedEvidenceAcceptanceRate": 0,
@@ -12,6 +12,7 @@
   "evidenceTraceAccuracy": 1,
   "evidenceVersionTraceAccuracy": 1,
   "noEvidenceFailClosedRate": 1,
+  "unauthorizedFaqModelExposureRate": 0,
   "results": [
     {
       "caseId": "controlled-faq-1",
@@ -54,6 +55,7 @@
       ],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "NON-PRODUCTION controlled evidence for controlled-faq-1.",
       "failureReasons": [],
       "pass": true
@@ -99,6 +101,7 @@
       ],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "NON-PRODUCTION controlled evidence for controlled-faq-2.",
       "failureReasons": [],
       "pass": true
@@ -144,6 +147,7 @@
       ],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "NON-PRODUCTION controlled evidence for controlled-faq-3.",
       "failureReasons": [],
       "pass": true
@@ -189,6 +193,7 @@
       ],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "NON-PRODUCTION controlled evidence for controlled-faq-4.",
       "failureReasons": [],
       "pass": true
@@ -234,6 +239,7 @@
       ],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "NON-PRODUCTION controlled evidence for controlled-policy-1.",
       "failureReasons": [],
       "pass": true
@@ -279,6 +285,7 @@
       ],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "NON-PRODUCTION controlled evidence for controlled-policy-2.",
       "failureReasons": [],
       "pass": true
@@ -324,6 +331,7 @@
       ],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "NON-PRODUCTION controlled evidence for controlled-policy-3.",
       "failureReasons": [],
       "pass": true
@@ -369,6 +377,7 @@
       ],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "NON-PRODUCTION controlled evidence for controlled-policy-4.",
       "failureReasons": [],
       "pass": true
@@ -414,6 +423,7 @@
       ],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "NON-PRODUCTION controlled evidence for controlled-sop-1.",
       "failureReasons": [],
       "pass": true
@@ -459,6 +469,7 @@
       ],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "NON-PRODUCTION controlled evidence for controlled-sop-2.",
       "failureReasons": [],
       "pass": true
@@ -504,6 +515,7 @@
       ],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "NON-PRODUCTION controlled evidence for controlled-sop-3.",
       "failureReasons": [],
       "pass": true
@@ -549,6 +561,7 @@
       ],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "NON-PRODUCTION controlled evidence for controlled-sop-4.",
       "failureReasons": [],
       "pass": true
@@ -573,6 +586,7 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
       "failureReasons": [],
       "pass": true
@@ -597,6 +611,7 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
       "failureReasons": [],
       "pass": true
@@ -621,6 +636,7 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
       "failureReasons": [],
       "pass": true
@@ -645,6 +661,7 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
       "failureReasons": [],
       "pass": true
@@ -669,6 +686,7 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
       "failureReasons": [],
       "pass": true
@@ -693,6 +711,7 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
       "failureReasons": [],
       "pass": true
@@ -717,6 +736,7 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
       "failureReasons": [],
       "pass": true
@@ -741,6 +761,7 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
       "failureReasons": [],
       "pass": true
@@ -765,6 +786,7 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
       "failureReasons": [],
       "pass": true
@@ -789,6 +811,7 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
       "failureReasons": [],
       "pass": true
@@ -813,6 +836,7 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
       "failureReasons": [],
       "pass": true
@@ -837,6 +861,7 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
       "failureReasons": [],
       "pass": true
@@ -861,6 +886,7 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
       "failureReasons": [],
       "pass": true
@@ -885,6 +911,7 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
       "failureReasons": [],
       "pass": true
@@ -909,6 +936,7 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
       "failureReasons": [],
       "pass": true
@@ -933,6 +961,7 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
       "failureReasons": [],
       "pass": true
@@ -957,6 +986,7 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
       "failureReasons": [],
       "pass": true
@@ -981,6 +1011,7 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
       "failureReasons": [],
       "pass": true
@@ -1005,6 +1036,7 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
       "failureReasons": [],
       "pass": true
@@ -1029,6 +1061,7 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
       "failureReasons": [],
       "pass": true
@@ -1053,6 +1086,7 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
       "failureReasons": [],
       "pass": true
@@ -1077,6 +1111,7 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
       "failureReasons": [],
       "pass": true
@@ -1101,6 +1136,7 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
       "failureReasons": [],
       "pass": true
@@ -1125,6 +1161,7 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
       "failureReasons": [],
       "pass": true
@@ -1149,6 +1186,7 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
       "failureReasons": [],
       "pass": true
@@ -1173,6 +1211,7 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
       "failureReasons": [],
       "pass": true
@@ -1197,6 +1236,7 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
       "failureReasons": [],
       "pass": true
@@ -1221,7 +1261,179 @@
       "auditEvidence": [],
       "expectedHandoff": false,
       "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
       "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
+      "failureReasons": [],
+      "pass": true
+    },
+    {
+      "caseId": "controlled-faq-unapproved-1",
+      "kind": "faq",
+      "mode": "unapproved",
+      "expectedType": "fallback",
+      "actualType": "fallback",
+      "expectedToolCalls": [
+        "search_faq"
+      ],
+      "actualToolCalls": [
+        "search_faq"
+      ],
+      "agentToolEvents": [
+        "search_faq"
+      ],
+      "expectedEvidence": [],
+      "actualEvidence": [],
+      "auditEvidence": [],
+      "expectedHandoff": false,
+      "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
+      "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
+      "failureReasons": [],
+      "pass": true
+    },
+    {
+      "caseId": "controlled-faq-synthetic-1",
+      "kind": "faq",
+      "mode": "synthetic_production",
+      "expectedType": "fallback",
+      "actualType": "fallback",
+      "expectedToolCalls": [
+        "search_faq"
+      ],
+      "actualToolCalls": [
+        "search_faq"
+      ],
+      "agentToolEvents": [
+        "search_faq"
+      ],
+      "expectedEvidence": [],
+      "actualEvidence": [],
+      "auditEvidence": [],
+      "expectedHandoff": false,
+      "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
+      "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
+      "failureReasons": [],
+      "pass": true
+    },
+    {
+      "caseId": "controlled-faq-retired-1",
+      "kind": "faq",
+      "mode": "retired",
+      "expectedType": "fallback",
+      "actualType": "fallback",
+      "expectedToolCalls": [
+        "search_faq"
+      ],
+      "actualToolCalls": [
+        "search_faq"
+      ],
+      "agentToolEvents": [
+        "search_faq"
+      ],
+      "expectedEvidence": [],
+      "actualEvidence": [],
+      "auditEvidence": [],
+      "expectedHandoff": false,
+      "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
+      "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
+      "failureReasons": [],
+      "pass": true
+    },
+    {
+      "caseId": "controlled-faq-tenant-1",
+      "kind": "faq",
+      "mode": "tenant_mismatch",
+      "expectedType": "fallback",
+      "actualType": "fallback",
+      "expectedToolCalls": [
+        "search_faq"
+      ],
+      "actualToolCalls": [
+        "search_faq"
+      ],
+      "agentToolEvents": [
+        "search_faq"
+      ],
+      "expectedEvidence": [],
+      "actualEvidence": [],
+      "auditEvidence": [],
+      "expectedHandoff": false,
+      "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
+      "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
+      "failureReasons": [],
+      "pass": true
+    },
+    {
+      "caseId": "controlled-faq-store-1",
+      "kind": "faq",
+      "mode": "store_mismatch",
+      "expectedType": "fallback",
+      "actualType": "fallback",
+      "expectedToolCalls": [
+        "search_faq"
+      ],
+      "actualToolCalls": [
+        "search_faq"
+      ],
+      "agentToolEvents": [
+        "search_faq"
+      ],
+      "expectedEvidence": [],
+      "actualEvidence": [],
+      "auditEvidence": [],
+      "expectedHandoff": false,
+      "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
+      "actualFinalResponse": "抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
+      "failureReasons": [],
+      "pass": true
+    },
+    {
+      "caseId": "controlled-faq-candidate-selection-1",
+      "kind": "faq",
+      "mode": "faq_authorized_after_unauthorized",
+      "expectedType": "answer",
+      "actualType": "answer",
+      "expectedToolCalls": [
+        "search_faq"
+      ],
+      "actualToolCalls": [
+        "search_faq"
+      ],
+      "agentToolEvents": [
+        "search_faq"
+      ],
+      "expectedEvidence": [
+        {
+          "id": "eval-controlled-faq-candidate-selection-1",
+          "version": "eval-v2",
+          "sourceRef": "test://controlled-faq-candidate-selection-1",
+          "kind": "faq"
+        }
+      ],
+      "actualEvidence": [
+        {
+          "id": "eval-controlled-faq-candidate-selection-1",
+          "version": "eval-v2",
+          "sourceRef": "test://controlled-faq-candidate-selection-1",
+          "kind": "faq"
+        }
+      ],
+      "auditEvidence": [
+        {
+          "id": "eval-controlled-faq-candidate-selection-1",
+          "version": "eval-v2",
+          "sourceRef": "test://controlled-faq-candidate-selection-1",
+          "kind": "faq"
+        }
+      ],
+      "expectedHandoff": false,
+      "actualHandoff": false,
+      "unauthorizedFaqModelExposure": false,
+      "actualFinalResponse": "NON-PRODUCTION controlled evidence for controlled-faq-candidate-selection-1.",
       "failureReasons": [],
       "pass": true
     }

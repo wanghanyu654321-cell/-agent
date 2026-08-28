@@ -4,6 +4,7 @@ import {
 	evaluateKnowledgeCase,
 	evaluateKnowledgeObservation,
 	isKnowledgeGatePassed,
+	runKnowledgeEval,
 } from "../evals/knowledge/runner.ts";
 
 describe("V2.0 governed knowledge evaluation", () => {
@@ -73,6 +74,7 @@ describe("V2.0 governed knowledge evaluation", () => {
 				evidenceTraceAccuracy: 1,
 				evidenceVersionTraceAccuracy: 1,
 				noEvidenceFailClosedRate: 1,
+				unauthorizedFaqModelExposureRate: 0,
 			}),
 		).toBe(false);
 	});
@@ -85,5 +87,25 @@ describe("V2.0 governed knowledge evaluation", () => {
 		expect(result.actualEvidence).toHaveLength(1);
 		expect(result.auditEvidence).toEqual(result.actualEvidence);
 		expect(result.pass).toBe(true);
+	});
+
+	it("measures zero model exposure for unauthorized FAQ cases through the real runtime", async () => {
+		const requiredModes = [
+			"unapproved",
+			"retired",
+			"synthetic_production",
+			"tenant_mismatch",
+			"store_mismatch",
+			"faq_authorized_after_unauthorized",
+		] as const;
+		for (const mode of requiredModes) {
+			const testCase = knowledgeEvalCases.find((item) => item.kind === "faq" && item.mode === mode);
+			expect(testCase, `missing FAQ eval case for ${mode}`).toBeDefined();
+			const result = await evaluateKnowledgeCase(testCase!);
+			expect((result as { unauthorizedFaqModelExposure?: boolean }).unauthorizedFaqModelExposure).toBe(false);
+		}
+		const { gatePassed, report } = await runKnowledgeEval();
+		expect(report.unauthorizedFaqModelExposureRate).toBe(0);
+		expect(gatePassed).toBe(true);
 	});
 });

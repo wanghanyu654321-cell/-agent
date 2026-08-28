@@ -41,6 +41,7 @@ export interface KnowledgeEvalResult {
 	auditEvidence: GroundingReference[];
 	expectedHandoff: boolean;
 	actualHandoff: boolean;
+	unauthorizedFaqModelExposure: boolean;
 	actualFinalResponse: string;
 	pass: boolean;
 	failureReasons: string[];
@@ -58,6 +59,7 @@ export type KnowledgeGateMetrics = {
 	evidenceTraceAccuracy: number;
 	evidenceVersionTraceAccuracy: number;
 	noEvidenceFailClosedRate: number;
+	unauthorizedFaqModelExposureRate: number;
 };
 
 export function evaluateKnowledgeObservation(c: KnowledgeEvalCase, o: Observation) {
@@ -88,6 +90,33 @@ export function evaluateKnowledgeObservation(c: KnowledgeEvalCase, o: Observatio
 
 function entryForCase(testCase: KnowledgeEvalCase): KnowledgeEntry[] {
 	if (testCase.mode === "none") return [];
+	if (testCase.mode === "faq_authorized_after_unauthorized") {
+		return [
+			{
+				id: `unauthorized-${testCase.caseId}`,
+				kind: "faq",
+				status: "synthetic_test_only",
+				title: testCase.caseId,
+				content: `UNAUTHORIZED_FAQ_CONTENT_${testCase.caseId}`,
+				version: "unauthorized-v1",
+				updatedAt: "2026-08-28",
+				sourceRef: `test://unauthorized-${testCase.caseId}`,
+				tags: [testCase.caseId, "controlled", "synthetic_test_only"],
+				tenantScope: "other-tenant",
+			},
+			{
+				id: `eval-${testCase.caseId}`,
+				kind: "faq",
+				status: "synthetic_test_only",
+				title: testCase.caseId,
+				content: `NON-PRODUCTION controlled evidence for ${testCase.caseId}.`,
+				version: EVAL_VERSION,
+				updatedAt: "2026-08-28",
+				sourceRef: `test://${testCase.caseId}`,
+				tags: [testCase.caseId, "controlled", "synthetic_test_only"],
+			},
+		];
+	}
 	const status =
 		testCase.mode === "unapproved" ? "unapproved" : testCase.mode === "retired" ? "retired" : "synthetic_test_only";
 	return [
@@ -96,7 +125,10 @@ function entryForCase(testCase: KnowledgeEvalCase): KnowledgeEntry[] {
 			kind: testCase.kind,
 			status,
 			title: testCase.caseId,
-			content: `NON-PRODUCTION controlled evidence for ${testCase.caseId}.`,
+			content:
+				testCase.kind === "faq" && testCase.mode !== "admissible"
+					? `UNAUTHORIZED_FAQ_CONTENT_${testCase.caseId}`
+					: `NON-PRODUCTION controlled evidence for ${testCase.caseId}.`,
 			version: EVAL_VERSION,
 			updatedAt: "2026-08-28",
 			sourceRef: `test://${testCase.caseId}`,
@@ -148,7 +180,7 @@ export async function evaluateKnowledgeCase(testCase: KnowledgeEvalCase): Promis
 		]);
 		const store = new InMemorySupportStore();
 		const entries = entryForCase(testCase);
-		const allowSynthetic = testCase.mode === "admissible";
+		const allowSynthetic = testCase.mode === "admissible" || testCase.mode === "faq_authorized_after_unauthorized";
 		const runtime = new SupportAgentRuntime({
 			model: faux.getModel(),
 			streamFn: streamSimple,
@@ -182,6 +214,20 @@ export async function evaluateKnowledgeCase(testCase: KnowledgeEvalCase): Promis
 			.map((event) => event.toolName);
 		const auditEvidence = readGroundingAudit(runtime, conversationId, directory);
 		const actualHandoff = store.findHandoff(conversationId) !== undefined;
+		const sessionFile = runtime.getSessionFile(conversationId);
+		if (!sessionFile) throw new Error(`Missing persisted session for ${conversationId}.`);
+		const persistedSession = JSON.stringify(SessionManager.open(sessionFile, directory, process.cwd()).getEntries());
+		const unauthorizedFaqModelExposure =
+			testCase.kind === "faq" &&
+			[
+				"unapproved",
+				"synthetic_production",
+				"retired",
+				"tenant_mismatch",
+				"store_mismatch",
+				"faq_authorized_after_unauthorized",
+			].includes(testCase.mode) &&
+			persistedSession.includes(`UNAUTHORIZED_FAQ_CONTENT_${testCase.caseId}`);
 		const evaluation = evaluateKnowledgeObservation(testCase, {
 			actualType: result.type,
 			actualText: result.text,
@@ -215,6 +261,7 @@ export async function evaluateKnowledgeCase(testCase: KnowledgeEvalCase): Promis
 			auditEvidence,
 			expectedHandoff: false,
 			actualHandoff,
+			unauthorizedFaqModelExposure,
 			actualFinalResponse: result.text,
 			...evaluation,
 		};
@@ -236,7 +283,8 @@ export function isKnowledgeGatePassed(m: KnowledgeGateMetrics) {
 		m.unsupportedBusinessFactRate === 0 &&
 		m.evidenceTraceAccuracy === 1 &&
 		m.evidenceVersionTraceAccuracy === 1 &&
-		m.noEvidenceFailClosedRate === 1
+		m.noEvidenceFailClosedRate === 1 &&
+		m.unauthorizedFaqModelExposureRate === 0
 	);
 }
 
@@ -248,6 +296,18 @@ export async function runKnowledgeEval(): Promise<{ gatePassed: boolean; report:
 		items.filter(predicate).length / Math.max(1, items.length);
 	const admissible = byMode("admissible");
 	const noEvidence = results.filter((result) => result.expectedType === "fallback");
+	const unauthorizedFaqCases = results.filter(
+		(result) =>
+			result.kind === "faq" &&
+			[
+				"unapproved",
+				"synthetic_production",
+				"retired",
+				"tenant_mismatch",
+				"store_mismatch",
+				"faq_authorized_after_unauthorized",
+			].includes(result.mode),
+	);
 	const report = {
 		totalCases: results.length,
 		passRate: rate(results, (result) => result.pass),
@@ -274,6 +334,7 @@ export async function runKnowledgeEval(): Promise<{ gatePassed: boolean; report:
 			noEvidence,
 			(result) => result.actualType === "fallback" && result.actualEvidence.length === 0,
 		),
+		unauthorizedFaqModelExposureRate: rate(unauthorizedFaqCases, (result) => result.unauthorizedFaqModelExposure),
 		results,
 	};
 	const { results: _results, totalCases: _totalCases, ...metrics } = report;
@@ -287,7 +348,7 @@ async function main(): Promise<void> {
 	writeFileSync(join(reports, "latest.json"), JSON.stringify({ gatePassed, ...report }, null, 2));
 	writeFileSync(
 		join(reports, "latest.md"),
-		`# V2.0 Governed Knowledge Eval Report\n\nGate passed: ${gatePassed}\n\nTotal cases: ${report.totalCases}\n\nPass rate: ${(report.passRate as number) * 100}%\n\nApproved evidence usage: ${(report.approvedEvidenceUsageRate as number) * 100}%\n\nEvidence trace accuracy: ${(report.evidenceTraceAccuracy as number) * 100}%\n\nNo-evidence fail-closed rate: ${(report.noEvidenceFailClosedRate as number) * 100}%\n`,
+		`# V2.0.1 FAQ Admission Eval Report\n\nGate passed: ${gatePassed}\n\nTotal cases: ${report.totalCases}\n\nPass rate: ${(report.passRate as number) * 100}%\n\nApproved evidence usage: ${(report.approvedEvidenceUsageRate as number) * 100}%\n\nEvidence trace accuracy: ${(report.evidenceTraceAccuracy as number) * 100}%\n\nNo-evidence fail-closed rate: ${(report.noEvidenceFailClosedRate as number) * 100}%\n\nUnauthorized FAQ model exposure rate: ${(report.unauthorizedFaqModelExposureRate as number) * 100}%\n`,
 	);
 	console.log(JSON.stringify(report));
 	if (!gatePassed) process.exitCode = 1;
