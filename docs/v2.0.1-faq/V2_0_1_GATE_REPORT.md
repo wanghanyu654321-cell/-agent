@@ -39,3 +39,9 @@ The existing GitHub Actions workflow is extended to trigger on `fix/v2.0.1-faq-a
 - `Unauthorized FAQ Model Exposure Rate = 0%` from persisted Pi-session evidence.
 
 The annotated `customer-support-agent-v2.0.1-faq-admission` tag may be created only after that exact remote run passes.
+
+## GitHub Actions confirmation
+
+GitHub Actions [run 33182531546](https://github.com/wanghanyu654321-cell/-agent/actions/runs/33182531546) passed on `bce59d240178e893b1b4378309c307ed93f174ec`. Its clean Ubuntu runner completed lockfile installation, immutable-tag/Pi/architecture integrity, all 127 tests, build, check, V1 30-case evaluation, V1.1 100-case evaluation, V1.2 60-case holdout, V2.0.1 46-case knowledge evaluation, and evaluation-artifact upload with no allowed failure.
+
+The final documentation checkpoint is required to pass this same workflow before the V2.0.1 annotated tag is created.

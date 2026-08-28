@@ -21,7 +21,7 @@ V2.0.1 FAQ Admission Hardening is additive work on `fix/v2.0.1-faq-admission` ab
 
 CUSTOMER SUPPORT AGENT V2.0.1
 FAQ ADMISSION HARDENING
-BASELINE FREEZE PENDING EXACT CLEAN-RUNNER GATE
+BASELINE FREEZE CANDIDATE — FINAL EXACT CLEAN-RUNNER GATE REQUIRED BEFORE TAGGING
 
 The product source of truth is `wanghanyu654321-cell/-agent`. The Pi working tree at source commit `6026a439cc345969f708a820990dd3fe8d88f0b7` remains historical frozen evidence and a read-only reference implementation checkpoint.
 
