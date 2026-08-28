@@ -81,18 +81,72 @@ function hasSafetyHardNegative(text: string): boolean {
 }
 
 function hasDeviceRiskSignal(text: string): boolean {
+	const deviceContext = hasKeyword(text, ["仪器", "设备", "机器", "机子"]);
+	const deviceFault = hasKeyword(text, [
+		"报错",
+		"baocuo",
+		"焦糊",
+		"糊味",
+		"火星",
+		"读数跳",
+		"数字忽高忽低",
+		"界面一直闪",
+	]);
 	return (
 		(hasKeyword(text, ["仪器", "设备", "机器"]) &&
 			hasKeyword(text, ["电", "dian", "麻", "打痛", "烫", "异常", "不对劲", "怪怪", "疼", "碰"])) ||
-		hasKeyword(text, ["电了一下", "像被电", "漏电", "电麻"])
+		hasKeyword(text, ["电了一下", "像被电", "漏电", "电麻"]) ||
+		(deviceContext && deviceFault)
 	);
 }
 
 function hasContraindicationSignal(text: string): boolean {
+	const serviceDecision = /(能不能|可不可以|还能|能否|安排|预约|项目|服务|做|继续|能排|能约)/.test(text);
+	const medicationContext = hasKeyword(text, ["药", "服用", "喝药", "药片"]);
 	return (
-		(/(吃过|吃着|服过|服用|在吃|吃完|服药|吃药).{0,4}药?/.test(text) &&
-			/(能不能|可不可以|还能|能否|项目|做|继续|上)/.test(text)) ||
-		hasKeyword(text, ["怀孕", "怀着", "哺乳"])
+		(/(吃过|吃着|服过|服用|在吃|吃完|服药|吃药).{0,4}药?/.test(text) && serviceDecision) ||
+		(medicationContext && serviceDecision) ||
+		hasKeyword(text, ["怀孕", "怀着", "哺乳", "怀宝宝", "肚子里有宝宝"])
+	);
+}
+
+function hasVisibleSkinRiskSignal(text: string): boolean {
+	return hasKeyword(text, [
+		"红斑",
+		"红ban",
+		"疹子",
+		"渗出",
+		"发白",
+		"晒伤",
+		"冒热",
+		"烤熟",
+		"针扎",
+		"针戳",
+		"小疙瘩",
+		"颜色越来越白",
+	]);
+}
+
+function hasAcuteUncertainRiskSignal(text: string): boolean {
+	return (
+		hasKeyword(text, [
+			"头晕",
+			"胸口发闷",
+			"胸口堵",
+			"胸men",
+			"嗓子发紧",
+			"嗓子jin",
+			"眼前发黑",
+			"发飘",
+			"缩脖子",
+			"不对味",
+			"全是汗",
+			"出去透气",
+			"反复吞咽",
+			"退了两步",
+			"站不稳",
+			"嘴唇肿",
+		]) || /眼前.{0,4}发黑/.test(text)
 	);
 }
 
@@ -101,6 +155,8 @@ export function detectSafetyRisk(text: string): SafetyRiskCategory | undefined {
 	if (hasSafetyHardNegative(normalized)) return undefined;
 	if (hasDeviceRiskSignal(normalized)) return "device_safety";
 	if (hasContraindicationSignal(normalized)) return "contraindication";
+	if (hasVisibleSkinRiskSignal(normalized)) return "skin_abnormality";
+	if (hasAcuteUncertainRiskSignal(normalized)) return "unknown_professional_risk";
 	if (
 		hasKeyword(normalized, [
 			"过敏",
@@ -115,6 +171,7 @@ export function detectSafetyRisk(text: string): SafetyRiskCategory | undefined {
 			"抓脸",
 			"痒一直",
 			"yue痒",
+			"揉眼睛",
 		])
 	) {
 		return "allergy";

@@ -1,0 +1,60 @@
+name: Customer Support Agent Gate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - feat/v1.2-blind-eval-ci
+
+jobs:
+  independent-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout complete repository history and tags
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use supported Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+
+      - name: Verify Node version
+        run: node -e "const [major, minor] = process.versions.node.split('.').map(Number); if (major < 22 || (major === 22 && minor < 19)) process.exit(1); console.log(process.versions.node)"
+
+      - name: Install declared dependencies from lockfile
+        run: npm ci --ignore-scripts
+
+      - name: Verify immutable tags, Pi pins, and architecture boundaries
+        run: node scripts/verify-integrity.mjs
+
+      - name: Run unit and runtime tests
+        run: npm test
+
+      - name: Build package
+        run: npm run build
+
+      - name: Run format, lint, and type checks
+        run: npm run check
+
+      - name: Run V1 controlled safety evaluation
+        run: npm run eval:safety
+
+      - name: Run V1.1 robustness evaluation
+        run: npm run eval:safety:robustness
+
+      - name: Run V1.2 blind holdout evaluation
+        run: npm run eval:safety:holdout
+
+      - name: Upload evaluation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: customer-support-agent-evaluations
+          if-no-files-found: error
+          path: |
+            evals/safety/robustness/reports/latest.json
+            evals/safety/holdout/reports/first-run.json
+            evals/safety/holdout/reports/latest.json
