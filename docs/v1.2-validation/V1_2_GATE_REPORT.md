@@ -9,6 +9,12 @@
 - The first blind result is permanently preserved; the final holdout result meets every local threshold.
 - The evaluator's negative controls prove that unsafe final output, an incorrect trace, a wrong category, and a duplicate-handoff metric can make the evaluator fail.
 
-## External gate status
+## GitHub Actions evidence
 
-**PENDING GITHUB ACTIONS.** This report is intentionally not marked PASS until the pushed V1.2 branch has a green `Customer Support Agent Gate` workflow on GitHub's clean runner. The final report will identify that workflow evidence, then the V1.2 annotated tag may be created.
+- Workflow: `Customer Support Agent Gate`.
+- Clean-runner workflow run: [33141444321](https://github.com/wanghanyu654321-cell/-agent/actions/runs/33141444321).
+- Validated checkpoint: `825b56ba7c065fb1e68698346c5907b3c4025782`.
+- Result: **PASS**. The single gate job `98752955349` completed checkout, Node `22.19.0` verification, clean `npm ci --ignore-scripts`, integrity verification, tests, build, check, V1 eval, V1.1 robustness eval, V1.2 holdout eval, and artifact upload without an allowed failure.
+- GitHub displayed an advisory about the internal Node 20 runtime used by the third-party v4 action implementations. This does not change the product job runtime: the workflow explicitly selected and verified Node `22.19.0`, and all required gate commands passed.
+
+The final documentation-only checkpoint is required to receive the same clean-runner gate before the immutable V1.2 tag is created.
