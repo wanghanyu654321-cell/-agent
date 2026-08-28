@@ -17,6 +17,12 @@ CUSTOMER SUPPORT AGENT V2.0
 GOVERNED KNOWLEDGE GROUNDING
 INDEPENDENT REPOSITORY BASELINE FROZEN
 
+V2.0.1 FAQ Admission Hardening is additive work on `fix/v2.0.1-faq-admission` above the immutable V2.0 tag. It closes a pre-model ordering gap in `search_faq`: lifecycle, tenant/store scope, and explicit synthetic-test admission are decided before any FAQ answer is returned in a Pi tool result. Rejected FAQ text cannot establish verified evidence or enter the persisted Pi session; only an admitted candidate is traceable through `SupportResult.evidence` and `support-agent.audit.grounding`. The expanded V2.0.1 controlled evaluation records `Unauthorized FAQ Model Exposure Rate = 0%`. Its source audit, admission contract, and Gate evidence are recorded under [docs/v2.0.1-faq](../v2.0.1-faq/).
+
+CUSTOMER SUPPORT AGENT V2.0.1
+FAQ ADMISSION HARDENING
+BASELINE FREEZE PENDING EXACT CLEAN-RUNNER GATE
+
 The product source of truth is `wanghanyu654321-cell/-agent`. The Pi working tree at source commit `6026a439cc345969f708a820990dd3fe8d88f0b7` remains historical frozen evidence and a read-only reference implementation checkpoint.
 
 ## Included V0 behavior
