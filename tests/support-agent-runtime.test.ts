@@ -18,8 +18,17 @@ import {
 	type RetrievalService,
 	SupportAgentRuntime,
 } from "../src/index.ts";
+import { GovernedKnowledgeRetrievalService } from "../src/knowledge.ts";
 
 const registrations: Array<{ unregister(): void }> = [];
+const testFaq = {
+	id: "test-faq-business-hours",
+	question: "营业时间",
+	answer: "门店每天 09:00-21:00 营业。",
+	status: "synthetic_test_only" as const,
+	version: "test-v1",
+	sourceRef: "test://faq-business-hours",
+};
 
 afterEach(() => {
 	while (registrations.length > 0) registrations.pop()?.unregister();
@@ -31,6 +40,7 @@ describe("SupportAgentRuntime", () => {
 		options?: {
 			retrieval?: RetrievalService;
 			store?: InMemorySupportStore;
+			allowSyntheticTestKnowledge?: boolean;
 			limits?: {
 				maxAgentTurns?: number;
 				maxToolCalls?: number;
@@ -47,7 +57,8 @@ describe("SupportAgentRuntime", () => {
 			streamFn: streamSimple,
 			retrieval: options?.retrieval ?? new InMemoryRetrievalService(),
 			store: options?.store ?? new InMemorySupportStore(),
-			faq: [{ question: "营业时间", answer: "门店每天 09:00-21:00 营业。" }],
+			faq: [testFaq],
+			allowSyntheticTestKnowledge: options?.allowSyntheticTestKnowledge ?? true,
 			limits: options?.limits,
 		});
 	}
@@ -79,7 +90,8 @@ describe("SupportAgentRuntime", () => {
 			streamFn: streamSimple,
 			retrieval: new InMemoryRetrievalService(),
 			store: new InMemorySupportStore(),
-			faq: [{ question: "营业时间", answer: "门店每天 09:00-21:00 营业。" }],
+			faq: [testFaq],
+			allowSyntheticTestKnowledge: true,
 		});
 
 		const result = await runtime.run({
@@ -149,9 +161,23 @@ describe("SupportAgentRuntime", () => {
 				fauxAssistantMessage("退款会在申请后五个工作日内原路退回。"),
 			],
 			{
-				retrieval: new InMemoryRetrievalService([
-					{ id: "refund-policy", text: "退款会在申请后五个工作日内原路退回。" },
-				]),
+				retrieval: new GovernedKnowledgeRetrievalService(
+					[
+						{
+							id: "test-refund-policy",
+							kind: "policy",
+							status: "synthetic_test_only",
+							title: "退款",
+							content: "退款会在申请后五个工作日内原路退回。",
+							version: "test-v1",
+							updatedAt: "2026-08-28",
+							sourceRef: "test://refund-policy",
+							tags: ["退款"],
+						},
+					],
+					{ allowSyntheticTestFixtures: true },
+				),
+				allowSyntheticTestKnowledge: true,
 			},
 		);
 
@@ -450,7 +476,8 @@ describe("SupportAgentRuntime", () => {
 			streamFn: streamSimple,
 			retrieval: new InMemoryRetrievalService(),
 			store: new InMemorySupportStore(),
-			faq: [{ question: "营业时间", answer: "门店每天 09:00-21:00 营业。" }],
+			faq: [testFaq],
+			allowSyntheticTestKnowledge: true,
 			limits: { maxAgentTurns: 1 },
 		});
 
@@ -609,7 +636,8 @@ describe("SupportAgentRuntime", () => {
 				model: faux.getModel(),
 				streamFn: streamSimple,
 				retrieval: new InMemoryRetrievalService(),
-				faq: [{ question: "营业时间", answer: "门店每天 09:00-21:00 营业。" }],
+				faq: [testFaq],
+				allowSyntheticTestKnowledge: true,
 				sessionDirectory: directory,
 				limits: { maxToolCalls: 1 },
 			};

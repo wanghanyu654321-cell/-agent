@@ -10,6 +10,13 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import { type Static, Type } from "typebox";
 import {
+	type GroundingReference,
+	groundingReference,
+	isAdmissibleKnowledgeEvidence,
+	type KnowledgeEvidenceMetadata,
+	type KnowledgeStatus,
+} from "./knowledge.ts";
+import {
 	decideSafety,
 	detectSafetyRisk,
 	formatSafetySupportedResponse,
@@ -32,10 +39,16 @@ export interface RetrievalEvidence {
 	id: string;
 	text: string;
 	safety?: SafetyEvidence;
+	knowledge?: KnowledgeEvidenceMetadata;
+}
+
+export interface RetrievalContext {
+	tenantId: string;
+	storeId: string;
 }
 
 export interface RetrievalService {
-	search(query: string, signal: AbortSignal): Promise<RetrievalEvidence[]>;
+	search(query: string, signal: AbortSignal, context?: RetrievalContext): Promise<RetrievalEvidence[]>;
 }
 
 export class InMemoryRetrievalService implements RetrievalService {
@@ -45,7 +58,7 @@ export class InMemoryRetrievalService implements RetrievalService {
 		this.evidence = evidence;
 	}
 
-	async search(query: string, signal: AbortSignal): Promise<RetrievalEvidence[]> {
+	async search(query: string, signal: AbortSignal, _context?: RetrievalContext): Promise<RetrievalEvidence[]> {
 		if (signal.aborted) throw new Error("Knowledge search aborted.");
 		const normalized = query.trim().toLowerCase();
 		return this.evidence.filter((item) => item.text.toLowerCase().includes(normalized));
@@ -155,8 +168,14 @@ export class InMemorySupportStore {
 }
 
 export interface FaqEntry {
+	id: string;
 	question: string;
 	answer: string;
+	status: KnowledgeStatus;
+	version: string;
+	sourceRef: string;
+	tenantScope?: string;
+	storeScope?: string;
 }
 
 export interface SupportAgentLimits {
@@ -175,6 +194,7 @@ export interface SupportAgentRuntimeOptions {
 	faq: FaqEntry[];
 	sessionDirectory?: string;
 	skillsDirectory?: string;
+	allowSyntheticTestKnowledge?: boolean;
 	limits?: Partial<SupportAgentLimits>;
 }
 
@@ -184,6 +204,7 @@ export interface SupportResult {
 	piSessionId: string;
 	toolsCalled: string[];
 	sessionEvents: AgentEvent[];
+	evidence: GroundingReference[];
 }
 
 const DEFAULT_LIMITS: SupportAgentLimits = {
@@ -218,7 +239,7 @@ function fallback(
 	toolsCalled: string[],
 	sessionEvents: AgentEvent[],
 ): SupportResult {
-	return { type: "fallback", text, piSessionId, toolsCalled, sessionEvents };
+	return { type: "fallback", text, piSessionId, toolsCalled, sessionEvents, evidence: [] };
 }
 
 function hasPermission(request: SupportRequest, permission: string): boolean {
@@ -284,6 +305,8 @@ export class SupportAgentRuntime {
 		let toolFailed = false;
 		let noKnowledgeEvidence = false;
 		let verifiedKnowledgeEvidence = false;
+		let groundingQuery: string | undefined;
+		let groundingEvidence: RetrievalEvidence[] = [];
 		const safetyRisk = detectSafetyRisk(request.text);
 		let safetyEvidence: SafetyEvidence[] = [];
 		let safetyRetrievalQuery: string | undefined;
@@ -312,8 +335,17 @@ export class SupportAgentRuntime {
 			() => {
 				noKnowledgeEvidence = true;
 			},
-			() => {
-				verifiedKnowledgeEvidence = true;
+			(query, evidence) => {
+				groundingQuery = query;
+				groundingEvidence = evidence.filter((item) =>
+					isAdmissibleKnowledgeEvidence(
+						item.knowledge,
+						{ tenantId: request.tenantId, storeId: request.storeId },
+						this.options.allowSyntheticTestKnowledge ?? false,
+					),
+				);
+				verifiedKnowledgeEvidence = groundingEvidence.length > 0;
+				if (!verifiedKnowledgeEvidence) noKnowledgeEvidence = true;
 			},
 			(query, evidence) => {
 				safetyRetrievalQuery = query;
@@ -422,6 +454,11 @@ export class SupportAgentRuntime {
 		if (safetyRisk) safetyDecision = decideSafety(safetyRisk, safetyEvidence, false, "pause");
 
 		const piSessionId = sessionManager.getSessionId();
+		const groundingReferences = (): GroundingReference[] =>
+			groundingEvidence.flatMap((item) => {
+				const reference = groundingReference(item);
+				return reference ? [reference] : [];
+			});
 		const finish = (result: SupportResult): SupportResult => {
 			if (timedOut) {
 				for (const unsubscribe of unsubscribeEventListeners) unsubscribe();
@@ -460,6 +497,13 @@ export class SupportAgentRuntime {
 							disposition: safetyDecision?.disposition,
 							handoffResult: this.options.store.findHandoff(request.conversationId) ? "created" : "not_created",
 							guardResult: safetyDecision?.reason,
+						}
+					: undefined,
+				grounding: groundingQuery
+					? {
+							retrievalQuery: groundingQuery,
+							admissible: verifiedKnowledgeEvidence,
+							evidence: groundingReferences(),
 						}
 					: undefined,
 			});
@@ -511,6 +555,7 @@ export class SupportAgentRuntime {
 				piSessionId,
 				toolsCalled,
 				sessionEvents,
+				evidence: [],
 			});
 		}
 		if (safetyDecision?.disposition === "supported") {
@@ -520,6 +565,7 @@ export class SupportAgentRuntime {
 				piSessionId,
 				toolsCalled,
 				sessionEvents,
+				evidence: [],
 			});
 		}
 		if (escalationRequested) {
@@ -529,6 +575,7 @@ export class SupportAgentRuntime {
 				piSessionId,
 				toolsCalled,
 				sessionEvents,
+				evidence: [],
 			});
 		}
 		if (request.requiresEscalation) {
@@ -550,6 +597,16 @@ export class SupportAgentRuntime {
 					sessionEvents,
 				),
 			);
+		}
+		if (verifiedKnowledgeEvidence) {
+			return finish({
+				type: "answer",
+				text: groundingEvidence.map((item) => item.text).join("\n\n"),
+				piSessionId,
+				toolsCalled,
+				sessionEvents,
+				evidence: groundingReferences(),
+			});
 		}
 		if (lastAssistant?.stopReason === "error" || lastAssistant?.stopReason === "aborted") {
 			return finish(
@@ -577,7 +634,7 @@ export class SupportAgentRuntime {
 				fallback("抱歉，我无法确认该操作已经完成，请联系人工客服核实。", piSessionId, toolsCalled, sessionEvents),
 			);
 		}
-		return finish({ type: "answer", text, piSessionId, toolsCalled, sessionEvents });
+		return finish({ type: "answer", text, piSessionId, toolsCalled, sessionEvents, evidence: [] });
 	}
 
 	private getOrCreateSession(request: SupportRequest): SessionManager {
@@ -620,7 +677,7 @@ export class SupportAgentRuntime {
 		request: SupportRequest,
 		onEscalate: () => void,
 		onNoKnowledgeEvidence: () => void,
-		onVerifiedKnowledgeEvidence: () => void,
+		onKnowledgeEvidence: (query: string, evidence: RetrievalEvidence[]) => void,
 		onSafetyEvidence: (query: string, evidence: RetrievalEvidence[]) => void,
 		overallSignal: AbortSignal,
 	): AgentTool[] {
@@ -654,8 +711,22 @@ export class SupportAgentRuntime {
 					const match = this.options.faq.find(
 						(item) => item.question.includes(params.query) || params.query.includes(item.question),
 					);
-					if (match) onVerifiedKnowledgeEvidence();
-					else onNoKnowledgeEvidence();
+					if (match) {
+						onKnowledgeEvidence(params.query, [
+							{
+								id: match.id,
+								text: match.answer,
+								knowledge: {
+									kind: "faq",
+									status: match.status,
+									version: match.version,
+									sourceRef: match.sourceRef,
+									...(match.tenantScope ? { tenantScope: match.tenantScope } : {}),
+									...(match.storeScope ? { storeScope: match.storeScope } : {}),
+								},
+							},
+						]);
+					} else onNoKnowledgeEvidence();
 					return {
 						content: [{ type: "text" as const, text: match ? match.answer : "No FAQ evidence found." }],
 						details: { found: Boolean(match) },
@@ -671,10 +742,13 @@ export class SupportAgentRuntime {
 			execute: async (_id, params: Static<typeof querySchema>) =>
 				withToolTimeout(async (signal) => {
 					if (signal.aborted) throw new Error("Knowledge search aborted.");
-					const evidence = await this.options.retrieval.search(params.query, signal);
+					const evidence = await this.options.retrieval.search(params.query, signal, {
+						tenantId: request.tenantId,
+						storeId: request.storeId,
+					});
 					if (signal.aborted) throw new Error("Knowledge search aborted.");
 					if (evidence.length === 0) onNoKnowledgeEvidence();
-					else onVerifiedKnowledgeEvidence();
+					onKnowledgeEvidence(params.query, evidence);
 					onSafetyEvidence(params.query, evidence);
 					return {
 						content: [
