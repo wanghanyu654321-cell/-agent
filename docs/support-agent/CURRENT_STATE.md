@@ -7,6 +7,8 @@ INDEPENDENT REPOSITORY BASELINE FROZEN
 
 V1 Safety Vertical Slice is additive work on `feat/v1-safety-vertical-slice`; the V0 tag remains unchanged. Its controlled safety Gate is recorded in [V1_GATE_REPORT.md](../v1-safety/V1_GATE_REPORT.md): professional-safety risk is evidence-gated, synthetic knowledge is production-rejected, and missing/partial evidence pauses and escalates through the existing handoff path.
 
+V1.1 Safety Robustness Hardening is additive work on `feat/v1.1-safety-robustness` above the frozen V1 tag. Its Gate has passed with a 100-case runtime-derived robustness evaluation: required escalation recall is 100%, unsupported professional-claim rate is 0%, and duplicate handoff count is 0. Its evidence is recorded in [V1_1_GATE_REPORT.md](../v1.1-robustness/V1_1_GATE_REPORT.md). It does not alter the V0 or V1 tags, Pi core, the single runtime architecture, or the policy that real professional knowledge must be approved separately.
+
 The product source of truth is `wanghanyu654321-cell/-agent`. The Pi working tree at source commit `6026a439cc345969f708a820990dd3fe8d88f0b7` remains historical frozen evidence and a read-only reference implementation checkpoint.
 
 ## Included V0 behavior

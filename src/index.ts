@@ -9,7 +9,13 @@ import {
 	SessionManager,
 } from "@earendil-works/pi-coding-agent";
 import { type Static, Type } from "typebox";
-import { decideSafety, detectSafetyRisk, type SafetyDecision, type SafetyEvidence } from "./safety.ts";
+import {
+	decideSafety,
+	detectSafetyRisk,
+	formatSafetySupportedResponse,
+	type SafetyDecision,
+	type SafetyEvidence,
+} from "./safety.ts";
 
 export interface SupportRequest {
 	conversationId: string;
@@ -508,15 +514,9 @@ export class SupportAgentRuntime {
 			});
 		}
 		if (safetyDecision?.disposition === "supported") {
-			const options = safetyDecision.options
-				.map(
-					(option, index) =>
-						`${index + 1}. ${option.action}（风险：${option.risk}；预期：${option.likelyResult}）`,
-				)
-				.join("\n");
 			return finish({
 				type: "answer",
-				text: `以下仅为已批准资料覆盖的选项：\n${options}`,
+				text: formatSafetySupportedResponse(safetyDecision.options),
 				piSessionId,
 				toolsCalled,
 				sessionEvents,
