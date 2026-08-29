@@ -40,6 +40,10 @@ export interface RetrievalEvidence {
 	text: string;
 	safety?: SafetyEvidence;
 	knowledge?: KnowledgeEvidenceMetadata;
+	relevance?: {
+		score: number;
+		rank: number;
+	};
 }
 
 export interface RetrievalContext {

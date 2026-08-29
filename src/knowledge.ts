@@ -203,8 +203,11 @@ export class GovernedKnowledgeRetrievalService implements RetrievalService {
 			.filter((item) => item.score >= 20);
 		if (this.rankByRelevance)
 			matches.sort((left, right) => right.score - left.score || left.entry.id.localeCompare(right.entry.id));
-		return matches
-			.slice(0, this.rankByRelevance ? 3 : undefined)
-			.map(({ entry }) => ({ id: entry.id, text: entry.content, knowledge: metadata(entry) }));
+		return matches.slice(0, this.rankByRelevance ? 3 : undefined).map(({ entry, score }, index) => ({
+			id: entry.id,
+			text: entry.content,
+			knowledge: metadata(entry),
+			...(this.rankByRelevance ? { relevance: { score, rank: index + 1 } } : {}),
+		}));
 	}
 }

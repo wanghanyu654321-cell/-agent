@@ -29,6 +29,8 @@ V2.1 Real Knowledge & Retrieval Quality now runs a bounded public real-world ben
 
 V2.1.1 Evaluation Integrity & Evidence Precision is additive work on `fix/v2.1.1-eval-integrity` above the frozen V2.1 tag. It measures public-runtime evidence and audit properties independently, adds precision/extraneous-evidence metrics, and preserves V2.1 retrieval behavior. Its source audit and candidate Gate evidence are recorded in [docs/v2.1.1-eval-integrity](../v2.1.1-eval-integrity/).
 
+V2.2 Deterministic Evidence Selection was assessed on `feat/v2.2-evidence-selection` without changing frozen candidate scoring, ordering, corpus, or entering a selector into the customer runtime. The complete score/margin analysis shows that the current admissible deterministic score signals cannot simultaneously reach zero wrong selections, at least 95% correct selection, and at least 95% answerable coverage without an arbitrary benchmark-derived exception. The V2.2 success Gate is therefore not passed, no V2.2 release tag exists, and the recorded decision is [SEMANTIC EVIDENCE SELECTION JUSTIFIED](../v2.2-selection/SELECTION_DECISION.md). Candidate score/rank metadata is retained only as non-business runtime metadata for a separately scoped successor analysis; Safety, FAQ admission, customer answer composition, and historical behavior remain unchanged.
+
 The product source of truth is `wanghanyu654321-cell/-agent`. The Pi working tree at source commit `6026a439cc345969f708a820990dd3fe8d88f0b7` remains historical frozen evidence and a read-only reference implementation checkpoint.
 
 ## Included V0 behavior

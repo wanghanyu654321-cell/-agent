@@ -89,6 +89,39 @@ describe("governed general knowledge", () => {
 		expect(otherTenant.map((item) => item.id)).toEqual(["fixture-global-faq"]);
 	});
 
+	it("preserves deterministic relevance score and rank for ranked candidates without changing unranked retrieval", async () => {
+		const ranked = new GovernedKnowledgeRetrievalService(
+			[
+				approvedGlobal,
+				{
+					...approvedTenant,
+					id: "fixture-ranked-specific",
+					title: "受控 FAQ 具体政策",
+					content: "受控 FAQ 具体政策的受控业务事实。",
+					tags: ["受控 FAQ", "具体政策"],
+				},
+			],
+			{ rankByRelevance: true },
+		);
+
+		const candidates = await ranked.search("受控 FAQ 具体政策", new AbortController().signal, {
+			tenantId: "tenant-a",
+			storeId: "store-a1",
+		});
+		const unranked = await new GovernedKnowledgeRetrievalService([approvedGlobal]).search(
+			"受控",
+			new AbortController().signal,
+			{ tenantId: "tenant-a", storeId: "store-a1" },
+		);
+
+		expect(candidates).toMatchObject([
+			{ id: "fixture-ranked-specific", relevance: { rank: 1, score: expect.any(Number) } },
+			{ id: "fixture-global-faq", relevance: { rank: 2, score: expect.any(Number) } },
+		]);
+		expect(candidates[0]!.relevance!.score).toBeGreaterThan(candidates[1]!.relevance!.score);
+		expect(unranked[0]!.relevance).toBeUndefined();
+	});
+
 	it("rejects malformed and duplicate knowledge at construction", () => {
 		expect(() => validateKnowledgeEntries([{ ...approvedGlobal, id: "" }])).toThrow("id is required");
 		expect(() => validateKnowledgeEntries([{ ...approvedGlobal, content: "  " }])).toThrow("content is required");
