@@ -1,0 +1,23 @@
+{
+  "kind": "V2_3_REAL_MODEL_SELECTION_RUN",
+  "provider": "openai-codex",
+  "model": "gpt-5.6-sol",
+  "promptVersion": "v2.3.0",
+  "benchmarkHash": "af35c7c5467fc4d293626044e4a42edc18e068c07ffb95010192bb6b21651137",
+  "corpusHash": "1aecf6ea0270ad48ce111737c6b6acb57a59006ff69f59257cb1c0f7f3e723af",
+  "executedAt": "2026-08-29T13:25:24.725Z",
+  "semanticCalls": 44,
+  "metrics": {
+    "correctSelectionRate": 0.56,
+    "wrongSelectionRate": 0,
+    "answerableCoverage": 0.56,
+    "selectedEvidencePrecision": 1,
+    "abstentionRate": 0.44,
+    "invalidSelectorOutputRate": 0.5,
+    "multiCandidateSemanticAccuracy": 0,
+    "multiCandidateWrongSelectionRate": 0,
+    "orderRobustCorrectSelectionRate": 0,
+    "orderInducedWrongSelectionRate": 0
+  },
+  "gatePassed": false
+}
