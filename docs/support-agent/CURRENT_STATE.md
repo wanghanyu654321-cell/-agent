@@ -31,6 +31,8 @@ V2.1.1 Evaluation Integrity & Evidence Precision is additive work on `fix/v2.1.1
 
 V2.2 Deterministic Evidence Selection was assessed on `feat/v2.2-evidence-selection` without changing frozen candidate scoring, ordering, corpus, or entering a selector into the customer runtime. The complete score/margin analysis shows that the current admissible deterministic score signals cannot simultaneously reach zero wrong selections, at least 95% correct selection, and at least 95% answerable coverage without an arbitrary benchmark-derived exception. The V2.2 success Gate is therefore not passed, no V2.2 release tag exists, and the recorded decision is [SEMANTIC EVIDENCE SELECTION JUSTIFIED](../v2.2-selection/SELECTION_DECISION.md). Candidate score/rank metadata is retained only as non-business runtime metadata for a separately scoped successor analysis; Safety, FAQ admission, customer answer composition, and historical behavior remain unchanged.
 
+V2.3 Lightweight Semantic Evidence Selector starts from the V2.2 checkpoint with a bounded provider-independent one-shot classifier contract and offline evaluator. No supported real provider/model credential is available in the current environment, so the real-model Gate is blocked and selector integration into `SupportAgentRuntime` has not occurred. The blocker and code-side contract are recorded in [docs/v2.3-semantic-selector](../v2.3-semantic-selector/).
+
 The product source of truth is `wanghanyu654321-cell/-agent`. The Pi working tree at source commit `6026a439cc345969f708a820990dd3fe8d88f0b7` remains historical frozen evidence and a read-only reference implementation checkpoint.
 
 ## Included V0 behavior

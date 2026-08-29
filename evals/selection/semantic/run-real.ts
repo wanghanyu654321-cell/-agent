@@ -1,0 +1,65 @@
+import { createHash } from "node:crypto";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { type BuiltinProvider, getModel } from "@earendil-works/pi-ai/compat";
+import { GovernedKnowledgeRetrievalService } from "../../../src/knowledge.ts";
+import { createPiSemanticEvidenceSelector, SEMANTIC_SELECTOR_PROMPT_VERSION } from "../../../src/semantic-selector.ts";
+import { loadPublicBenchmarkEntries, publicBenchmarkCases } from "../../retrieval/public-benchmark.ts";
+import { runSemanticSelectionEvaluation } from "./evaluation.ts";
+
+const provider = process.env.SEMANTIC_SELECTOR_PROVIDER;
+const modelId = process.env.SEMANTIC_SELECTOR_MODEL;
+if (!provider || !modelId) {
+	console.error(
+		"REAL_MODEL_EVAL_BLOCKED: set SEMANTIC_SELECTOR_PROVIDER and SEMANTIC_SELECTOR_MODEL with provider credentials.",
+	);
+	process.exitCode = 1;
+} else {
+	const model = getModel(provider as BuiltinProvider, modelId);
+	if (!model) {
+		console.error(`REAL_MODEL_EVAL_BLOCKED: Pi 0.84.3 does not recognize ${provider}/${modelId}.`);
+		process.exitCode = 1;
+	} else {
+		const entries = loadPublicBenchmarkEntries();
+		const entriesById = new Map(entries.map((entry) => [entry.id, entry]));
+		const retrieval = new GovernedKnowledgeRetrievalService(entries, { rankByRelevance: true });
+		const cases = await Promise.all(
+			publicBenchmarkCases
+				.filter((testCase) => testCase.expectedAnswerable)
+				.map(async (testCase) => ({
+					caseId: testCase.caseId,
+					query: testCase.query,
+					expectedEvidenceId: testCase.expectedEvidenceIds[0]!,
+					candidates: (
+						await retrieval.search(testCase.query, new AbortController().signal, {
+							tenantId: testCase.tenantId,
+							storeId: testCase.storeId,
+						})
+					).map((candidate) => {
+						const entry = entriesById.get(candidate.id);
+						if (!entry) throw new Error(`Missing governed entry for ${candidate.id}.`);
+						return { id: candidate.id, title: entry.title, content: candidate.text };
+					}),
+				})),
+		);
+		const evaluation = await runSemanticSelectionEvaluation(cases, createPiSemanticEvidenceSelector(model));
+		const hash = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
+		const report = {
+			kind: "V2_3_REAL_MODEL_SELECTION_RUN",
+			provider,
+			model: modelId,
+			promptVersion: SEMANTIC_SELECTOR_PROMPT_VERSION,
+			benchmarkHash: hash(publicBenchmarkCases),
+			corpusHash: hash(entries),
+			executedAt: new Date().toISOString(),
+			...evaluation,
+		};
+		const reports = join(import.meta.dirname, "reports");
+		mkdirSync(reports, { recursive: true });
+		const first = join(reports, "first-real-run.json");
+		if (!existsSync(first)) writeFileSync(first, `${JSON.stringify(report, null, 2)}\n`);
+		writeFileSync(join(reports, "final.json"), `${JSON.stringify(report, null, 2)}\n`);
+		console.log(JSON.stringify(report, null, 2));
+		if (!evaluation.gatePassed) process.exitCode = 1;
+	}
+}

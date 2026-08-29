@@ -15,6 +15,7 @@
 		"eval:knowledge": "node evals/knowledge/runner.ts",
 		"eval:retrieval:public": "node evals/retrieval/public-runner.ts",
 		"eval:retrieval:public-real": "node evals/retrieval/run-public-benchmark.ts",
+		"eval:selection:semantic": "node evals/selection/semantic/run-real.ts",
 		"test": "vitest --run"
 	},
 	"dependencies": {
