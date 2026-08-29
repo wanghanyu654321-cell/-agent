@@ -10,6 +10,7 @@ export const EXPECTED_TAG_PEELS = {
 	"customer-support-agent-v1.2-validation": "932cdf5543f996c63157c00750cdb597d0f547bd",
 	"customer-support-agent-v2.0-knowledge": "98cca9b92c13c2639beb958177923b3c09b42ed9",
 	"customer-support-agent-v2.0.1-faq-admission": "f8a5498ddae424246a9e32fcc430d186573d9d55",
+	"customer-support-agent-v2.1-public-retrieval": "9a7872004399ad55b8bd5dbeaffc073b68f0c641",
 };
 
 const PI_PACKAGES = [

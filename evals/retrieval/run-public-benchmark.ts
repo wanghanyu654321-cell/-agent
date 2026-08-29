@@ -9,7 +9,7 @@ const runtime = await runPublicBenchmarkRuntimeEvaluation();
 const firstRunPath = join(reportsDirectory, "first-run.json");
 if (!existsSync(firstRunPath)) writeFileSync(firstRunPath, `${JSON.stringify(retrieval.first, null, 2)}\n`);
 writeFileSync(
-	join(reportsDirectory, "public-real-world-final.json"),
+	join(reportsDirectory, "public-real-world-v2.1.1-final.json"),
 	`${JSON.stringify({ retrieval, runtime }, null, 2)}\n`,
 );
 console.log(

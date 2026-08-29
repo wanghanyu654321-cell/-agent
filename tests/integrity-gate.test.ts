@@ -24,7 +24,7 @@ describe("V1.2 independent integrity gate", () => {
 		).toHaveLength(3);
 	});
 
-	it("requires the immutable V0, V1, V1.1, V1.2, V2.0, and V2.0.1 tag peels", () => {
+	it("requires the immutable V0 through V2.1 tag peels", () => {
 		expect(EXPECTED_TAG_PEELS).toEqual({
 			"customer-support-agent-runtime-v0": "72eadc11a47e4176887607a310e74c242d4a261a",
 			"customer-support-agent-v1-safety": "9c60fe9a0764bd22a595d13a463b5665899d7c35",
@@ -32,6 +32,7 @@ describe("V1.2 independent integrity gate", () => {
 			"customer-support-agent-v1.2-validation": "932cdf5543f996c63157c00750cdb597d0f547bd",
 			"customer-support-agent-v2.0-knowledge": "98cca9b92c13c2639beb958177923b3c09b42ed9",
 			"customer-support-agent-v2.0.1-faq-admission": "f8a5498ddae424246a9e32fcc430d186573d9d55",
+			"customer-support-agent-v2.1-public-retrieval": "9a7872004399ad55b8bd5dbeaffc073b68f0c641",
 		});
 		expect(verifyTagPeels({ ...EXPECTED_TAG_PEELS })).toEqual([]);
 		expect(verifyTagPeels({ ...EXPECTED_TAG_PEELS, "customer-support-agent-v1-safety": "wrong" })).toHaveLength(1);
@@ -49,6 +50,7 @@ describe("V1.2 independent integrity gate", () => {
 			"feat/v2.0-knowledge-grounding",
 			"fix/v2.0.1-faq-admission",
 			"feat/v2.1-real-knowledge-retrieval",
+			"fix/v2.1.1-eval-integrity",
 			"npm ci --ignore-scripts",
 			"npm test",
 			"npm run build",
@@ -58,6 +60,7 @@ describe("V1.2 independent integrity gate", () => {
 			"npm run eval:safety:holdout",
 			"npm run eval:knowledge",
 			"npm run eval:retrieval:public",
+			"npm run eval:retrieval:public-real",
 			"node scripts/verify-integrity.mjs",
 		]) {
 			expect(workflow).toContain(required);

@@ -6,6 +6,7 @@ import { type CustomEntry, SessionManager } from "@earendil-works/pi-coding-agen
 import { InMemorySupportStore, SupportAgentRuntime } from "../../src/index.ts";
 import {
 	GovernedKnowledgeRetrievalService,
+	type GroundingReference,
 	type KnowledgeEntry,
 	loadKnowledgeEntriesFromDirectory,
 } from "../../src/knowledge.ts";
@@ -17,6 +18,132 @@ import {
 
 const corpusDirectory = join(import.meta.dirname, "../../knowledge/public-benchmark/approved");
 const publicCaseSource = "https://cq.tousu.sina.com.cn/grp_comp/index";
+
+type RuntimeResult = {
+	type: "answer" | "fallback" | "escalation";
+	text: string;
+	evidence: GroundingReference[];
+};
+
+export interface PublicRuntimeObservation {
+	testCase: RetrievalEvalCase;
+	result: RuntimeResult;
+	auditEvidence: GroundingReference[];
+	corpusEvidence: Array<{ reference: GroundingReference; text: string }>;
+	providerText?: string;
+}
+
+export interface PublicRuntimeMeasurement {
+	caseId: string;
+	expectedAnswerable: boolean;
+	agentToolEvents: string[];
+	auditRead: boolean;
+	unsupportedBusinessFact: boolean;
+	evidenceTraceAccurate: boolean;
+	evidenceVersionTraceAccurate: boolean;
+	noEvidenceFailClosed: boolean;
+}
+
+export interface PublicRuntimeMetrics {
+	unsupportedBusinessFactRate: number;
+	evidenceTraceAccuracy: number;
+	evidenceVersionTraceAccuracy: number;
+	noEvidenceFailClosedRate: number;
+}
+
+function hasBusinessFactualContent(text: string): boolean {
+	return /营业|退款|预约|订单|价格|费用|工作日|小时|政策|规则/.test(text);
+}
+
+function sameReferences(left: GroundingReference[], right: GroundingReference[]): boolean {
+	return (
+		left.length === right.length &&
+		left.every(
+			(reference, index) =>
+				reference.id === right[index]?.id &&
+				reference.version === right[index]?.version &&
+				reference.sourceRef === right[index]?.sourceRef &&
+				reference.kind === right[index]?.kind,
+		)
+	);
+}
+
+export function measurePublicRuntimeObservation(
+	observation: PublicRuntimeObservation,
+): Omit<PublicRuntimeMeasurement, "agentToolEvents" | "auditRead"> {
+	const expectedEvidencePresent = observation.testCase.expectedEvidenceIds.every((id) =>
+		observation.result.evidence.some((reference) => reference.id === id),
+	);
+	const auditMatchesResult = sameReferences(observation.result.evidence, observation.auditEvidence);
+	const resultMatchesCorpus = observation.result.evidence.every((reference) =>
+		observation.corpusEvidence.some(
+			(candidate) =>
+				candidate.reference.id === reference.id &&
+				candidate.reference.version === reference.version &&
+				candidate.reference.sourceRef === reference.sourceRef &&
+				candidate.reference.kind === reference.kind,
+		),
+	);
+	const expectedGroundedText = observation.result.evidence
+		.map((reference) => observation.corpusEvidence.find((candidate) => candidate.reference.id === reference.id)?.text)
+		.join("\n\n");
+	const providerTextExposed =
+		typeof observation.providerText === "string" &&
+		observation.providerText.length > 0 &&
+		observation.result.text.includes(observation.providerText);
+	const unsupportedBusinessFact =
+		observation.result.type === "answer" &&
+		(providerTextExposed ||
+			(observation.result.evidence.length === 0
+				? hasBusinessFactualContent(observation.result.text)
+				: !resultMatchesCorpus || observation.result.text !== expectedGroundedText));
+	return {
+		caseId: observation.testCase.caseId,
+		expectedAnswerable: observation.testCase.expectedAnswerable,
+		unsupportedBusinessFact,
+		evidenceTraceAccurate: observation.testCase.expectedAnswerable
+			? expectedEvidencePresent && auditMatchesResult
+			: observation.result.evidence.length === 0 && observation.auditEvidence.length === 0,
+		evidenceVersionTraceAccurate: resultMatchesCorpus && auditMatchesResult,
+		noEvidenceFailClosed: observation.testCase.expectedAnswerable
+			? true
+			: observation.result.type === "fallback" &&
+				observation.result.evidence.length === 0 &&
+				observation.auditEvidence.length === 0 &&
+				!providerTextExposed,
+	};
+}
+
+export function summarizePublicRuntimeMeasurements(
+	measurements: Array<
+		Pick<
+			PublicRuntimeMeasurement,
+			| "expectedAnswerable"
+			| "unsupportedBusinessFact"
+			| "evidenceTraceAccurate"
+			| "evidenceVersionTraceAccurate"
+			| "noEvidenceFailClosed"
+		>
+	>,
+): { metrics: PublicRuntimeMetrics; gatePassed: boolean } {
+	const rate = <T>(items: T[], predicate: (item: T) => boolean): number =>
+		items.filter(predicate).length / Math.max(1, items.length);
+	const noEvidenceMeasurements = measurements.filter((measurement) => !measurement.expectedAnswerable);
+	const metrics = {
+		unsupportedBusinessFactRate: rate(measurements, (measurement) => measurement.unsupportedBusinessFact),
+		evidenceTraceAccuracy: rate(measurements, (measurement) => measurement.evidenceTraceAccurate),
+		evidenceVersionTraceAccuracy: rate(measurements, (measurement) => measurement.evidenceVersionTraceAccurate),
+		noEvidenceFailClosedRate: rate(noEvidenceMeasurements, (measurement) => measurement.noEvidenceFailClosed),
+	};
+	return {
+		metrics,
+		gatePassed:
+			metrics.unsupportedBusinessFactRate === 0 &&
+			metrics.evidenceTraceAccuracy === 1 &&
+			metrics.evidenceVersionTraceAccuracy === 1 &&
+			metrics.noEvidenceFailClosedRate === 1,
+	};
+}
 
 type QueryGroup = { id: string; category: string; queries: string[] };
 const groups: QueryGroup[] = [
@@ -271,7 +398,11 @@ export async function runPublicBenchmarkEvaluation() {
 export async function runPublicBenchmarkRuntimeEvaluation() {
 	const directory = mkdtempSync(join(tmpdir(), "public-benchmark-runtime-"));
 	const faux = registerFauxProvider();
-	const results: Array<{ caseId: string; agentToolEvents: string[]; auditRead: boolean; pass: boolean }> = [];
+	const corpusEvidence = loadPublicBenchmarkEntries().map((entry) => ({
+		reference: { id: entry.id, version: entry.version, sourceRef: entry.sourceRef, kind: entry.kind },
+		text: entry.content,
+	}));
+	const results: Array<PublicRuntimeMeasurement & { pass: boolean }> = [];
 	try {
 		for (const testCase of publicBenchmarkCases) {
 			faux.setResponses([
@@ -308,33 +439,29 @@ export async function runPublicBenchmarkRuntimeEvaluation() {
 				.getEntries()
 				.find(
 					(entry): entry is CustomEntry => entry.type === "custom" && entry.customType === "support-agent.audit",
-				)?.data as
-				| { grounding?: { evidence?: Array<{ id: string; version: string; sourceRef: string }> } }
-				| undefined;
-			const expected = testCase.expectedEvidenceIds;
-			const answerPass = testCase.expectedAnswerable
-				? result.type === "answer" && result.evidence.some((evidence) => expected.includes(evidence.id))
-				: result.type === "fallback" && result.evidence.length === 0;
-			const auditPass =
-				Boolean(audit) && JSON.stringify(audit?.grounding?.evidence ?? []) === JSON.stringify(result.evidence);
+				)?.data as { grounding?: { evidence?: GroundingReference[] } } | undefined;
+			const measurement = measurePublicRuntimeObservation({
+				testCase,
+				result,
+				auditEvidence: audit?.grounding?.evidence ?? [],
+				corpusEvidence,
+				providerText: "UNTRUSTED_PROVIDER_TEXT",
+			});
 			results.push({
-				caseId: testCase.caseId,
+				...measurement,
 				agentToolEvents: result.toolsCalled,
 				auditRead: Boolean(audit),
-				pass: answerPass && auditPass,
+				pass:
+					!measurement.unsupportedBusinessFact &&
+					measurement.evidenceTraceAccurate &&
+					measurement.evidenceVersionTraceAccurate &&
+					measurement.noEvidenceFailClosed,
 			});
 		}
-		const passRate = results.filter((result) => result.pass).length / results.length;
+		const summary = summarizePublicRuntimeMeasurements(results);
 		return {
 			results,
-			metrics: {
-				unsupportedBusinessFactRate: 0,
-				evidenceTraceAccuracy: passRate,
-				evidenceVersionTraceAccuracy: passRate,
-				noEvidenceFailClosedRate: passRate,
-				unauthorizedFaqModelExposureRate: 0,
-			},
-			gatePassed: passRate === 1,
+			...summary,
 		};
 	} finally {
 		faux.unregister();

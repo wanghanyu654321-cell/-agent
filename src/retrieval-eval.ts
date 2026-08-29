@@ -36,7 +36,11 @@ export interface RetrievalQualityMetrics {
 	top1HitRate: number;
 	recallAt3: number;
 	noAnswerCorrectRejectionRate: number;
+	/** Complete retrieval misses only; extraneous evidence is measured separately. */
 	wrongEvidenceRate: number;
+	evidencePrecision: number;
+	extraneousEvidenceRate: number;
+	meanReturnedEvidenceCount: number;
 	crossTenantLeakageRate: number;
 	crossStoreLeakageRate: number;
 	unauthorizedKnowledgeExposureRate: number;
@@ -99,6 +103,11 @@ export async function runRetrievalEvaluation(
 	}
 	const answerable = results.filter((result) => result.expectedAnswerable);
 	const noAnswer = results.filter((result) => !result.expectedAnswerable);
+	const returnedEvidence = answerable.flatMap((result) => result.actualEvidenceIds);
+	const goldEvidence = answerable.flatMap((result) =>
+		result.actualEvidenceIds.filter((id) => result.expectedEvidenceIds.includes(id)),
+	);
+	const evidencePrecision = goldEvidence.length / Math.max(1, returnedEvidence.length);
 	const crossTenant = results.filter(
 		(result) => cases.find((item) => item.caseId === result.caseId)?.scopeExpectation === "tenant",
 	);
@@ -112,6 +121,9 @@ export async function runRetrievalEvaluation(
 			recallAt3: rate(answerable, (result) => result.recallAt3Hit),
 			noAnswerCorrectRejectionRate: rate(noAnswer, (result) => result.noAnswerRejected),
 			wrongEvidenceRate: rate(results, (result) => result.wrongEvidence),
+			evidencePrecision,
+			extraneousEvidenceRate: 1 - evidencePrecision,
+			meanReturnedEvidenceCount: returnedEvidence.length / Math.max(1, answerable.length),
 			crossTenantLeakageRate: rate(crossTenant, (result) => !result.noAnswerRejected),
 			crossStoreLeakageRate: rate(crossStore, (result) => !result.noAnswerRejected),
 			unauthorizedKnowledgeExposureRate: rate(noAnswer, (result) => result.unauthorizedKnowledgeExposure),

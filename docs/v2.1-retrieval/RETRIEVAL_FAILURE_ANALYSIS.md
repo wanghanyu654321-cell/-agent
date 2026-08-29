@@ -8,6 +8,6 @@ The smallest generalized repair is deterministic lexical normalization, phrase/t
 
 ## FINAL failure families
 
-The FINAL baseline has one Top-1 miss among 50 answerable queries (96% Top-1) and no Recall@3 miss (100% Recall@3). No-answer rejection, wrong-evidence rate, tenant/store isolation, and unauthorized exposure remain at their gates. The single ranking miss is retained as benchmark evidence rather than patched with a query-specific special case.
+The FINAL baseline has two Top-1 misses among 50 answerable queries (48 Top-1 hits; 96% Top-1) and no Recall@3 miss (100% Recall@3). `public-24` and `public-30` are retained as permanent ranking/extraneous-evidence evidence rather than patched with query-specific rules. No-answer rejection, legacy complete-wrong-evidence rate, tenant/store isolation, and unauthorized exposure remain at their gates.
 
 Future changes require a new FIRST baseline on a changed corpus and a documented failure family. Do not tune against individual query strings, and do not treat `PUBLIC_REAL_CASE` or `SYNTHETIC_QUERY` wording as factual authority.
