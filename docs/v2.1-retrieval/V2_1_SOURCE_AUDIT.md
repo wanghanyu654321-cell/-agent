@@ -13,6 +13,8 @@ The V2.0.1 runtime, knowledge contract, Safety boundary, FAQ admission tests, go
 
 `SupportAgentRuntime` remains the only runtime and Pi Agent owner. `GovernedKnowledgeRetrievalService` remains the retrieval implementation behind `RetrievalService`; no vector database, embedding service, second Agent runtime, Pi fork, or vendor copy is present.
 
-## V2.1 code-side decision
+## V2.1 public benchmark decision
 
-The workspace contains no REAL_SOURCE material. V2.1 therefore adds only a Git-ignored private input boundary, an explicit private-corpus loader, a deterministic retrieval-quality evaluator, and a public synthetic regression. It does not add business facts, tune the existing deterministic retrieval algorithm, or claim a real-corpus baseline.
+The original private-source absence remains documented in `REAL_SOURCE_BLOCKER.md` as historical evidence. On 2026-08-29 the product scope was explicitly narrowed to a public official local-services benchmark. The new corpus contains only reviewed atomic benchmark facts from public official sources; public real-case material is query wording only and synthetic queries are augmentation only.
+
+V2.1 adds a bounded deterministic lexical normalization/ranking path beneath the existing `RetrievalService`, a 62-case benchmark, and runtime/audit verification. It does not add a vector database, embeddings, reranking, LLM judging, a second runtime, Pi source, or store-specific business facts.

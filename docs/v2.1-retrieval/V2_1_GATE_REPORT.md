@@ -1,31 +1,29 @@
-# V2.1 Real Knowledge & Retrieval Quality Gate Report
+# V2.1 Public Real-World Retrieval Benchmark Gate Report
 
-## Status
+## Gate scope
 
-**GATE NOT PASSED — REAL_SOURCE_INPUT_REQUIRED**.
+V2.1 is a bounded public local-services benchmark. `PUBLIC_OFFICIAL_AUTHORITY` is factual authority; `PUBLIC_REAL_CASE` is query/scenario wording only; and `SYNTHETIC_QUERY` is augmentation only. Neither public cases nor synthetic queries can admit a factual answer.
 
-V2.1 code-side preparation is complete enough to preserve the boundary: private corpus/evaluation paths are Git-ignored, the private loader requires an explicit path, public synthetic regression is explicitly non-real, V2.0.1 tags are immutable under the integrity script, and no business fact was added.
+## Candidate verification
 
-## Code-side verification
-
-| Command | Result |
+| Gate | Candidate result |
 | --- | --- |
-| `npm test` | PASS — 20 files, 132 tests |
-| `npm run build` | PASS |
-| `npm run check` | PASS |
-| `node scripts/verify-integrity.mjs` | PASS — V0 through V2.0.1 peeled tags, exact Pi pins, one runtime, and no unsafe/vendored boundary violation |
-| `npm run eval:safety` | PASS — 30/30 |
-| `npm run eval:safety:robustness` | PASS — 100/100 |
-| `npm run eval:safety:holdout` | PASS — 60/60 |
-| `npm run eval:knowledge` | PASS — 46/46; Unauthorized FAQ Model Exposure Rate 0% |
-| `npm run eval:retrieval:public` | PASS — 4 controlled synthetic cases; explicitly excluded from real-corpus metrics |
+| Corpus | PASS — 11 official factual records, 2 source-backed scope probes; no private/store/customer corpus retained. |
+| Benchmark | PASS — 62 retrieval queries: 50 answerable, 10 no-answer, 2 cross-scope. |
+| FIRST baseline | Preserved — Top-1 0%, Recall@3 0%; [`first-run.json`](../../evals/retrieval/reports/first-run.json) is immutable after creation. |
+| FINAL baseline | PASS — Top-1 96%, Recall@3 100%, no-answer rejection 100%, wrong evidence 0%. |
+| Scope/security | PASS — tenant leakage 0%, store leakage 0%, unauthorized exposure 0%. |
+| Runtime grounding | PASS — every V2.1 case runs through `SupportAgentRuntime`, Pi tool events, and persisted `support-agent.audit`; unsupported business facts 0%, evidence and version trace accuracy 100%. |
+| V0–V2 regression | PASS — V1 30/30, V1.1 100/100, V1.2 60/60, V2 knowledge 46/46. |
+| Unit/runtime suite | PASS — 135/135 tests. |
+| Build/check/integrity | PASS — exact Pi dependency pins remain `0.84.3`; one product runtime and no copied Pi core. |
 
-## Public clean-clone verification
+## Release verification rule
 
-A fresh short-path clone of `5c344b22c6abc7d58d30612e02839f14727e340e` completed `npm ci --ignore-scripts --no-audit` from the lockfile (278 packages). It then passed all 132 tests, build, check, integrity verification, V1/V1.1/V1.2 safety regressions, V2.0.1 knowledge regression, and the public sanitized retrieval regression without a Pi checkout, old `node_modules`, or any private corpus mount.
+Before release tagging, a fresh clone of the exact final commit must pass `npm ci --ignore-scripts`, tests, build, check, integrity, V1/V1.1/V1.2/V2 regressions, and the V2.1 retrieval benchmark. The exact pushed final commit must then pass the GitHub Actions clean-runner Gate. This report is committed before that external exact-commit result; the annotated V2.1 tag is created only after the external gate is green.
 
-## Public GitHub Actions verification
+## Retrieval decision
 
-GitHub Actions [run 33185909597](https://github.com/wanghanyu654321-cell/-agent/actions/runs/33185909597) passed on `48bcf66dc8ec651ade1af2045593e9f9949dfcbd`. Its clean Ubuntu runner completed lockfile installation, integrity verification, all unit/runtime tests, build, check, V1/V1.1/V1.2/V2 regressions, and the V2.1 public sanitized retrieval regression. This run validates public code only; it neither loads nor claims a private real corpus.
+`DETERMINISTIC LEXICAL RETRIEVAL SUFFICIENT FOR CURRENT PUBLIC PILOT`
 
-The Real Source, Retrieval, Runtime, private-corpus clean-clone, and final GitHub release gates cannot run without an authoritative source and gold labels. No V2.1 release tag has been created.
+That conclusion is limited to this controlled public benchmark. It does not claim vector retrieval will never be needed, and it does not make any store policy or professional-safety claim.

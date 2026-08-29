@@ -1,6 +1,6 @@
 import type { RetrievalService } from "./index.ts";
 
-export type RetrievalQueryProvenance = "REAL_QUERY" | "HUMAN_AUTHORED" | "SYNTHETIC_QUERY";
+export type RetrievalQueryProvenance = "PUBLIC_REAL_CASE" | "HUMAN_AUTHORED" | "SYNTHETIC_QUERY";
 
 export interface RetrievalEvalCase {
 	caseId: string;
@@ -13,6 +13,8 @@ export interface RetrievalEvalCase {
 	category: string;
 	difficulty: string;
 	scopeExpectation?: "tenant" | "store";
+	provenanceSourceRef?: string;
+	queryDisclosure?: "paraphrased" | "synthetic" | "human_authored";
 }
 
 export interface RetrievalEvalResult {
@@ -124,6 +126,7 @@ export function isRetrievalQualityGatePassed(metrics: RetrievalQualityMetrics): 
 		metrics.top1HitRate >= 0.85 &&
 		metrics.recallAt3 >= 0.95 &&
 		metrics.noAnswerCorrectRejectionRate >= 0.95 &&
+		metrics.wrongEvidenceRate <= 0.05 &&
 		metrics.crossTenantLeakageRate === 0 &&
 		metrics.crossStoreLeakageRate === 0 &&
 		metrics.unauthorizedKnowledgeExposureRate === 0

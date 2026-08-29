@@ -3,3 +3,4 @@ dist/
 *.log
 knowledge/private/
 evals/retrieval/private/
+.firecrawl/

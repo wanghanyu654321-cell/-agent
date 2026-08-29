@@ -57,6 +57,9 @@ jobs:
       - name: Run V2.1 public sanitized retrieval regression
         run: npm run eval:retrieval:public
 
+      - name: Run V2.1 public real-world retrieval benchmark
+        run: npm run eval:retrieval:public-real
+
       - name: Upload evaluation evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -71,3 +74,5 @@ jobs:
             evals/knowledge/reports/latest.md
             evals/retrieval/reports/public-latest.json
             evals/retrieval/reports/public-latest.md
+            evals/retrieval/reports/first-run.json
+            evals/retrieval/reports/public-real-world-final.json
