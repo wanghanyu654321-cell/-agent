@@ -1,0 +1,24 @@
+{
+  "holdoutVersion": "v2",
+  "authoringBaseCommit": "b8af014e094d020689f06275d840191ca9ff9672",
+  "evidenceCount": 12,
+  "primaryCaseCount": 24,
+  "positiveCount": 18,
+  "abstainCount": 6,
+  "evidencePackSha256": "51f027ded1cb1310b284dd1838297ea1a061ff768760f878a0764033285740c2",
+  "casesSha256": "61453d420631644e9cf589c1d2b400bfa00fce4eb810f422cafe1064af5f2364",
+  "promptVersion": "v2.3.0",
+  "promptHash": "ac4831b003263bf8aea76dd13f535808f84a39306055402ac1f99725707acf4f",
+  "futurePrimaryCalls": 24,
+  "futureReversedCalls": 24,
+  "futureTotalCalls": 48,
+  "integerPassRequirements": {
+    "positivePrimary": { "correct": 18, "wrong": 0, "abstain": 0 },
+    "abstainPrimary": { "correct": 6, "unsupportedSelection": 0 },
+    "positiveReversed": { "correct": 18, "wrong": 0, "abstain": 0 },
+    "abstainReversed": { "correct": 6, "unsupportedSelection": 0 },
+    "allCalls": { "invalid": 0, "providerError": 0, "timeout": 0 },
+    "orderRobustness": { "orderInducedWrong": 0, "orderInducedOutcomeDisagreement": 0 }
+  },
+  "createdAt": "2026-08-30T14:20:00.000Z"
+}

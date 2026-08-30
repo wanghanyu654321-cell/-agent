@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
 	FUTURE_GATE,
@@ -8,6 +10,16 @@ import {
 } from "../evals/selection/semantic/holdout-v1/holdout.ts";
 
 describe("unseen holdout v1", () => {
+	it("matches the frozen manifest to the exact historical raw bytes", () => {
+		const manifest = JSON.parse(
+			readFileSync(
+				join(import.meta.dirname, "../evals/selection/semantic/holdout-v1/holdout-freeze-manifest.json"),
+				"utf8",
+			),
+		) as { casesSha256: string };
+		expect(holdoutHash()).toBe(manifest.casesSha256);
+	});
+
 	it("freezes 24 direct-and-sufficient positives and six hard abstains", () => {
 		const cases = loadHoldout();
 		expect(() => validateHoldout(cases)).not.toThrow();
