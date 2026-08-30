@@ -1,13 +1,21 @@
 import { describe, expect, it } from "vitest";
 import {
 	classifySafeProviderError,
+	controlTextMatchesExpected,
 	summarizeAssistantEnvelope,
 } from "../evals/selection/semantic/diagnose-provider-envelope.ts";
 
 describe("V2.3 provider response envelope diagnostic", () => {
+	it("records only an exact-control boolean rather than control text", () => {
+		expect(controlTextMatchesExpected([{ type: "text", text: "OK" }])).toBe(true);
+		expect(controlTextMatchesExpected([{ type: "text", text: " OK" }])).toBe(false);
+		expect(controlTextMatchesExpected([{ type: "thinking", thinking: "OK" }])).toBe(false);
+	});
+
 	it("classifies provider errors without retaining their raw message", () => {
 		expect(classifySafeProviderError("request timed out while waiting")).toBe("timeout_or_abort");
 		expect(classifySafeProviderError("OAuth token expired")).toBe("authentication");
+		expect(classifySafeProviderError("No API key for provider: openai-codex")).toBe("authentication");
 		expect(classifySafeProviderError("account is not permitted for this organization")).toBe(
 			"authorization_or_account",
 		);

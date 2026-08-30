@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+	createPiSemanticEvidenceSelector,
 	mapPiAssistantMessageToSemanticCompletion,
 	OneShotSemanticEvidenceSelector,
+	type PiSimpleCompletionRuntime,
 	parseSemanticSelectionOutput,
 	type SemanticSelectionInput,
 } from "../src/semantic-selector.ts";
@@ -15,6 +17,26 @@ const input: SemanticSelectionInput = {
 };
 
 describe("V2.3 bounded semantic evidence selector", () => {
+	it("uses the injected Pi completion runtime without compat completion", async () => {
+		let invocationCount = 0;
+		const runtime: PiSimpleCompletionRuntime = {
+			async completeSimple() {
+				invocationCount += 1;
+				return {
+					stopReason: "stop",
+					content: [{ type: "text", text: '{"selection":"A"}' }],
+				} as never;
+			},
+		};
+		const selector = createPiSemanticEvidenceSelector({} as never, runtime);
+
+		await expect(selector.select(input, new AbortController().signal)).resolves.toMatchObject({
+			selection: "A",
+			outcome: "selected",
+		});
+		expect(invocationCount).toBe(1);
+	});
+
 	it("maps Pi error and aborted envelopes to typed failures before parsing output", async () => {
 		const providerFailure = mapPiAssistantMessageToSemanticCompletion({ stopReason: "error", content: [] });
 		const timeout = mapPiAssistantMessageToSemanticCompletion({ stopReason: "aborted", content: [] });

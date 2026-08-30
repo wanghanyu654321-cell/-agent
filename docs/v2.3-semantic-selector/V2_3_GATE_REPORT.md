@@ -2,7 +2,8 @@
 
 ## Code-side evidence
 
-- Strict selector parser and one-shot Pi `completeSimple` adapter: PASS in unit tests.
+- Strict selector parser and one-shot Pi completion adapter: PASS in unit tests.
+- OAuth-aware evaluator and diagnostics use public Coding Agent `ModelRuntime`, `checkAuth`, `getModel`, and injected `completeSimple`; no manual credential access occurs.
 - Pi `error` envelopes now fail closed to `ABSTAIN/provider_error`; Pi `aborted` envelopes fail closed to `ABSTAIN/timeout` before parsing.
 - Successful `stop` and `length` envelopes parse only final text. Empty and thinking-only successful envelopes remain invalid; thinking is never selector output.
 - Provider failure, malformed output, unknown labels, cancellation and timeout: fail closed to `ABSTAIN`.
@@ -10,4 +11,4 @@
 
 ## Blocking Gate
 
-Real-model capability Gate: **NOT VALIDLY EXECUTED**. OAuth/configuration was available and a FIRST run occurred, but Pi returned error envelopes rather than model output. The current one-call control returned `stopReason: "error"` in 11 ms with `safeErrorCategory: "unknown"`, no content, and zero usage. The blocker is therefore an unresolved provider error category, not a semantic-quality failure. Runtime integration and a V2.3 release tag remain prohibited. See [PROVIDER_ERROR_CLASSIFICATION.md](PROVIDER_ERROR_CLASSIFICATION.md).
+Provider call path: **VALIDATED**. The one-call public `ModelRuntime` control resolved stored OAuth and returned `stopReason: "stop"` in 2962 ms with one text block, non-zero output usage, and a response ID. Its historical sanitized report did not capture `textMatchesExpectedControl`, so it cannot establish the exact control response. The semantic Gate is therefore **NOT VALIDLY EXECUTED**: the 44-call benchmark was not rerun. Runtime integration and a V2.3 release tag remain prohibited. See [OAUTH_AWARE_COMPLETION_PATH.md](OAUTH_AWARE_COMPLETION_PATH.md).

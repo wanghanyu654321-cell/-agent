@@ -1,11 +1,11 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { type BuiltinProvider, getModel } from "@earendil-works/pi-ai/compat";
 import { GovernedKnowledgeRetrievalService } from "../../../src/knowledge.ts";
 import { createPiSemanticEvidenceSelector, SEMANTIC_SELECTOR_PROMPT_VERSION } from "../../../src/semantic-selector.ts";
 import { loadPublicBenchmarkEntries, publicBenchmarkCases } from "../../retrieval/public-benchmark.ts";
 import { runSemanticSelectionEvaluation } from "./evaluation.ts";
+import { bootstrapOAuthAwareModelRuntime } from "./oauth-aware-runtime.ts";
 
 const provider = process.env.SEMANTIC_SELECTOR_PROVIDER;
 const modelId = process.env.SEMANTIC_SELECTOR_MODEL;
@@ -24,9 +24,9 @@ if (!existsSync(first)) {
 	);
 	process.exitCode = 1;
 } else {
-	const model = getModel(provider as BuiltinProvider, modelId);
-	if (!model) {
-		console.error(`REAL_MODEL_EVAL_BLOCKED: Pi 0.84.3 does not recognize ${provider}/${modelId}.`);
+	const bootstrap = await bootstrapOAuthAwareModelRuntime(provider, modelId);
+	if (!bootstrap.authConfigured) {
+		console.error("REAL_MODEL_EVAL_BLOCKED: Pi OAuth credential resolution is not configured for this provider.");
 		process.exitCode = 1;
 	} else {
 		const entries = loadPublicBenchmarkEntries();
@@ -51,7 +51,10 @@ if (!existsSync(first)) {
 					}),
 				})),
 		);
-		const evaluation = await runSemanticSelectionEvaluation(cases, createPiSemanticEvidenceSelector(model));
+		const evaluation = await runSemanticSelectionEvaluation(
+			cases,
+			createPiSemanticEvidenceSelector(bootstrap.model, bootstrap.completionRuntime),
+		);
 		const hash = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 		const report = {
 			kind: "V2_3_REAL_MODEL_SELECTION_RUN",

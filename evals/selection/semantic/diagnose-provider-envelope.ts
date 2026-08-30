@@ -1,9 +1,9 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { type BuiltinProvider, completeSimple, getModel } from "@earendil-works/pi-ai/compat";
 import { GovernedKnowledgeRetrievalService } from "../../../src/knowledge.ts";
 import { SEMANTIC_SELECTOR_PROMPT_VERSION, SEMANTIC_SELECTOR_SYSTEM_PROMPT } from "../../../src/semantic-selector.ts";
 import { loadPublicBenchmarkEntries, publicBenchmarkCases } from "../../retrieval/public-benchmark.ts";
+import { bootstrapOAuthAwareModelRuntime } from "./oauth-aware-runtime.ts";
 
 type EnvelopeContent = {
 	type: string;
@@ -13,6 +13,16 @@ type EnvelopeContent = {
 	name?: string;
 	arguments?: Record<string, unknown>;
 };
+
+/** Returns a boolean only; the diagnostic never persists control text. */
+export function controlTextMatchesExpected(content: EnvelopeContent[]): boolean {
+	return (
+		content
+			.filter((block) => block.type === "text")
+			.map((block) => block.text ?? "")
+			.join("") === "OK"
+	);
+}
 
 export type SafeProviderErrorCategory =
 	| "timeout_or_abort"
@@ -28,7 +38,11 @@ export type SafeProviderErrorCategory =
 export function classifySafeProviderError(message: string | undefined): SafeProviderErrorCategory {
 	const normalized = message?.toLowerCase() ?? "";
 	if (/timeout|timed out|deadline|aborted/.test(normalized)) return "timeout_or_abort";
-	if (/unauthenticated|authentication|oauth|token (?:expired|invalid)|credential/.test(normalized))
+	if (
+		/unauthenticated|authentication|oauth|token (?:expired|invalid)|credential|(?:no|missing) api key|api key required/.test(
+			normalized,
+		)
+	)
 		return "authentication";
 	if (/forbidden|not permitted|not authorized|account .*access|organization .*access/.test(normalized))
 		return "authorization_or_account";
@@ -112,11 +126,14 @@ function diagnosticTransport(): "auto" | "sse" {
 	throw new Error("SEMANTIC_SELECTOR_DIAGNOSTIC_TRANSPORT must be auto or sse.");
 }
 
-function diagnosticPhase(): "provider_error_classification" | undefined {
+function diagnosticPhase(): "provider_error_classification" | "oauth_aware_completion" | undefined {
 	const phase = process.env.SEMANTIC_SELECTOR_DIAGNOSTIC_PHASE;
 	if (phase === undefined) return undefined;
 	if (phase === "provider-error-classification") return "provider_error_classification";
-	throw new Error("SEMANTIC_SELECTOR_DIAGNOSTIC_PHASE must be provider-error-classification when set.");
+	if (phase === "oauth-aware-completion") return "oauth_aware_completion";
+	throw new Error(
+		"SEMANTIC_SELECTOR_DIAGNOSTIC_PHASE must be provider-error-classification or oauth-aware-completion when set.",
+	);
 }
 
 async function runDiagnostic(): Promise<void> {
@@ -129,19 +146,22 @@ async function runDiagnostic(): Promise<void> {
 	if (!control && process.env.SEMANTIC_SELECTOR_DIAGNOSTIC_CONTROL !== undefined)
 		throw new Error("SEMANTIC_SELECTOR_DIAGNOSTIC_CONTROL must be 1 when set.");
 	const reports = join(import.meta.dirname, "reports");
-	if (phase === "provider_error_classification" && (!control || transport !== "auto"))
-		throw new Error("Provider-error classification requires the single normal-transport control call.");
+	if (
+		(phase === "provider_error_classification" || phase === "oauth_aware_completion") &&
+		(!control || transport !== "auto")
+	)
+		throw new Error("This diagnostic phase requires the single normal-transport control call.");
 	const reportPath = join(
 		reports,
 		phase === "provider_error_classification"
 			? "provider-error-classification-control.json"
-			: control
-				? "provider-envelope-control.json"
-				: `provider-envelope-${transport}.json`,
+			: phase === "oauth_aware_completion"
+				? "oauth-aware-completion-control.json"
+				: control
+					? "provider-envelope-control.json"
+					: `provider-envelope-${transport}.json`,
 	);
 	if (existsSync(reportPath)) throw new Error(`${reportPath} already exists and will not be overwritten.`);
-	const model = getModel(provider as BuiltinProvider, modelId);
-	if (!model) throw new Error(`Pi 0.84.3 does not recognize ${provider}/${modelId}.`);
 
 	let caseId: string;
 	let candidateCount: number;
@@ -175,11 +195,32 @@ async function runDiagnostic(): Promise<void> {
 		request = JSON.stringify({ query: testCase.query, candidates });
 	}
 	let report: Record<string, unknown>;
-	const timeoutMs = 2_000;
+	const timeoutMs = phase === "oauth_aware_completion" ? 15_000 : 2_000;
+	const bootstrap = await bootstrapOAuthAwareModelRuntime(provider, modelId);
+	if (!bootstrap.authConfigured) {
+		report = {
+			kind: "V2_3_PROVIDER_RESPONSE_ENVELOPE_DIAGNOSTIC",
+			provider,
+			model: modelId,
+			promptVersion: SEMANTIC_SELECTOR_PROMPT_VERSION,
+			transport,
+			mode: control ? "control" : "selector",
+			...(phase ? { phase } : {}),
+			caseId,
+			candidateCount,
+			authConfigured: false,
+			timeoutMs,
+			outcome: "auth_unconfigured",
+		};
+		mkdirSync(reports, { recursive: true });
+		writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`);
+		console.log(JSON.stringify(report, null, 2));
+		return;
+	}
 	const startedAt = performance.now();
 	try {
-		const response = await completeSimple(
-			model,
+		const response = await bootstrap.completionRuntime.completeSimple(
+			bootstrap.model,
 			{
 				systemPrompt,
 				messages: [{ role: "user", content: request, timestamp: Date.now() }],
@@ -203,9 +244,11 @@ async function runDiagnostic(): Promise<void> {
 			...(phase ? { phase } : {}),
 			caseId,
 			candidateCount,
+			authConfigured: true,
 			timeoutMs,
 			elapsedMs: Math.round(performance.now() - startedAt),
 			outcome: "assistant_message",
+			...(control ? { textMatchesExpectedControl: controlTextMatchesExpected(response.content) } : {}),
 			safeErrorCategory:
 				response.stopReason === "error" ? classifySafeProviderError(response.errorMessage) : undefined,
 			envelope: summarizeAssistantEnvelope(response),
@@ -221,6 +264,7 @@ async function runDiagnostic(): Promise<void> {
 			...(phase ? { phase } : {}),
 			caseId,
 			candidateCount,
+			authConfigured: true,
 			timeoutMs,
 			elapsedMs: Math.round(performance.now() - startedAt),
 			outcome: "thrown_error",

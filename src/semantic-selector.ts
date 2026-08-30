@@ -1,6 +1,5 @@
 import { createHash } from "node:crypto";
-import type { AssistantMessage, Model } from "@earendil-works/pi-ai";
-import { completeSimple } from "@earendil-works/pi-ai/compat";
+import type { Api, AssistantMessage, Context, Model, ModelsSimpleStreamOptions } from "@earendil-works/pi-ai";
 
 export type SemanticSelectionLabel = "A" | "B" | "C";
 export type SemanticSelectionOutcome = "selected" | "abstained" | "invalid" | "timeout" | "provider_error";
@@ -51,6 +50,11 @@ export type SemanticSelectorCompletion = (
 	signal: AbortSignal,
 	modelInput: string,
 ) => Promise<SemanticSelectorCompletionResult>;
+
+/** Pi-specific completion capability, injected so selector semantics stay provider-independent. */
+export interface PiSimpleCompletionRuntime {
+	completeSimple(model: Model<Api>, context: Context, options?: ModelsSimpleStreamOptions): Promise<AssistantMessage>;
+}
 
 export interface OneShotSemanticEvidenceSelectorOptions {
 	complete: SemanticSelectorCompletion;
@@ -223,11 +227,15 @@ export class OneShotSemanticEvidenceSelector implements SemanticEvidenceSelector
 	}
 }
 
-export function createPiSemanticEvidenceSelector(model: Model<string>, timeoutMs = 2_000): SemanticEvidenceSelector {
+export function createPiSemanticEvidenceSelector(
+	model: Model<Api>,
+	completionRuntime: PiSimpleCompletionRuntime,
+	timeoutMs = 2_000,
+): SemanticEvidenceSelector {
 	return new OneShotSemanticEvidenceSelector({
 		timeoutMs,
 		complete: async (signal, modelInput) => {
-			const response = await completeSimple(
+			const response = await completionRuntime.completeSimple(
 				model,
 				{
 					systemPrompt: SEMANTIC_SELECTOR_SYSTEM_PROMPT,
