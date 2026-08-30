@@ -65,6 +65,7 @@ describe("V2.3 offline semantic-selection evaluation", () => {
 				mappedEvidenceId: "gold-payment",
 				expectedEvidenceId: "gold-payment",
 				classification: "correct",
+				elapsedMs: expect.any(Number),
 			},
 			{
 				caseId: "ambiguous",
@@ -79,6 +80,7 @@ describe("V2.3 offline semantic-selection evaluation", () => {
 				mappedEvidenceId: "gold-payment",
 				expectedEvidenceId: "gold-payment",
 				classification: "correct",
+				elapsedMs: expect.any(Number),
 			},
 		]);
 	});
@@ -129,5 +131,44 @@ describe("V2.3 offline semantic-selection evaluation", () => {
 			alwaysFirst,
 		);
 		expect(result.metrics.orderInducedWrongSelectionRate).toBe(0);
+	});
+
+	it("records per-invocation latency and preserves timeout/provider error rates", async () => {
+		let call = 0;
+		const failing: SemanticEvidenceSelector = {
+			async select() {
+				call += 1;
+				return call === 1
+					? { selection: "ABSTAIN", outcome: "provider_error" }
+					: { selection: "ABSTAIN", outcome: "timeout" };
+			},
+		};
+		const result = await runSemanticSelectionEvaluation(
+			[
+				{
+					caseId: "infrastructure-outcomes",
+					query: "query",
+					expectedEvidenceId: "gold",
+					candidates: [
+						{ id: "gold", title: "gold", content: "GOLD" },
+						{ id: "other", title: "other", content: "OTHER" },
+					],
+				},
+			],
+			failing,
+		);
+
+		expect(result.metrics.providerErrorRate).toBe(0.5);
+		expect(result.metrics.timeoutRate).toBe(0.5);
+		expect(result.traces.every((trace) => typeof trace.elapsedMs === "number" && trace.elapsedMs >= 0)).toBe(true);
+		expect(result.latency).toMatchObject({
+			minMs: expect.any(Number),
+			p50Ms: expect.any(Number),
+			p95Ms: expect.any(Number),
+			maxMs: expect.any(Number),
+		});
+		expect(result.latency.minMs).toBeLessThanOrEqual(result.latency.p50Ms);
+		expect(result.latency.p50Ms).toBeLessThanOrEqual(result.latency.p95Ms);
+		expect(result.latency.p95Ms).toBeLessThanOrEqual(result.latency.maxMs);
 	});
 });

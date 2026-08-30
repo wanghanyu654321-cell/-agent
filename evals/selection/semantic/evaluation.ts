@@ -25,6 +25,8 @@ export interface SemanticSelectionMetrics {
 	selectedEvidencePrecision: number;
 	abstentionRate: number;
 	invalidSelectorOutputRate: number;
+	providerErrorRate: number;
+	timeoutRate: number;
 	multiCandidateSemanticAccuracy: number;
 	multiCandidateWrongSelectionRate: number;
 	orderRobustCorrectSelectionRate: number;
@@ -47,6 +49,14 @@ export interface SemanticInvocationTrace {
 	rawOutputShape?: SemanticSelectionObservation["rawOutputShape"];
 	rawOutputSha256?: string;
 	rawOutputLength?: number;
+	elapsedMs?: number;
+}
+
+export interface SemanticLatencyStatistics {
+	minMs: number;
+	p50Ms: number;
+	p95Ms: number;
+	maxMs: number;
 }
 
 export interface SemanticEvaluationResult {
@@ -54,6 +64,7 @@ export interface SemanticEvaluationResult {
 	metrics: SemanticSelectionMetrics;
 	traces: SemanticInvocationTrace[];
 	traceSummary: SemanticTraceSummary;
+	latency: SemanticLatencyStatistics;
 	gatePassed: boolean;
 }
 
@@ -74,7 +85,7 @@ export interface SemanticOutcomeCounts {
 	providerError: number;
 }
 
-type ClassifiedSelection = { selectedId?: string; result?: SemanticSelectionResult };
+type ClassifiedSelection = { selectedId?: string; result?: SemanticSelectionResult; elapsedMs?: number };
 
 function labels(candidates: SemanticEvaluationCandidate[]): SemanticSelectionCandidate[] {
 	return candidates.map((candidate, index) => ({
@@ -91,12 +102,14 @@ async function classify(
 ): Promise<ClassifiedSelection> {
 	if (candidates.length === 1) return { selectedId: candidates[0]!.id };
 	const labelled = labels(candidates);
+	const startedAt = performance.now();
 	const result = await selector.select({ query: testCase.query, candidates: labelled }, new AbortController().signal);
-	if (result.outcome !== "selected") return { result };
+	const elapsedMs = Math.round(performance.now() - startedAt);
+	if (result.outcome !== "selected") return { result, elapsedMs };
 	const index = labelled.findIndex((candidate) => candidate.label === result.selection);
 	return index < 0
-		? { result: { ...result, selection: "ABSTAIN", outcome: "invalid" } }
-		: { selectedId: candidates[index]!.id, result };
+		? { result: { ...result, selection: "ABSTAIN", outcome: "invalid" }, elapsedMs }
+		: { selectedId: candidates[index]!.id, result, elapsedMs };
 }
 
 function rate(numerator: number, denominator: number): number {
@@ -136,7 +149,18 @@ function createTrace(
 					rawOutputLength: result.observation.rawOutputLength,
 				}
 			: {}),
+		...(classified.elapsedMs === undefined ? {} : { elapsedMs: classified.elapsedMs }),
 	};
+}
+
+function latencyStatistics(traces: SemanticInvocationTrace[]): SemanticLatencyStatistics {
+	const values = traces
+		.map((trace) => trace.elapsedMs)
+		.filter((elapsedMs): elapsedMs is number => elapsedMs !== undefined)
+		.sort((left, right) => left - right);
+	if (values.length === 0) return { minMs: 0, p50Ms: 0, p95Ms: 0, maxMs: 0 };
+	const nearestRank = (percentile: number) => values[Math.max(0, Math.ceil(percentile * values.length) - 1)]!;
+	return { minMs: values[0]!, p50Ms: nearestRank(0.5), p95Ms: nearestRank(0.95), maxMs: values.at(-1)! };
 }
 
 function emptyOutcomeCounts(): SemanticOutcomeCounts {
@@ -218,6 +242,8 @@ export async function runSemanticSelectionEvaluation(
 		selectedEvidencePrecision: rate(correct, selected),
 		abstentionRate: rate(abstained, cases.length),
 		invalidSelectorOutputRate: rate(traces.filter((trace) => trace.outcome === "invalid").length, semanticCalls),
+		providerErrorRate: rate(traces.filter((trace) => trace.outcome === "provider_error").length, semanticCalls),
+		timeoutRate: rate(traces.filter((trace) => trace.outcome === "timeout").length, semanticCalls),
 		multiCandidateSemanticAccuracy: rate(multiCorrect, multi.length),
 		multiCandidateWrongSelectionRate: rate(multiWrong, multi.length),
 		orderRobustCorrectSelectionRate: rate(orderRobustCorrect, multi.length),
@@ -228,6 +254,7 @@ export async function runSemanticSelectionEvaluation(
 		metrics,
 		traces,
 		traceSummary: summarizeTraces(traces),
+		latency: latencyStatistics(traces),
 		gatePassed:
 			metrics.correctSelectionRate >= 0.98 &&
 			metrics.wrongSelectionRate === 0 &&

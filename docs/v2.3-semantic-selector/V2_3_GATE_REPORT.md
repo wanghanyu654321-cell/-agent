@@ -11,4 +11,8 @@
 
 ## Blocking Gate
 
-Provider call path: **VALIDATED**. The one-call public `ModelRuntime` control resolved stored OAuth and returned `stopReason: "stop"` in 2962 ms with one text block, non-zero output usage, and a response ID. Its historical sanitized report did not capture `textMatchesExpectedControl`, so it cannot establish the exact control response. The semantic Gate is therefore **NOT VALIDLY EXECUTED**: the 44-call benchmark was not rerun. Runtime integration and a V2.3 release tag remain prohibited. See [OAUTH_AWARE_COMPLETION_PATH.md](OAUTH_AWARE_COMPLETION_PATH.md).
+Provider call path: **VALIDATED**. The one-call public `ModelRuntime` control resolved stored OAuth and returned `stopReason: "stop"` in 2962 ms with one text block, non-zero output usage, and a response ID. Its historical sanitized report did not capture `textMatchesExpectedControl`, so it cannot establish the exact control response.
+
+## OAuth-aware semantic Gate execution
+
+The one authorized 44-call Gate process started with the frozen provider, model, prompt, benchmark, corpus, and a 15000 ms evaluation-only timeout. It terminated before writing `oauth-aware-semantic-gate-run.json`. No complete trace, aggregate metrics, latency distribution, provider-error count, timeout count, or case-level result exists; these values are intentionally recorded as unavailable rather than inferred. The result is **SEMANTIC GATE INFRASTRUCTURE BLOCKED**, not semantic failure. No rerun, runtime integration, or V2.3 release tag is authorized. See [oauth-aware-semantic-gate-infrastructure-blocked.json](../../evals/selection/semantic/reports/oauth-aware-semantic-gate-infrastructure-blocked.json).
