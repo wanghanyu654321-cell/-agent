@@ -9,7 +9,16 @@ import { runSemanticSelectionEvaluation } from "./evaluation.ts";
 
 const provider = process.env.SEMANTIC_SELECTOR_PROVIDER;
 const modelId = process.env.SEMANTIC_SELECTOR_MODEL;
-if (!provider || !modelId) {
+const reports = join(import.meta.dirname, "reports");
+const first = join(reports, "first-real-run.json");
+const ioContractRun = join(reports, "io-contract-run.json");
+if (!existsSync(first)) {
+	console.error("REAL_MODEL_EVAL_BLOCKED: first-real-run.json is required and must remain immutable.");
+	process.exitCode = 1;
+} else if (existsSync(ioContractRun)) {
+	console.error("REAL_MODEL_EVAL_BLOCKED: io-contract-run.json already exists and will not be overwritten.");
+	process.exitCode = 1;
+} else if (!provider || !modelId) {
 	console.error(
 		"REAL_MODEL_EVAL_BLOCKED: set SEMANTIC_SELECTOR_PROVIDER and SEMANTIC_SELECTOR_MODEL with provider credentials.",
 	);
@@ -54,11 +63,8 @@ if (!provider || !modelId) {
 			executedAt: new Date().toISOString(),
 			...evaluation,
 		};
-		const reports = join(import.meta.dirname, "reports");
 		mkdirSync(reports, { recursive: true });
-		const first = join(reports, "first-real-run.json");
-		if (!existsSync(first)) writeFileSync(first, `${JSON.stringify(report, null, 2)}\n`);
-		writeFileSync(join(reports, "final.json"), `${JSON.stringify(report, null, 2)}\n`);
+		writeFileSync(ioContractRun, `${JSON.stringify(report, null, 2)}\n`);
 		console.log(JSON.stringify(report, null, 2));
 		if (!evaluation.gatePassed) process.exitCode = 1;
 	}

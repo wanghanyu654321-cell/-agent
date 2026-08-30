@@ -1,8 +1,24 @@
+import { createHash } from "node:crypto";
 import type { Model } from "@earendil-works/pi-ai";
 import { completeSimple } from "@earendil-works/pi-ai/compat";
 
 export type SemanticSelectionLabel = "A" | "B" | "C";
 export type SemanticSelectionOutcome = "selected" | "abstained" | "invalid" | "timeout" | "provider_error";
+export type SemanticSelectionRawOutputShape =
+	| "exact_json"
+	| "surrounding_whitespace_json"
+	| "fenced_json"
+	| "json_plus_prose"
+	| "plain_label"
+	| "empty"
+	| "malformed_json"
+	| "other_invalid";
+
+export interface SemanticSelectionObservation {
+	rawOutputShape: SemanticSelectionRawOutputShape;
+	rawOutputSha256: string;
+	rawOutputLength: number;
+}
 
 export interface SemanticSelectionCandidate {
 	label: SemanticSelectionLabel;
@@ -18,6 +34,7 @@ export interface SemanticSelectionInput {
 export interface SemanticSelectionResult {
 	selection: SemanticSelectionLabel | "ABSTAIN";
 	outcome: SemanticSelectionOutcome;
+	observation?: SemanticSelectionObservation;
 }
 
 export interface SemanticEvidenceSelector {
@@ -44,8 +61,16 @@ function isLabel(value: unknown): value is SemanticSelectionLabel {
 	return value === "A" || value === "B" || value === "C";
 }
 
-function invalidResult(): SemanticSelectionResult {
-	return { selection: "ABSTAIN", outcome: "invalid" };
+function result(
+	selection: SemanticSelectionLabel | "ABSTAIN",
+	outcome: SemanticSelectionOutcome,
+	observation?: SemanticSelectionObservation,
+): SemanticSelectionResult {
+	return observation ? { selection, outcome, observation } : { selection, outcome };
+}
+
+function invalidResult(observation?: SemanticSelectionObservation): SemanticSelectionResult {
+	return result("ABSTAIN", "invalid", observation);
 }
 
 function validInput(input: SemanticSelectionInput): boolean {
@@ -60,24 +85,63 @@ function validInput(input: SemanticSelectionInput): boolean {
 	);
 }
 
+function classifyRawOutputShape(raw: string, normalized: string): SemanticSelectionRawOutputShape {
+	if (normalized.length === 0) return "empty";
+	if (normalized.startsWith("```")) return "fenced_json";
+	try {
+		JSON.parse(normalized);
+		return raw === normalized ? "exact_json" : "surrounding_whitespace_json";
+	} catch {
+		if (/^(?:A|B|C|ABSTAIN)$/.test(normalized)) return "plain_label";
+		const lastObjectEnd = normalized.lastIndexOf("}");
+		if (lastObjectEnd > 0 && lastObjectEnd < normalized.length - 1) {
+			try {
+				JSON.parse(normalized.slice(0, lastObjectEnd + 1));
+				return "json_plus_prose";
+			} catch {
+				// Continue to malformed JSON classification.
+			}
+		}
+		return normalized.startsWith("{") || normalized.startsWith("[") ? "malformed_json" : "other_invalid";
+	}
+}
+
+function observeRawOutput(raw: string, normalized: string): SemanticSelectionObservation {
+	return {
+		rawOutputShape: classifyRawOutputShape(raw, normalized),
+		rawOutputSha256: createHash("sha256").update(raw).digest("hex"),
+		rawOutputLength: raw.length,
+	};
+}
+
+function parseOutput(
+	raw: string,
+	allowedLabels: SemanticSelectionLabel[],
+	includeObservation: boolean,
+): SemanticSelectionResult {
+	const normalized = raw.trim();
+	const observation = includeObservation ? observeRawOutput(raw, normalized) : undefined;
+	if (normalized.length === 0) return invalidResult(observation);
+	try {
+		const parsed: unknown = JSON.parse(normalized);
+		if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return invalidResult(observation);
+		const record = parsed as Record<string, unknown>;
+		if (Object.keys(record).length !== 1 || !Object.hasOwn(record, "selection")) return invalidResult(observation);
+		if (record.selection === "ABSTAIN") return result("ABSTAIN", "abstained", observation);
+		if (isLabel(record.selection) && allowedLabels.includes(record.selection)) {
+			return result(record.selection, "selected", observation);
+		}
+		return invalidResult(observation);
+	} catch {
+		return invalidResult(observation);
+	}
+}
+
 export function parseSemanticSelectionOutput(
 	raw: string,
 	allowedLabels: SemanticSelectionLabel[],
 ): SemanticSelectionResult {
-	if (raw.length === 0 || raw.trim() !== raw) return invalidResult();
-	try {
-		const parsed: unknown = JSON.parse(raw);
-		if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return invalidResult();
-		const record = parsed as Record<string, unknown>;
-		if (Object.keys(record).length !== 1 || !Object.hasOwn(record, "selection")) return invalidResult();
-		if (record.selection === "ABSTAIN") return { selection: "ABSTAIN", outcome: "abstained" };
-		if (isLabel(record.selection) && allowedLabels.includes(record.selection)) {
-			return { selection: record.selection, outcome: "selected" };
-		}
-		return invalidResult();
-	} catch {
-		return invalidResult();
-	}
+	return parseOutput(raw, allowedLabels, false);
 }
 
 export class OneShotSemanticEvidenceSelector implements SemanticEvidenceSelector {
@@ -113,9 +177,10 @@ export class OneShotSemanticEvidenceSelector implements SemanticEvidenceSelector
 			]);
 			if (result.kind === "timeout" || timedOut || signal.aborted)
 				return { selection: "ABSTAIN", outcome: "timeout" };
-			return parseSemanticSelectionOutput(
+			return parseOutput(
 				result.raw,
 				input.candidates.map((candidate) => candidate.label),
+				true,
 			);
 		} catch {
 			return { selection: "ABSTAIN", outcome: combinedSignal.aborted ? "timeout" : "provider_error" };

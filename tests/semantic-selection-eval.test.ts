@@ -43,6 +43,44 @@ describe("V2.3 offline semantic-selection evaluation", () => {
 			orderInducedWrongSelectionRate: 0,
 		});
 		expect(result.semanticCalls).toBe(2);
+		expect(result.traceSummary).toEqual({
+			primary: { selected: 1, abstained: 0, invalid: 0, timeout: 0, providerError: 0 },
+			reversed: { selected: 1, abstained: 0, invalid: 0, timeout: 0, providerError: 0 },
+			rawOutputShapes: {},
+			correct: 2,
+			wrong: 0,
+			nonSelection: 0,
+		});
+		expect(result.traces).toEqual([
+			{
+				caseId: "ambiguous",
+				order: "primary",
+				candidateCount: 2,
+				candidates: [
+					{ label: "A", evidenceId: "wrong-refund" },
+					{ label: "B", evidenceId: "gold-payment" },
+				],
+				outcome: "selected",
+				selection: "B",
+				mappedEvidenceId: "gold-payment",
+				expectedEvidenceId: "gold-payment",
+				classification: "correct",
+			},
+			{
+				caseId: "ambiguous",
+				order: "reversed",
+				candidateCount: 2,
+				candidates: [
+					{ label: "A", evidenceId: "gold-payment" },
+					{ label: "B", evidenceId: "wrong-refund" },
+				],
+				outcome: "selected",
+				selection: "A",
+				mappedEvidenceId: "gold-payment",
+				expectedEvidenceId: "gold-payment",
+				classification: "correct",
+			},
+		]);
 	});
 
 	it("fails the semantic gate when a multi-candidate selection is wrong", async () => {
