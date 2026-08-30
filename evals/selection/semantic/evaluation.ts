@@ -68,6 +68,29 @@ export interface SemanticEvaluationResult {
 	gatePassed: boolean;
 }
 
+/** Optional product-owned observer used by durable evaluators after each completed model invocation. */
+export interface SemanticEvaluationOptions {
+	onInvocationComplete?: (trace: SemanticInvocationTrace) => void | Promise<void>;
+}
+
+/** A trace persisted outside the evaluator includes its journal sequence. */
+export interface PersistedSemanticInvocationTrace extends SemanticInvocationTrace {
+	sequence: number;
+}
+
+export interface ReconstructedSemanticSelectionEvaluation {
+	status: "complete" | "infrastructure_blocked";
+	expectedSemanticCalls: number;
+	persistedSemanticCalls: number;
+	uniqueInvocationCount: number;
+	reason?: string;
+	metrics?: SemanticSelectionMetrics;
+	traces?: SemanticInvocationTrace[];
+	traceSummary?: SemanticTraceSummary;
+	latency?: SemanticLatencyStatistics;
+	gatePassed: boolean;
+}
+
 export interface SemanticTraceSummary {
 	primary: SemanticOutcomeCounts;
 	reversed: SemanticOutcomeCounts;
@@ -153,7 +176,7 @@ function createTrace(
 	};
 }
 
-function latencyStatistics(traces: SemanticInvocationTrace[]): SemanticLatencyStatistics {
+export function latencyStatistics(traces: SemanticInvocationTrace[]): SemanticLatencyStatistics {
 	const values = traces
 		.map((trace) => trace.elapsedMs)
 		.filter((elapsedMs): elapsedMs is number => elapsedMs !== undefined)
@@ -167,7 +190,7 @@ function emptyOutcomeCounts(): SemanticOutcomeCounts {
 	return { selected: 0, abstained: 0, invalid: 0, timeout: 0, providerError: 0 };
 }
 
-function summarizeTraces(traces: SemanticInvocationTrace[]): SemanticTraceSummary {
+export function summarizeTraces(traces: SemanticInvocationTrace[]): SemanticTraceSummary {
 	const summary: SemanticTraceSummary = {
 		primary: emptyOutcomeCounts(),
 		reversed: emptyOutcomeCounts(),
@@ -192,6 +215,7 @@ function summarizeTraces(traces: SemanticInvocationTrace[]): SemanticTraceSummar
 export async function runSemanticSelectionEvaluation(
 	cases: SemanticEvaluationCase[],
 	selector: SemanticEvidenceSelector,
+	options: SemanticEvaluationOptions = {},
 ): Promise<SemanticEvaluationResult> {
 	let semanticCalls = 0;
 	let correct = 0;
@@ -208,7 +232,9 @@ export async function runSemanticSelectionEvaluation(
 		const primary = await classify(testCase, testCase.candidates, selector);
 		if (testCase.candidates.length >= 2) {
 			semanticCalls += 1;
-			traces.push(createTrace(testCase, "primary", testCase.candidates, primary));
+			const trace = createTrace(testCase, "primary", testCase.candidates, primary);
+			await options.onInvocationComplete?.(trace);
+			traces.push(trace);
 		}
 		if (primary.selectedId) {
 			selected += 1;
@@ -223,7 +249,9 @@ export async function runSemanticSelectionEvaluation(
 		const reversedCandidates = [...testCase.candidates].reverse();
 		const alternate = await classify(testCase, reversedCandidates, selector);
 		semanticCalls += 1;
-		traces.push(createTrace(testCase, "reversed", reversedCandidates, alternate));
+		const trace = createTrace(testCase, "reversed", reversedCandidates, alternate);
+		await options.onInvocationComplete?.(trace);
+		traces.push(trace);
 		if (primary.selectedId === testCase.expectedEvidenceId && alternate.selectedId === testCase.expectedEvidenceId) {
 			orderRobustCorrect += 1;
 		}
@@ -263,5 +291,184 @@ export async function runSemanticSelectionEvaluation(
 			metrics.multiCandidateWrongSelectionRate === 0 &&
 			metrics.invalidSelectorOutputRate === 0 &&
 			metrics.orderInducedWrongSelectionRate === 0,
+	};
+}
+
+function expectedTraceCandidates(
+	testCase: SemanticEvaluationCase,
+	order: SemanticInvocationOrder,
+): Array<{ label: SemanticSelectionCandidate["label"]; evidenceId: string }> {
+	const candidates = order === "primary" ? testCase.candidates : [...testCase.candidates].reverse();
+	return labels(candidates).map((candidate, index) => ({ label: candidate.label, evidenceId: candidates[index]!.id }));
+}
+
+function matchesExpectedTrace(
+	trace: PersistedSemanticInvocationTrace,
+	testCase: SemanticEvaluationCase,
+): string | undefined {
+	if (!Number.isSafeInteger(trace.sequence) || trace.sequence < 1) return "has an invalid sequence";
+	if (trace.expectedEvidenceId !== testCase.expectedEvidenceId) return "has a mismatched expected evidence id";
+	const expectedCandidates = expectedTraceCandidates(testCase, trace.order);
+	if (trace.candidateCount !== expectedCandidates.length) return "has a mismatched candidate count";
+	if (
+		trace.candidates.length !== expectedCandidates.length ||
+		trace.candidates.some(
+			(candidate, index) =>
+				candidate.label !== expectedCandidates[index]!.label ||
+				candidate.evidenceId !== expectedCandidates[index]!.evidenceId,
+		)
+	)
+		return "has a mismatched candidate mapping";
+	if (trace.outcome === "selected") {
+		if (!trace.selection || trace.selection === "ABSTAIN" || !trace.mappedEvidenceId)
+			return "records a selected outcome without a mapped selection";
+		const mapped = trace.candidates.find((candidate) => candidate.label === trace.selection)?.evidenceId;
+		if (mapped !== trace.mappedEvidenceId) return "records an inconsistent label mapping";
+		const expectedClassification = trace.mappedEvidenceId === testCase.expectedEvidenceId ? "correct" : "wrong";
+		if (trace.classification !== expectedClassification) return "records an inconsistent selection classification";
+	} else if (trace.classification !== "non_selection" || trace.mappedEvidenceId !== undefined) {
+		return "records an inconsistent non-selection";
+	}
+	if (trace.elapsedMs !== undefined && (!Number.isFinite(trace.elapsedMs) || trace.elapsedMs < 0))
+		return "has an invalid elapsed time";
+	return undefined;
+}
+
+function gatePassed(metrics: SemanticSelectionMetrics): boolean {
+	return (
+		metrics.correctSelectionRate >= 0.98 &&
+		metrics.wrongSelectionRate === 0 &&
+		metrics.answerableCoverage >= 0.95 &&
+		metrics.selectedEvidencePrecision >= 0.98 &&
+		metrics.multiCandidateWrongSelectionRate === 0 &&
+		metrics.invalidSelectorOutputRate === 0 &&
+		metrics.orderInducedWrongSelectionRate === 0
+	);
+}
+
+/**
+ * Rebuilds official Gate metrics only from a complete, unique persisted trace set.
+ * Incomplete or malformed journals deliberately return no metrics, never inferred values.
+ */
+export function reconstructSemanticSelectionEvaluation(
+	cases: SemanticEvaluationCase[],
+	persistedTraces: PersistedSemanticInvocationTrace[],
+): ReconstructedSemanticSelectionEvaluation {
+	const multi = cases.filter((testCase) => testCase.candidates.length >= 2);
+	const expectedSemanticCalls = multi.length * 2;
+	const traceByInvocation = new Map<string, PersistedSemanticInvocationTrace>();
+	const sequences = new Set<number>();
+	const knownCases = new Map(cases.map((testCase) => [testCase.caseId, testCase]));
+	let reason: string | undefined;
+	for (const trace of persistedTraces) {
+		const testCase = knownCases.get(trace.caseId);
+		if (!testCase || testCase.candidates.length < 2) {
+			reason = `unknown or single-candidate trace for ${trace.caseId}`;
+			break;
+		}
+		const key = `${trace.caseId}\u0000${trace.order}`;
+		if (traceByInvocation.has(key)) {
+			reason = `duplicate persisted trace for ${trace.caseId}/${trace.order}`;
+			break;
+		}
+		if (sequences.has(trace.sequence)) {
+			reason = `duplicate persisted trace sequence ${trace.sequence}`;
+			break;
+		}
+		const mismatch = matchesExpectedTrace(trace, testCase);
+		if (mismatch) {
+			reason = `persisted trace ${trace.caseId}/${trace.order} ${mismatch}`;
+			break;
+		}
+		traceByInvocation.set(key, trace);
+		sequences.add(trace.sequence);
+	}
+	if (!reason && traceByInvocation.size !== expectedSemanticCalls)
+		reason = `expected ${expectedSemanticCalls} persisted semantic traces, found ${traceByInvocation.size}`;
+	if (!reason) {
+		for (const testCase of multi) {
+			if (
+				!traceByInvocation.has(`${testCase.caseId}\u0000primary`) ||
+				!traceByInvocation.has(`${testCase.caseId}\u0000reversed`)
+			) {
+				reason = `missing persisted trace for ${testCase.caseId}`;
+				break;
+			}
+		}
+	}
+	if (reason)
+		return {
+			status: "infrastructure_blocked",
+			expectedSemanticCalls,
+			persistedSemanticCalls: persistedTraces.length,
+			uniqueInvocationCount: traceByInvocation.size,
+			reason,
+			gatePassed: false,
+		};
+
+	let correct = 0;
+	let wrong = 0;
+	let selected = 0;
+	let abstained = 0;
+	let multiCorrect = 0;
+	let multiWrong = 0;
+	let orderRobustCorrect = 0;
+	let orderInducedWrong = 0;
+	for (const testCase of cases) {
+		if (testCase.candidates.length === 1) {
+			selected += 1;
+			correct += 1;
+			continue;
+		}
+		const primary = traceByInvocation.get(`${testCase.caseId}\u0000primary`)!;
+		const reversed = traceByInvocation.get(`${testCase.caseId}\u0000reversed`)!;
+		const primarySelectedId = primary.outcome === "selected" ? primary.mappedEvidenceId : undefined;
+		const reversedSelectedId = reversed.outcome === "selected" ? reversed.mappedEvidenceId : undefined;
+		if (primarySelectedId) {
+			selected += 1;
+			if (primarySelectedId === testCase.expectedEvidenceId) correct += 1;
+			else wrong += 1;
+		} else {
+			abstained += 1;
+		}
+		if (primarySelectedId === testCase.expectedEvidenceId) multiCorrect += 1;
+		if (primarySelectedId && primarySelectedId !== testCase.expectedEvidenceId) multiWrong += 1;
+		if (primarySelectedId === testCase.expectedEvidenceId && reversedSelectedId === testCase.expectedEvidenceId)
+			orderRobustCorrect += 1;
+		if (
+			(primarySelectedId === testCase.expectedEvidenceId || primarySelectedId === undefined) &&
+			reversedSelectedId !== undefined &&
+			reversedSelectedId !== testCase.expectedEvidenceId
+		)
+			orderInducedWrong += 1;
+	}
+	const traces = [...traceByInvocation.values()]
+		.sort((left, right) => left.sequence - right.sequence)
+		.map(({ sequence: _sequence, ...trace }) => trace);
+	const semanticCalls = traces.length;
+	const metrics = {
+		correctSelectionRate: rate(correct, cases.length),
+		wrongSelectionRate: rate(wrong, cases.length),
+		answerableCoverage: rate(selected, cases.length),
+		selectedEvidencePrecision: rate(correct, selected),
+		abstentionRate: rate(abstained, cases.length),
+		invalidSelectorOutputRate: rate(traces.filter((trace) => trace.outcome === "invalid").length, semanticCalls),
+		providerErrorRate: rate(traces.filter((trace) => trace.outcome === "provider_error").length, semanticCalls),
+		timeoutRate: rate(traces.filter((trace) => trace.outcome === "timeout").length, semanticCalls),
+		multiCandidateSemanticAccuracy: rate(multiCorrect, multi.length),
+		multiCandidateWrongSelectionRate: rate(multiWrong, multi.length),
+		orderRobustCorrectSelectionRate: rate(orderRobustCorrect, multi.length),
+		orderInducedWrongSelectionRate: rate(orderInducedWrong, multi.length),
+	};
+	return {
+		status: "complete",
+		expectedSemanticCalls,
+		persistedSemanticCalls: persistedTraces.length,
+		uniqueInvocationCount: traceByInvocation.size,
+		metrics,
+		traces,
+		traceSummary: summarizeTraces(traces),
+		latency: latencyStatistics(traces),
+		gatePassed: gatePassed(metrics),
 	};
 }

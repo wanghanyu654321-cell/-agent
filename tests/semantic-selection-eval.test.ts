@@ -171,4 +171,69 @@ describe("V2.3 offline semantic-selection evaluation", () => {
 		expect(result.latency.p50Ms).toBeLessThanOrEqual(result.latency.p95Ms);
 		expect(result.latency.p95Ms).toBeLessThanOrEqual(result.latency.maxMs);
 	});
+
+	it("persists the primary trace before beginning the reversed invocation", async () => {
+		const events: string[] = [];
+		const selector: SemanticEvidenceSelector = {
+			async select(input) {
+				events.push(`select:${input.candidates.map((candidate) => candidate.content).join(",")}`);
+				return { selection: "A", outcome: "selected" };
+			},
+		};
+
+		await runSemanticSelectionEvaluation(
+			[
+				{
+					caseId: "durable-order",
+					query: "query",
+					expectedEvidenceId: "gold",
+					candidates: [
+						{ id: "gold", title: "gold", content: "GOLD" },
+						{ id: "other", title: "other", content: "OTHER" },
+					],
+				},
+			],
+			selector,
+			{
+				async onInvocationComplete(trace) {
+					events.push(`persist:${trace.order}`);
+				},
+			},
+		);
+
+		expect(events).toEqual(["select:GOLD,OTHER", "persist:primary", "select:OTHER,GOLD", "persist:reversed"]);
+	});
+
+	it("stops before the next semantic invocation when trace persistence fails", async () => {
+		let calls = 0;
+		const selector: SemanticEvidenceSelector = {
+			async select() {
+				calls += 1;
+				return { selection: "A", outcome: "selected" };
+			},
+		};
+
+		await expect(
+			runSemanticSelectionEvaluation(
+				[
+					{
+						caseId: "persistence-failure",
+						query: "query",
+						expectedEvidenceId: "gold",
+						candidates: [
+							{ id: "gold", title: "gold", content: "GOLD" },
+							{ id: "other", title: "other", content: "OTHER" },
+						],
+					},
+				],
+				selector,
+				{
+					onInvocationComplete() {
+						throw new Error("journal write failed");
+					},
+				},
+			),
+		).rejects.toThrow("journal write failed");
+		expect(calls).toBe(1);
+	});
 });

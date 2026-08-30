@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { GovernedKnowledgeRetrievalService } from "../../../src/knowledge.ts";
 import {
@@ -9,11 +9,23 @@ import {
 	SEMANTIC_SELECTOR_SYSTEM_PROMPT,
 } from "../../../src/semantic-selector.ts";
 import { loadPublicBenchmarkEntries, publicBenchmarkCases } from "../../retrieval/public-benchmark.ts";
-import { runSemanticSelectionEvaluation, type SemanticEvaluationCase } from "./evaluation.ts";
+import {
+	createDurableSemanticGateAttempt,
+	readDurableSemanticGateTraces,
+	writeFinalSemanticGateReportOnce,
+} from "./durable-journal.ts";
+import {
+	reconstructSemanticSelectionEvaluation,
+	runSemanticSelectionEvaluation,
+	type SemanticEvaluationCase,
+} from "./evaluation.ts";
 import { bootstrapOAuthAwareModelRuntime } from "./oauth-aware-runtime.ts";
 
 export const REAL_MODEL_EVAL_TIMEOUT_MS = 15_000;
 export const OAUTH_AWARE_GATE_REPORT = "oauth-aware-semantic-gate-run.json";
+export const OAUTH_AWARE_GATE_RECOVERY_ATTEMPT_MANIFEST = "oauth-aware-semantic-gate-recovery-attempt-manifest.json";
+export const OAUTH_AWARE_GATE_RECOVERY_TRACES = "oauth-aware-semantic-gate-recovery-traces.jsonl";
+export const OAUTH_AWARE_GATE_RECOVERY_REPORT = "oauth-aware-semantic-gate-recovery-run.json";
 const PROVIDER = "openai-codex";
 const MODEL = "gpt-5.6-sol";
 const EXPECTED_PROMPT_VERSION = "v2.3.0";
@@ -81,47 +93,98 @@ async function main(): Promise<void> {
 	)
 		throw new Error("Frozen V2.3 selector prompt or prompt version changed.");
 	const reports = join(import.meta.dirname, "reports");
-	const reportPath = join(reports, OAUTH_AWARE_GATE_REPORT);
+	const reportPath = join(reports, OAUTH_AWARE_GATE_RECOVERY_REPORT);
 	ensureGateReportDoesNotExist(reportPath);
 	const { cases, benchmarkHash, corpusHash } = await buildFrozenCases();
 	const bootstrap = await bootstrapOAuthAwareModelRuntime(provider, modelId);
 	if (!bootstrap.authConfigured)
 		throw new Error("Pi OAuth credential resolution is not configured for the frozen provider.");
-	const evaluation = await runSemanticSelectionEvaluation(
-		cases,
-		createPiSemanticEvidenceSelector(bootstrap.model, bootstrap.completionRuntime, REAL_MODEL_EVAL_TIMEOUT_MS),
+	mkdirSync(reports, { recursive: true });
+	const sourceCommit = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+	const journal = createDurableSemanticGateAttempt(
+		{
+			manifestPath: join(reports, OAUTH_AWARE_GATE_RECOVERY_ATTEMPT_MANIFEST),
+			journalPath: join(reports, OAUTH_AWARE_GATE_RECOVERY_TRACES),
+			finalReportPath: reportPath,
+		},
+		{
+			kind: "V2_3_OAUTH_AWARE_SEMANTIC_GATE_RECOVERY_ATTEMPT",
+			attemptId: "v2.3-oauth-aware-semantic-gate-recovery-1",
+			createdAt: new Date().toISOString(),
+			status: "running",
+			provider,
+			model: modelId,
+			promptVersion: SEMANTIC_SELECTOR_PROMPT_VERSION,
+			promptHash: hashFrozenPrompt(SEMANTIC_SELECTOR_SYSTEM_PROMPT),
+			benchmarkHash,
+			corpusHash,
+			sourceCommit,
+			evaluationTimeoutMs: REAL_MODEL_EVAL_TIMEOUT_MS,
+			expectedSemanticCalls: 44,
+		},
 	);
-	if (evaluation.semanticCalls !== 44)
-		throw new Error(`Expected exactly 44 semantic calls; got ${evaluation.semanticCalls}.`);
-	const providerErrorCount = evaluation.traces.filter((trace) => trace.outcome === "provider_error").length;
-	const timeoutCount = evaluation.traces.filter((trace) => trace.outcome === "timeout").length;
+	let sequence = 0;
+	try {
+		const inMemoryEvaluation = await runSemanticSelectionEvaluation(
+			cases,
+			createPiSemanticEvidenceSelector(bootstrap.model, bootstrap.completionRuntime, REAL_MODEL_EVAL_TIMEOUT_MS),
+			{
+				onInvocationComplete(trace) {
+					sequence += 1;
+					journal.append({ ...trace, sequence });
+				},
+			},
+		);
+		if (inMemoryEvaluation.semanticCalls !== 44)
+			throw new Error(`Expected exactly 44 semantic calls; got ${inMemoryEvaluation.semanticCalls}.`);
+	} finally {
+		journal.close();
+	}
+	const recoveredJournal = readDurableSemanticGateTraces(join(reports, OAUTH_AWARE_GATE_RECOVERY_TRACES));
+	if (recoveredJournal.incompleteTrailingLine)
+		throw new Error("Recovery journal has an incomplete trailing line; no official Gate report can be produced.");
+	const recovery = reconstructSemanticSelectionEvaluation(cases, recoveredJournal.traces);
+	if (
+		recovery.status !== "complete" ||
+		!recovery.metrics ||
+		!recovery.traces ||
+		!recovery.traceSummary ||
+		!recovery.latency
+	)
+		throw new Error(`Recovery journal is incomplete: ${recovery.reason ?? "unknown recovery failure"}.`);
+	if (recovery.expectedSemanticCalls !== 44 || recovery.persistedSemanticCalls !== 44)
+		throw new Error(`Expected exactly 44 durable semantic traces; got ${recovery.persistedSemanticCalls}.`);
+	const providerErrorCount = recovery.traces.filter((trace) => trace.outcome === "provider_error").length;
+	const timeoutCount = recovery.traces.filter((trace) => trace.outcome === "timeout").length;
 	const infrastructureBlocked = providerErrorCount > 0 || timeoutCount > 0;
 	const report = {
-		kind: "V2_3_OAUTH_AWARE_SEMANTIC_GATE_RUN",
+		kind: "V2_3_OAUTH_AWARE_SEMANTIC_GATE_RECOVERY_RUN",
 		provider,
 		model: modelId,
 		promptVersion: SEMANTIC_SELECTOR_PROMPT_VERSION,
 		promptHash: hashFrozenPrompt(SEMANTIC_SELECTOR_SYSTEM_PROMPT),
 		benchmarkHash,
 		corpusHash,
-		sourceCommit: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
+		sourceCommit,
 		executedAt: new Date().toISOString(),
 		evaluationTimeoutMs: REAL_MODEL_EVAL_TIMEOUT_MS,
-		semanticCalls: evaluation.semanticCalls,
-		metrics: evaluation.metrics,
-		latencyMinMs: evaluation.latency.minMs,
-		latencyP50Ms: evaluation.latency.p50Ms,
-		latencyP95Ms: evaluation.latency.p95Ms,
-		latencyMaxMs: evaluation.latency.maxMs,
+		expectedSemanticCalls: recovery.expectedSemanticCalls,
+		semanticCalls: recovery.persistedSemanticCalls,
+		journalPath: OAUTH_AWARE_GATE_RECOVERY_TRACES,
+		journalRecordCount: recovery.persistedSemanticCalls,
+		metrics: recovery.metrics,
+		latencyMinMs: recovery.latency.minMs,
+		latencyP50Ms: recovery.latency.p50Ms,
+		latencyP95Ms: recovery.latency.p95Ms,
+		latencyMaxMs: recovery.latency.maxMs,
 		providerErrorCount,
 		timeoutCount,
-		traceSummary: evaluation.traceSummary,
-		traces: evaluation.traces,
-		gateStatus: infrastructureBlocked ? "infrastructure_blocked" : evaluation.gatePassed ? "passed" : "failed",
-		gatePassed: !infrastructureBlocked && evaluation.gatePassed,
+		traceSummary: recovery.traceSummary,
+		traces: recovery.traces,
+		gateStatus: infrastructureBlocked ? "infrastructure_blocked" : recovery.gatePassed ? "passed" : "failed",
+		gatePassed: !infrastructureBlocked && recovery.gatePassed,
 	};
-	mkdirSync(reports, { recursive: true });
-	writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`);
+	writeFinalSemanticGateReportOnce(reportPath, report);
 	console.log(JSON.stringify(report, null, 2));
 	if (!report.gatePassed) process.exitCode = 1;
 }
