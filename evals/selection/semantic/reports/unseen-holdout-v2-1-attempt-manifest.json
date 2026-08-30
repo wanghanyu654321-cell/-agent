@@ -1,0 +1,16 @@
+{
+  "kind": "V2_3_TRUE_UNSEEN_HOLDOUT_V2_1_ATTEMPT",
+  "attemptId": "v2.3-true-unseen-holdout-v2.1-first-exposure",
+  "createdAt": "2026-08-30T16:36:39.605Z",
+  "status": "running",
+  "provider": "openai-codex",
+  "model": "gpt-5.6-sol",
+  "promptVersion": "v2.3.0",
+  "promptHash": "ac4831b003263bf8aea76dd13f535808f84a39306055402ac1f99725707acf4f",
+  "holdoutEvidenceSha256": "a818734e89760538bccbf93c91e4dc5a3043d382f9dcf939f2befe7f48e8fa60",
+  "holdoutCasesSha256": "842c1b53f114823dd4d52c59dfe3132ea60814b1d6917a509d47a555be56c3e6",
+  "holdoutFrozenCommit": "1c0ebd44128a32a98cc3ed1fca915fcd88a2e764",
+  "evaluationSourceCommit": "37ccec0954c04536362daf20a559473808abf6d6",
+  "evaluationTimeoutMs": 15000,
+  "expectedSemanticCalls": 48
+}

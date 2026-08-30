@@ -2,7 +2,7 @@
 
 ## Status
 
-**UNSEEN SEMANTIC HOLDOUT V2.1 FROZEN PENDING FIRST EXPOSURE.** The V2.1 preparation made zero real provider calls. It does not authorize runtime integration, a V2.3 release tag, or a selector change.
+**UNSEEN SEMANTIC HOLDOUT V2.1 GATE FAILED.** The one authorized first-exposure run completed all 48 calls with durable evidence. It made one unsafe selection in each order for hard-ABSTAIN case `holdout-v2.1-23`; runtime integration, a V2.3 release tag, and a selector change remain unauthorized. See [UNSEEN_HOLDOUT_V2_1_GATE_REPORT.md](UNSEEN_HOLDOUT_V2_1_GATE_REPORT.md).
 
 V2.1 supersedes V2 only as the future unseen-capability evaluation population. V2 remains immutable historical pre-run evidence with zero model calls.
 
