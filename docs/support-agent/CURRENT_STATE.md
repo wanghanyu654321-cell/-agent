@@ -37,6 +37,8 @@ The later recovery-2 authorization fixed only the repository-scoped Git provenan
 
 The subsequent offline benchmark-contract audit found 41 direct-and-sufficient cases and 9 PARTIAL cases among the 50 frozen answerable queries. Only `public-04/primary` and `public-28/primary` lower the 50-case primary correct-selection rate; `public-04/reversed` is an order diagnostic. The benchmark is **PARTIALLY VALID** for semantic sufficiency, while the frozen Recovery-2 Gate remains **FAILED**. The selector is still not integrated into `SupportAgentRuntime`; no rerun, tuning, tag, or release is authorized. See [BENCHMARK_CONTRACT_AUDIT.md](../v2.3-semantic-selector/BENCHMARK_CONTRACT_AUDIT.md).
 
+Audit V2 supersedes Audit V1's consistency interpretation: its explicit 50-case findings are 37 SUPPORTED, 13 PARTIAL, 0 UNSUPPORTED. It keeps the primary-rate correction and the immutable Recovery-2 **FAILED** result. The benchmark is **PARTIALLY VALID**; no runtime integration, rerun, tuning, tag, or release is authorized. See [BENCHMARK_CONTRACT_AUDIT_V2.md](../v2.3-semantic-selector/BENCHMARK_CONTRACT_AUDIT_V2.md).
+
 The product source of truth is `wanghanyu654321-cell/-agent`. The Pi working tree at source commit `6026a439cc345969f708a820990dd3fe8d88f0b7` remains historical frozen evidence and a read-only reference implementation checkpoint.
 
 ## Included V0 behavior
