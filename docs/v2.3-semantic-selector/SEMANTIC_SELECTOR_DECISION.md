@@ -1,5 +1,5 @@
 # V2.3 Semantic Selector Decision
 
-The code-side contract and deterministic fake-provider regressions are complete. The real-model offline Gate has not run because this environment lacks the required provider/model configuration and credential.
+The code-side contract and deterministic regressions are complete. OpenAI Codex OAuth/configuration became available and a FIRST real run was attempted, but its extracted empty text was not a valid semantic-quality observation. Pi envelope diagnostics show failed `AssistantMessage` envelopes (`stopReason: "error"`, no content), and the adapter now maps those to typed `provider_error` rather than `invalid`.
 
-`SEMANTIC SELECTOR NOT VALIDATED` is not asserted: no real model failure was observed. This is a credential/configuration blocker, not evidence that a vector database, embedding system, second Agent, or LLM judge is needed.
+The latest one-call provider-error control also returned a fast failed envelope. Its sanitized category is `unknown`; no raw provider error is retained. Therefore **SEMANTIC CAPABILITY NOT YET VALIDLY EVALUATED**. This is not a semantic-quality failure and does not justify a vector database, embeddings, a second Agent, or an LLM judge. See [PROVIDER_ERROR_CLASSIFICATION.md](PROVIDER_ERROR_CLASSIFICATION.md) for the controlling evidence.

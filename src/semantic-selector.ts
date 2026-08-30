@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { Model } from "@earendil-works/pi-ai";
+import type { AssistantMessage, Model } from "@earendil-works/pi-ai";
 import { completeSimple } from "@earendil-works/pi-ai/compat";
 
 export type SemanticSelectionLabel = "A" | "B" | "C";
@@ -41,7 +41,16 @@ export interface SemanticEvidenceSelector {
 	select(input: SemanticSelectionInput, signal: AbortSignal): Promise<SemanticSelectionResult>;
 }
 
-export type SemanticSelectorCompletion = (signal: AbortSignal, modelInput: string) => Promise<string>;
+export interface SemanticSelectorCompletionFailure {
+	kind: "failure";
+	outcome: "timeout" | "provider_error";
+}
+
+export type SemanticSelectorCompletionResult = string | SemanticSelectorCompletionFailure;
+export type SemanticSelectorCompletion = (
+	signal: AbortSignal,
+	modelInput: string,
+) => Promise<SemanticSelectorCompletionResult>;
 
 export interface OneShotSemanticEvidenceSelectorOptions {
 	complete: SemanticSelectorCompletion;
@@ -144,6 +153,27 @@ export function parseSemanticSelectionOutput(
 	return parseOutput(raw, allowedLabels, false);
 }
 
+/**
+ * Pi-specific completion boundary. The generic selector receives only final text
+ * or a typed failure, never a Pi AssistantMessage envelope or thinking content.
+ */
+export function mapPiAssistantMessageToSemanticCompletion(
+	response: Pick<AssistantMessage, "stopReason" | "content">,
+): SemanticSelectorCompletionResult {
+	if (response.stopReason === "error") return { kind: "failure", outcome: "provider_error" };
+	if (response.stopReason === "aborted") return { kind: "failure", outcome: "timeout" };
+	return response.content
+		.filter(
+			(content): content is Extract<(typeof response.content)[number], { type: "text" }> => content.type === "text",
+		)
+		.map((content) => content.text)
+		.join("");
+}
+
+function isCompletionFailure(value: SemanticSelectorCompletionResult): value is SemanticSelectorCompletionFailure {
+	return typeof value === "object" && value !== null && value.kind === "failure";
+}
+
 export class OneShotSemanticEvidenceSelector implements SemanticEvidenceSelector {
 	private readonly complete: SemanticSelectorCompletion;
 	private readonly timeoutMs: number;
@@ -172,13 +202,16 @@ export class OneShotSemanticEvidenceSelector implements SemanticEvidenceSelector
 		void task.catch(() => undefined);
 		try {
 			const result = await Promise.race([
-				task.then((raw) => ({ kind: "response" as const, raw })),
+				task.then((completion) => ({ kind: "response" as const, completion })),
 				deadline.then(() => ({ kind: "timeout" as const })),
 			]);
 			if (result.kind === "timeout" || timedOut || signal.aborted)
 				return { selection: "ABSTAIN", outcome: "timeout" };
+			if (isCompletionFailure(result.completion)) {
+				return { selection: "ABSTAIN", outcome: result.completion.outcome };
+			}
 			return parseOutput(
-				result.raw,
+				result.completion,
 				input.candidates.map((candidate) => candidate.label),
 				true,
 			);
@@ -202,13 +235,7 @@ export function createPiSemanticEvidenceSelector(model: Model<string>, timeoutMs
 				},
 				{ signal, timeoutMs, maxTokens: 32, maxRetries: 0, toolChoice: "none", reasoning: "minimal" },
 			);
-			return response.content
-				.filter(
-					(content): content is Extract<(typeof response.content)[number], { type: "text" }> =>
-						content.type === "text",
-				)
-				.map((content) => content.text)
-				.join("");
+			return mapPiAssistantMessageToSemanticCompletion(response);
 		},
 	});
 }

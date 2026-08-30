@@ -1,7 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { summarizeAssistantEnvelope } from "../evals/selection/semantic/diagnose-provider-envelope.ts";
+import {
+	classifySafeProviderError,
+	summarizeAssistantEnvelope,
+} from "../evals/selection/semantic/diagnose-provider-envelope.ts";
 
 describe("V2.3 provider response envelope diagnostic", () => {
+	it("classifies provider errors without retaining their raw message", () => {
+		expect(classifySafeProviderError("request timed out while waiting")).toBe("timeout_or_abort");
+		expect(classifySafeProviderError("OAuth token expired")).toBe("authentication");
+		expect(classifySafeProviderError("account is not permitted for this organization")).toBe(
+			"authorization_or_account",
+		);
+		expect(classifySafeProviderError("quota exceeded")).toBe("usage_or_quota");
+		expect(classifySafeProviderError("model not found")).toBe("model_unavailable");
+		expect(classifySafeProviderError("ECONNRESET while fetching")).toBe("transport_or_network");
+		expect(classifySafeProviderError("upstream service overloaded")).toBe("upstream_provider");
+		expect(classifySafeProviderError("unclassified provider detail")).toBe("unknown");
+	});
+
 	it("records only safe envelope metadata and never text or thinking content", () => {
 		const summary = summarizeAssistantEnvelope({
 			provider: "openai-codex",

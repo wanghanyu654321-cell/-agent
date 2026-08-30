@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+	mapPiAssistantMessageToSemanticCompletion,
 	OneShotSemanticEvidenceSelector,
 	parseSemanticSelectionOutput,
 	type SemanticSelectionInput,
@@ -14,6 +15,55 @@ const input: SemanticSelectionInput = {
 };
 
 describe("V2.3 bounded semantic evidence selector", () => {
+	it("maps Pi error and aborted envelopes to typed failures before parsing output", async () => {
+		const providerFailure = mapPiAssistantMessageToSemanticCompletion({ stopReason: "error", content: [] });
+		const timeout = mapPiAssistantMessageToSemanticCompletion({ stopReason: "aborted", content: [] });
+		expect(providerFailure).toEqual({ kind: "failure", outcome: "provider_error" });
+		expect(timeout).toEqual({ kind: "failure", outcome: "timeout" });
+
+		const providerSelector = new OneShotSemanticEvidenceSelector({ complete: async () => providerFailure });
+		const timeoutSelector = new OneShotSemanticEvidenceSelector({ complete: async () => timeout });
+		await expect(providerSelector.select(input, new AbortController().signal)).resolves.toEqual({
+			selection: "ABSTAIN",
+			outcome: "provider_error",
+		});
+		await expect(timeoutSelector.select(input, new AbortController().signal)).resolves.toEqual({
+			selection: "ABSTAIN",
+			outcome: "timeout",
+		});
+	});
+
+	it("parses only final Pi text for successful stop or length envelopes", async () => {
+		const emptyStop = mapPiAssistantMessageToSemanticCompletion({ stopReason: "stop", content: [] });
+		const selectedStop = mapPiAssistantMessageToSemanticCompletion({
+			stopReason: "stop",
+			content: [{ type: "text", text: '{"selection":"A"}' }],
+		});
+		const selectedLength = mapPiAssistantMessageToSemanticCompletion({
+			stopReason: "length",
+			content: [{ type: "text", text: '{"selection":"B"}' }],
+		});
+		const thinkingOnly = mapPiAssistantMessageToSemanticCompletion({
+			stopReason: "stop",
+			content: [{ type: "thinking", thinking: "private reasoning" }],
+		});
+		expect(emptyStop).toBe("");
+		expect(selectedStop).toBe('{"selection":"A"}');
+		expect(selectedLength).toBe('{"selection":"B"}');
+		expect(thinkingOnly).toBe("");
+
+		for (const [completion, expected] of [
+			[emptyStop, "invalid"],
+			[thinkingOnly, "invalid"],
+			[selectedStop, "selected"],
+			[selectedLength, "selected"],
+		] as const) {
+			const selector = new OneShotSemanticEvidenceSelector({ complete: async () => completion });
+			const result = await selector.select(input, new AbortController().signal);
+			expect(result.outcome).toBe(expected);
+		}
+	});
+
 	it("accepts JSON documents with surrounding whitespace while preserving the exact schema", () => {
 		for (const output of [
 			'{"selection":"A"}',

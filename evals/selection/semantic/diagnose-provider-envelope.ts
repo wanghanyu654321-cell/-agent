@@ -14,6 +14,32 @@ type EnvelopeContent = {
 	arguments?: Record<string, unknown>;
 };
 
+export type SafeProviderErrorCategory =
+	| "timeout_or_abort"
+	| "authentication"
+	| "authorization_or_account"
+	| "usage_or_quota"
+	| "model_unavailable"
+	| "transport_or_network"
+	| "upstream_provider"
+	| "unknown";
+
+/** Classifies an in-memory provider message without returning or persisting it. */
+export function classifySafeProviderError(message: string | undefined): SafeProviderErrorCategory {
+	const normalized = message?.toLowerCase() ?? "";
+	if (/timeout|timed out|deadline|aborted/.test(normalized)) return "timeout_or_abort";
+	if (/unauthenticated|authentication|oauth|token (?:expired|invalid)|credential/.test(normalized))
+		return "authentication";
+	if (/forbidden|not permitted|not authorized|account .*access|organization .*access/.test(normalized))
+		return "authorization_or_account";
+	if (/quota|usage limit|billing limit|available balance|out of budget/.test(normalized)) return "usage_or_quota";
+	if (/model (?:not found|unavailable|unsupported)|requested model/.test(normalized)) return "model_unavailable";
+	if (/econn|network|socket|dns|tls|fetch .*fail|connection (?:reset|refused)/.test(normalized))
+		return "transport_or_network";
+	if (/upstream|service unavailable|overloaded|provider service/.test(normalized)) return "upstream_provider";
+	return "unknown";
+}
+
 export interface AssistantEnvelopeInput {
 	provider: string;
 	model: string;
@@ -86,16 +112,33 @@ function diagnosticTransport(): "auto" | "sse" {
 	throw new Error("SEMANTIC_SELECTOR_DIAGNOSTIC_TRANSPORT must be auto or sse.");
 }
 
+function diagnosticPhase(): "provider_error_classification" | undefined {
+	const phase = process.env.SEMANTIC_SELECTOR_DIAGNOSTIC_PHASE;
+	if (phase === undefined) return undefined;
+	if (phase === "provider-error-classification") return "provider_error_classification";
+	throw new Error("SEMANTIC_SELECTOR_DIAGNOSTIC_PHASE must be provider-error-classification when set.");
+}
+
 async function runDiagnostic(): Promise<void> {
 	const provider = process.env.SEMANTIC_SELECTOR_PROVIDER;
 	const modelId = process.env.SEMANTIC_SELECTOR_MODEL;
 	if (!provider || !modelId) throw new Error("Set SEMANTIC_SELECTOR_PROVIDER and SEMANTIC_SELECTOR_MODEL.");
 	const transport = diagnosticTransport();
+	const phase = diagnosticPhase();
 	const control = process.env.SEMANTIC_SELECTOR_DIAGNOSTIC_CONTROL === "1";
 	if (!control && process.env.SEMANTIC_SELECTOR_DIAGNOSTIC_CONTROL !== undefined)
 		throw new Error("SEMANTIC_SELECTOR_DIAGNOSTIC_CONTROL must be 1 when set.");
 	const reports = join(import.meta.dirname, "reports");
-	const reportPath = join(reports, control ? "provider-envelope-control.json" : `provider-envelope-${transport}.json`);
+	if (phase === "provider_error_classification" && (!control || transport !== "auto"))
+		throw new Error("Provider-error classification requires the single normal-transport control call.");
+	const reportPath = join(
+		reports,
+		phase === "provider_error_classification"
+			? "provider-error-classification-control.json"
+			: control
+				? "provider-envelope-control.json"
+				: `provider-envelope-${transport}.json`,
+	);
 	if (existsSync(reportPath)) throw new Error(`${reportPath} already exists and will not be overwritten.`);
 	const model = getModel(provider as BuiltinProvider, modelId);
 	if (!model) throw new Error(`Pi 0.84.3 does not recognize ${provider}/${modelId}.`);
@@ -132,6 +175,8 @@ async function runDiagnostic(): Promise<void> {
 		request = JSON.stringify({ query: testCase.query, candidates });
 	}
 	let report: Record<string, unknown>;
+	const timeoutMs = 2_000;
+	const startedAt = performance.now();
 	try {
 		const response = await completeSimple(
 			model,
@@ -140,7 +185,7 @@ async function runDiagnostic(): Promise<void> {
 				messages: [{ role: "user", content: request, timestamp: Date.now() }],
 			},
 			{
-				timeoutMs: 2_000,
+				timeoutMs,
 				maxTokens: 32,
 				maxRetries: 0,
 				toolChoice: "none",
@@ -155,9 +200,14 @@ async function runDiagnostic(): Promise<void> {
 			promptVersion: SEMANTIC_SELECTOR_PROMPT_VERSION,
 			transport,
 			mode: control ? "control" : "selector",
+			...(phase ? { phase } : {}),
 			caseId,
 			candidateCount,
+			timeoutMs,
+			elapsedMs: Math.round(performance.now() - startedAt),
 			outcome: "assistant_message",
+			safeErrorCategory:
+				response.stopReason === "error" ? classifySafeProviderError(response.errorMessage) : undefined,
 			envelope: summarizeAssistantEnvelope(response),
 		};
 	} catch (error) {
@@ -168,10 +218,14 @@ async function runDiagnostic(): Promise<void> {
 			promptVersion: SEMANTIC_SELECTOR_PROMPT_VERSION,
 			transport,
 			mode: control ? "control" : "selector",
+			...(phase ? { phase } : {}),
 			caseId,
 			candidateCount,
+			timeoutMs,
+			elapsedMs: Math.round(performance.now() - startedAt),
 			outcome: "thrown_error",
 			errorType: error instanceof Error ? error.name : typeof error,
+			safeErrorCategory: classifySafeProviderError(error instanceof Error ? error.message : undefined),
 		};
 	}
 	mkdirSync(reports, { recursive: true });
