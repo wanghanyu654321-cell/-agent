@@ -14,10 +14,10 @@ For each semantic call, the persisted trace contains candidate mapping, order, o
 
 ## I/O-contract real run
 
-Report: `evals/selection/semantic/reports/io-contract-run.json`  
-Provider/model: `openai-codex` / `gpt-5.6-sol`  
-Prompt version: `v2.3.0`  
-Benchmark hash: `af35c7c5467fc4d293626044e4a42edc18e068c07ffb95010192bb6b21651137`  
+Report: `evals/selection/semantic/reports/io-contract-run.json`
+Provider/model: `openai-codex` / `gpt-5.6-sol`
+Prompt version: `v2.3.0`
+Benchmark hash: `af35c7c5467fc4d293626044e4a42edc18e068c07ffb95010192bb6b21651137`
 Corpus hash: `1aecf6ea0270ad48ce111737c6b6acb57a59006ff69f59257cb1c0f7f3e723af`
 
 | Evidence | Result |
