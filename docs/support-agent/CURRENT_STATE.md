@@ -39,6 +39,8 @@ The subsequent offline benchmark-contract audit found 41 direct-and-sufficient c
 
 Audit V2 supersedes Audit V1's consistency interpretation: its explicit 50-case findings are 37 SUPPORTED, 13 PARTIAL, 0 UNSUPPORTED. It keeps the primary-rate correction and the immutable Recovery-2 **FAILED** result. The benchmark is **PARTIALLY VALID**; no runtime integration, rerun, tuning, tag, or release is authorized. See [BENCHMARK_CONTRACT_AUDIT_V2.md](../v2.3-semantic-selector/BENCHMARK_CONTRACT_AUDIT_V2.md).
 
+Audit V3 is closed and supersedes the V1/V2 benchmark interpretation: its final findings are **39 SUPPORTED, 11 PARTIAL, and 0 UNSUPPORTED**. The exact Recovery-2 join contains **38 SUPPORTED traces and 6 PARTIAL traces**. The Benchmark Contract is **PARTIALLY VALID**, while the frozen Recovery-2 Gate remains **FAILED**. The repeatedly viewed old public benchmark is retired as the final semantic-capability Gate; V1/V2 remain historical records. A separate unseen Holdout V1 is frozen but its real-model Gate is not yet authorized. The selector remains outside `SupportAgentRuntime`; no runtime integration, tag, or release is authorized. See [UNSEEN_SEMANTIC_HOLDOUT.md](../v2.3-semantic-selector/UNSEEN_SEMANTIC_HOLDOUT.md).
+
 The product source of truth is `wanghanyu654321-cell/-agent`. The Pi working tree at source commit `6026a439cc345969f708a820990dd3fe8d88f0b7` remains historical frozen evidence and a read-only reference implementation checkpoint.
 
 ## Included V0 behavior

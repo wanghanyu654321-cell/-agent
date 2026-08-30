@@ -9,6 +9,13 @@ const v3Reasons: Record<string, string> = {
 		"Query states refusal after successful reservation; evidence explicitly classifies refusal after reservation as non-reception.",
 };
 
+export interface Recovery2Trace {
+	caseId: string;
+	order: "primary" | "reversed";
+	outcome: string;
+	classification: string;
+}
+
 export function buildBenchmarkContractAuditV3() {
 	const v2 = buildBenchmarkContractAuditV2();
 	const cases = v2.cases.map((entry) =>
@@ -35,21 +42,45 @@ export function buildBenchmarkContractAuditV3() {
 	};
 }
 
-export function joinRecovery2Diagnostics(audit = buildBenchmarkContractAuditV3()) {
-	const report = JSON.parse(
-		readFileSync(join(import.meta.dirname, "reports", "oauth-aware-semantic-gate-recovery-2-run.json"), "utf8"),
-	) as { traces: Array<{ caseId: string; outcome: string; classification: string }> };
+export function loadRecovery2Traces(): Recovery2Trace[] {
+	return (
+		JSON.parse(
+			readFileSync(join(import.meta.dirname, "reports", "oauth-aware-semantic-gate-recovery-2-run.json"), "utf8"),
+		) as { traces: Recovery2Trace[] }
+	).traces;
+}
+
+export function joinRecovery2Traces(traces: Recovery2Trace[], audit = buildBenchmarkContractAuditV3()) {
 	const classifications = new Map(audit.cases.map((entry) => [entry.caseId, entry.contractClassification]));
-	const joined = report.traces.map((trace) => {
+	if (traces.length !== 44) throw new Error("Recovery-2 trace count must equal 44.");
+
+	const seen = new Set<string>();
+	const ordersByCase = new Map<string, Set<string>>();
+	const joined = traces.map((trace) => {
+		if (trace.order !== "primary" && trace.order !== "reversed") {
+			throw new Error(`Recovery-2 trace has invalid order: ${trace.order}`);
+		}
 		const classification = classifications.get(trace.caseId);
 		if (!classification) throw new Error(`Recovery-2 trace has no V3 classification: ${trace.caseId}`);
+		const identity = `${trace.caseId}\u0000${trace.order}`;
+		if (seen.has(identity)) throw new Error(`Recovery-2 duplicate trace identity: ${trace.caseId}/${trace.order}`);
+		seen.add(identity);
+		const orders = ordersByCase.get(trace.caseId) ?? new Set<string>();
+		orders.add(trace.order);
+		ordersByCase.set(trace.caseId, orders);
 		return { ...trace, contractClassification: classification };
 	});
-	if (
-		joined.length !== 44 ||
-		new Set(joined.map((trace) => `${trace.caseId}|${trace.outcome}|${trace.classification}`)).size < 1
-	)
-		throw new Error("Recovery-2 trace join is incomplete.");
+	if (seen.size !== 44 || ordersByCase.size !== 22) throw new Error("Recovery-2 trace join is incomplete.");
+	for (const [caseId, orders] of ordersByCase) {
+		if (orders.size !== 2 || !orders.has("primary") || !orders.has("reversed")) {
+			throw new Error(`Recovery-2 trace pair is incomplete: ${caseId}`);
+		}
+	}
+	return joined;
+}
+
+export function joinRecovery2Diagnostics(audit = buildBenchmarkContractAuditV3()) {
+	const joined = joinRecovery2Traces(loadRecovery2Traces(), audit);
 	const summarize = (items: typeof joined) => ({
 		total: items.length,
 		selected: items.filter((item) => item.outcome === "selected").length,
