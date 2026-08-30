@@ -8,13 +8,13 @@ The previous OAuth-aware runner accumulated its 44 invocation traces in process 
 
 ## Future recovery attempt lifecycle
 
-The future OAuth-aware runner uses this distinct, write-once identity:
+The recovery-2 OAuth-aware runner uses this distinct, write-once identity:
 
 | Artifact | Path | Rule |
 | --- | --- | --- |
-| Manifest | `evals/selection/semantic/reports/oauth-aware-semantic-gate-recovery-attempt-manifest.json` | Created and fsynced before call #1; captures only safe frozen configuration and an attempt identity. |
-| Trace journal | `evals/selection/semantic/reports/oauth-aware-semantic-gate-recovery-traces.jsonl` | A single sanitized record is appended and fsynced immediately after each completed semantic invocation. |
-| Final report | `evals/selection/semantic/reports/oauth-aware-semantic-gate-recovery-run.json` | Write-once; produced only after complete journal reconstruction. |
+| Manifest | `evals/selection/semantic/reports/oauth-aware-semantic-gate-recovery-2-attempt-manifest.json` | Created and fsynced before call #1; captures only safe frozen configuration and an attempt identity. |
+| Trace journal | `evals/selection/semantic/reports/oauth-aware-semantic-gate-recovery-2-traces.jsonl` | A single sanitized record is appended and fsynced immediately after each completed semantic invocation. |
+| Final report | `evals/selection/semantic/reports/oauth-aware-semantic-gate-recovery-2-run.json` | Write-once; produced only after complete journal reconstruction. |
 
 The evaluator remains filesystem-independent. Its optional `onInvocationComplete(trace)` observer is awaited after every completed primary or reversed invocation. Consequently the order is: primary completion → observer/journal fsync succeeds → reversed invocation; reversed completion → observer/journal fsync succeeds → next case. The observer throwing stops evaluation before the next model call. The 28 one-candidate cases are direct selections and do not consume semantic calls. The 22 multi-candidate cases produce exactly 44 sequential calls; no concurrent requests are started.
 
@@ -53,3 +53,9 @@ The added deterministic tests prove that persistence completes before reversed i
 The one subsequently authorized Recovery Gate process was started at source HEAD `df9cefdd1d10bb8764658798bbdbec766176e5ce` with the frozen `openai-codex/gpt-5.6-sol` environment. It terminated before manifest creation, journal creation, final-report publication, or any semantic model completion: the runner's local `git rev-parse HEAD` provenance command was rejected by Git's worktree ownership protection. The runner reaches that command before `createDurableSemanticGateAttempt()`, so the resulting manifest, JSONL journal, and final report are all absent and the exact real semantic call count is `0`.
 
 This is **SEMANTIC GATE INFRASTRUCTURE BLOCKED**, not a semantic PASS or semantic failure. The process is not retried under this authorization. `SupportAgentRuntime` integration and a V2.3 release tag remain prohibited pending independent review and a separately authorized recovery execution.
+
+## Recovery-2 execution record
+
+The separately authorized recovery-2 execution ran from committed source `edb70e6c9d7e5b48defd5e42708e591d337bae4d` after its repository-scoped Git provenance resolution succeeded. Its manifest records the frozen `openai-codex/gpt-5.6-sol`, prompt `v2.3.0`, frozen hashes, and `15000` ms evaluation timeout before call #1. The durable journal contains 44 unique, newline-terminated records with contiguous sequences `1..44`; the derived final report was published once.
+
+The complete evidence has no provider errors, timeouts, invalid outputs, wrong selections, or order-induced wrong selections. It nevertheless fails the frozen offline Gate: `correctSelectionRate = 0.96` is below the required `0.98`, with three non-selections (`public-04/primary`, `public-04/reversed`, and `public-28/primary`). This is **SEMANTIC SELECTOR OFFLINE GATE FAILED**. The result is final for this authorization: no selector tuning, rerun, runtime integration, or V2.3 release tag is authorized.
