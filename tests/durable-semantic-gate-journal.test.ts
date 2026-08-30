@@ -1,6 +1,6 @@
 import { appendFileSync, existsSync, linkSync, mkdtempSync, readdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
 	createDurableSemanticGateAttempt,
@@ -170,5 +170,5 @@ describe("durable semantic Gate journal", () => {
 });
 
 function pathsRoot(attemptPaths: DurableSemanticGatePaths): string {
-	return attemptPaths.finalReportPath.slice(0, attemptPaths.finalReportPath.lastIndexOf("\\"));
+	return dirname(attemptPaths.finalReportPath);
 }
