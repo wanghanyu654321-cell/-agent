@@ -6,6 +6,7 @@ import {
 	createDurableSemanticGateAttempt,
 	type DurableSemanticGatePaths,
 	readDurableSemanticGateTraces,
+	resumeDurableSemanticGateAttempt,
 	writeFinalSemanticGateReportOnce,
 } from "../evals/selection/semantic/durable-journal.ts";
 
@@ -92,6 +93,26 @@ describe("durable semantic Gate journal", () => {
 		journal.append(trace(1));
 		expect(() => journal.append({ ...trace(2), sequence: 2 })).toThrow("Duplicate semantic trace");
 		journal.close();
+	});
+
+	it("resumes only a valid completed-prefix journal without replaying persisted invocations", () => {
+		const attemptPaths = paths();
+		const journal = createDurableSemanticGateAttempt(attemptPaths, {
+			attemptId: "attempt-resume",
+			provider: "openai-codex",
+			model: "gpt-5.6-sol",
+			expectedSemanticCalls: 44,
+			status: "running",
+		});
+		journal.append(trace(1));
+		journal.close();
+
+		const resumed = resumeDurableSemanticGateAttempt(attemptPaths);
+		expect(resumed.traces).toEqual([trace(1)]);
+		expect(() => resumed.journal.append({ ...trace(2), sequence: 2 })).toThrow("Duplicate semantic trace");
+		resumed.journal.append({ ...trace(2), caseId: "case-2", sequence: 2 });
+		resumed.journal.close();
+		expect(readDurableSemanticGateTraces(attemptPaths.journalPath).traces).toHaveLength(2);
 	});
 
 	it("refuses to append to an existing attempt and to overwrite its final report", () => {

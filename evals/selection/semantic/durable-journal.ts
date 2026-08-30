@@ -22,6 +22,11 @@ export interface DurableSemanticTraceJournal {
 	close(): void;
 }
 
+export interface ResumedDurableSemanticGateAttempt {
+	journal: DurableSemanticTraceJournal;
+	traces: PersistedSemanticInvocationTrace[];
+}
+
 export interface FinalReportPublicationOperations {
 	existsSync: typeof existsSync;
 	openSync: typeof openSync;
@@ -123,6 +128,55 @@ export function createDurableSemanticGateAttempt(
 			if (closed) return;
 			closed = true;
 			closeSync(descriptor);
+		},
+	};
+}
+
+/**
+ * Reopens only a complete, contiguous persisted prefix after a local process
+ * interruption. It never replays an existing invocation and refuses a finalised
+ * attempt, a partial trailing line, or a sequence gap.
+ */
+export function resumeDurableSemanticGateAttempt(paths: DurableSemanticGatePaths): ResumedDurableSemanticGateAttempt {
+	if (!existsSync(paths.manifestPath) || !existsSync(paths.journalPath))
+		throw new Error("A durable attempt can resume only when its manifest and journal already exist.");
+	if (existsSync(paths.finalReportPath)) throw new Error("A finalised durable attempt cannot resume.");
+	const recovered = readDurableSemanticGateTraces(paths.journalPath);
+	if (recovered.incompleteTrailingLine) throw new Error("A journal with an incomplete trailing line cannot resume.");
+	const seenInvocationKeys = new Set<string>();
+	const seenSequences = new Set<number>();
+	for (const [index, trace] of [...recovered.traces].sort((left, right) => left.sequence - right.sequence).entries()) {
+		validateTrace(trace);
+		if (trace.sequence !== index + 1) throw new Error("A journal with non-contiguous sequences cannot resume.");
+		const key = traceKey(trace);
+		if (seenInvocationKeys.has(key) || seenSequences.has(trace.sequence))
+			throw new Error("A journal with duplicate traces cannot resume.");
+		seenInvocationKeys.add(key);
+		seenSequences.add(trace.sequence);
+	}
+	const descriptor = openSync(paths.journalPath, "a");
+	let closed = false;
+	return {
+		traces: recovered.traces,
+		journal: {
+			append(trace) {
+				if (closed) throw new Error("Semantic trace journal is closed.");
+				validateTrace(trace);
+				const key = traceKey(trace);
+				if (seenInvocationKeys.has(key))
+					throw new Error(`Duplicate semantic trace for ${trace.caseId}/${trace.order}.`);
+				if (seenSequences.has(trace.sequence))
+					throw new Error(`Duplicate semantic trace sequence ${trace.sequence}.`);
+				writeAll(descriptor, `${JSON.stringify(trace)}\n`);
+				fsyncSync(descriptor);
+				seenInvocationKeys.add(key);
+				seenSequences.add(trace.sequence);
+			},
+			close() {
+				if (closed) return;
+				closed = true;
+				closeSync(descriptor);
+			},
 		},
 	};
 }

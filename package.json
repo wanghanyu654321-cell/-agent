@@ -17,6 +17,7 @@
 		"eval:retrieval:public-real": "node evals/retrieval/run-public-benchmark.ts",
 		"eval:selection:semantic": "node evals/selection/semantic/run-real.ts",
 		"eval:selection:semantic:oauth-gate": "node evals/selection/semantic/run-oauth-aware-gate.ts",
+		"eval:selection:semantic:holdout-v2.1": "node evals/selection/semantic/run-holdout-v2-1-gate.ts",
 		"integrity": "node scripts/verify-integrity.mjs",
 		"test": "vitest --run"
 	},

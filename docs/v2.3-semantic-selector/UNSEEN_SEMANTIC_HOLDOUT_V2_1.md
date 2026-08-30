@@ -23,3 +23,9 @@ The first authorized execution requires `openai-codex/gpt-5.6-sol`, prompt `v2.3
 Pass requires exactly: 18/18 positive correct and 6/6 ABSTAIN on both primary and reversed orders, with zero wrong selections, unsupported selections, positive abstentions, invalid outputs, provider errors, timeouts, order-induced wrong selections, and order-induced outcome disagreements.
 
 The Gate is a first-exposure property: V2 was pre-run material and made no model calls. The novelty audit explicitly distinguishes carried-forward V2 material from public/V1 exposure; no V2.1 item has been shown to the semantic model.
+
+## Durable execution boundary
+
+The dedicated command is `npm run eval:selection:semantic:holdout-v2.1`. Before its first semantic completion it writes and fsyncs a write-once attempt manifest. Every completed invocation appends and fsyncs a sanitized JSONL record before the next invocation begins. The journal holds only identity mappings, output shape/hash/length, outcome, classification, and latency; it never stores model reasoning, raw response text, OAuth credentials, or provider payloads.
+
+If a local process is interrupted without a persisted provider error, timeout, or invalid output, the same command can resume only the missing `caseId + order` identities from a valid, contiguous journal prefix. It cannot overwrite a final report or replay a completed identity. A persisted provider error, timeout, or invalid output blocks a clean retry and remains durable failure evidence.
