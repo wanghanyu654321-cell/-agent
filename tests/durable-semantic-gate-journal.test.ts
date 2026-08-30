@@ -1,4 +1,4 @@
-import { appendFileSync, existsSync, mkdtempSync, readFileSync } from "node:fs";
+import { appendFileSync, existsSync, linkSync, mkdtempSync, readdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -119,4 +119,56 @@ describe("durable semantic Gate journal", () => {
 			"already exists",
 		);
 	});
+
+	it("publishes a complete fsynced temporary report before atomically creating the final path", () => {
+		const attemptPaths = paths();
+		let observedTemporaryReport: unknown;
+		writeFinalSemanticGateReportOnce(
+			attemptPaths.finalReportPath,
+			{ complete: true, count: 44 },
+			{
+				linkSync(temporaryPath, finalPath) {
+					expect(existsSync(finalPath)).toBe(false);
+					observedTemporaryReport = JSON.parse(readFileSync(temporaryPath, "utf8"));
+					linkSync(temporaryPath, finalPath);
+				},
+			},
+		);
+
+		expect(observedTemporaryReport).toEqual({ complete: true, count: 44 });
+		expect(JSON.parse(readFileSync(attemptPaths.finalReportPath, "utf8"))).toEqual({ complete: true, count: 44 });
+		expect(readdirSync(pathsRoot(attemptPaths)).filter((name) => name.includes(".tmp-"))).toEqual([]);
+	});
+
+	it("preserves an existing final report without creating temporary residue", () => {
+		const attemptPaths = paths();
+		writeFinalSemanticGateReportOnce(attemptPaths.finalReportPath, { original: true });
+
+		expect(() => writeFinalSemanticGateReportOnce(attemptPaths.finalReportPath, { replacement: true })).toThrow(
+			"already exists",
+		);
+		expect(JSON.parse(readFileSync(attemptPaths.finalReportPath, "utf8"))).toEqual({ original: true });
+		expect(readdirSync(pathsRoot(attemptPaths)).filter((name) => name.includes(".tmp-"))).toEqual([]);
+	});
+
+	it("cleans the temporary report and propagates a pre-publication fsync failure", () => {
+		const attemptPaths = paths();
+		expect(() =>
+			writeFinalSemanticGateReportOnce(
+				attemptPaths.finalReportPath,
+				{ complete: true },
+				{
+					fsyncSync() {
+						throw new Error("simulated fsync failure");
+					},
+				},
+			),
+		).toThrow("simulated fsync failure");
+		expect(existsSync(attemptPaths.finalReportPath)).toBe(false);
+		expect(readdirSync(pathsRoot(attemptPaths)).filter((name) => name.includes(".tmp-"))).toEqual([]);
+	});
 });
+
+function pathsRoot(attemptPaths: DurableSemanticGatePaths): string {
+	return attemptPaths.finalReportPath.slice(0, attemptPaths.finalReportPath.lastIndexOf("\\"));
+}

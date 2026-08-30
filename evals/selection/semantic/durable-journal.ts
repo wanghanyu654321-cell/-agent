@@ -1,4 +1,5 @@
-import { closeSync, existsSync, fsyncSync, openSync, readFileSync, writeSync } from "node:fs";
+import { randomUUID } from "node:crypto";
+import { closeSync, existsSync, fsyncSync, linkSync, openSync, readFileSync, unlinkSync, writeSync } from "node:fs";
 import type { PersistedSemanticInvocationTrace } from "./evaluation.ts";
 
 export interface DurableSemanticGatePaths {
@@ -21,10 +22,32 @@ export interface DurableSemanticTraceJournal {
 	close(): void;
 }
 
-function writeAll(descriptor: number, value: string): void {
+export interface FinalReportPublicationOperations {
+	existsSync: typeof existsSync;
+	openSync: typeof openSync;
+	writeSync: typeof writeSync;
+	fsyncSync: typeof fsyncSync;
+	closeSync: typeof closeSync;
+	linkSync: typeof linkSync;
+	unlinkSync: typeof unlinkSync;
+	randomUUID: typeof randomUUID;
+}
+
+const defaultFinalReportPublicationOperations: FinalReportPublicationOperations = {
+	existsSync,
+	openSync,
+	writeSync,
+	fsyncSync,
+	closeSync,
+	linkSync,
+	unlinkSync,
+	randomUUID,
+};
+
+function writeAll(descriptor: number, value: string, write: typeof writeSync = writeSync): void {
 	const bytes = Buffer.from(value, "utf8");
 	let offset = 0;
-	while (offset < bytes.length) offset += writeSync(descriptor, bytes, offset, bytes.length - offset, null);
+	while (offset < bytes.length) offset += write(descriptor, bytes, offset, bytes.length - offset, null);
 }
 
 function writeNewJson(path: string, value: unknown): void {
@@ -129,8 +152,51 @@ export function readDurableSemanticGateTraces(journalPath: string): {
 	return { traces, incompleteTrailingLine: trailing.length > 0 };
 }
 
-/** Final reports are write-once and may be produced only after a complete journal reconstruction. */
-export function writeFinalSemanticGateReportOnce(path: string, report: unknown): void {
-	if (existsSync(path)) throw new Error(`${path} already exists and will not be overwritten.`);
-	writeNewJson(path, report);
+function publicationError(error: unknown, cleanupError: unknown): AggregateError {
+	const detail = error instanceof Error ? error.message : String(error);
+	return new AggregateError([error, cleanupError], `Final report publication failed: ${detail}`);
+}
+
+/**
+ * Publishes a complete derived report without replacing an existing destination.
+ * A same-directory hard link creates the final entry atomically and fails if it already exists;
+ * this is safer than Node's overwrite-capable rename semantics on Windows.
+ */
+export function writeFinalSemanticGateReportOnce(
+	path: string,
+	report: unknown,
+	overrides: Partial<FinalReportPublicationOperations> = {},
+): void {
+	const operations = { ...defaultFinalReportPublicationOperations, ...overrides };
+	if (operations.existsSync(path)) throw new Error(`${path} already exists and will not be overwritten.`);
+	const temporaryPath = `${path}.tmp-${process.pid}-${operations.randomUUID()}`;
+	let descriptor: number | undefined;
+	try {
+		descriptor = operations.openSync(temporaryPath, "wx");
+		writeAll(descriptor, `${JSON.stringify(report, null, 2)}\n`, operations.writeSync);
+		operations.fsyncSync(descriptor);
+		operations.closeSync(descriptor);
+		descriptor = undefined;
+		if (operations.existsSync(path)) throw new Error(`${path} already exists and will not be overwritten.`);
+		operations.linkSync(temporaryPath, path);
+		operations.unlinkSync(temporaryPath);
+	} catch (error) {
+		let cleanupError: unknown;
+		if (descriptor !== undefined) {
+			try {
+				operations.closeSync(descriptor);
+			} catch (closeError) {
+				cleanupError = closeError;
+			}
+		}
+		if (operations.existsSync(temporaryPath)) {
+			try {
+				operations.unlinkSync(temporaryPath);
+			} catch (unlinkError) {
+				cleanupError ??= unlinkError;
+			}
+		}
+		if (cleanupError !== undefined) throw publicationError(error, cleanupError);
+		throw error;
+	}
 }

@@ -24,10 +24,28 @@ Each journal record includes sequence, case ID, order, candidate count, label-to
 
 Only newline-terminated, valid JSONL records are accepted. A partial final line is ignored and explicitly reported. A malformed completed line, duplicate sequence, or duplicate `caseId + order` fails closed. Existing manifest, journal, or final-report paths prevent a new execution: an authorized retry must use a new identity and must never append to an older attempt.
 
-`reconstructSemanticSelectionEvaluation()` rebuilds metrics from the frozen cases and persisted evidence only. It publishes official metrics and a PASS/FAIL decision only when all expected trace pairs are valid, unique, and present (44 for the frozen population). Any partial, malformed, duplicate, or mismatched trace set returns `infrastructure_blocked` with no metrics and no inferred Gate result.
+`reconstructSemanticSelectionEvaluation()` rebuilds metrics from the frozen cases and persisted evidence only. It publishes official metrics and a PASS/FAIL decision only when all expected trace pairs are valid, unique, and present (44 for the frozen population), and their sorted sequences are exactly contiguous `1..44`. Any partial, malformed, duplicate, sequence-gapped, or mismatched trace set returns `infrastructure_blocked` with no metrics and no inferred Gate result.
+
+## Final report publication
+
+The journal remains the authoritative recoverable evidence; the final report is derived only from a complete deterministic reconstruction. Publication is write-once and uses this same-directory sequence:
+
+```text
+complete journal
+→ deterministic reconstruction
+→ exclusively create final-path.tmp-<pid>-<nonce> in the final report directory
+→ write complete JSON and fsync the temporary file
+→ close the temporary file
+→ atomically create the final path as a same-filesystem hard link
+→ remove the temporary path
+```
+
+The hard-link publication step is deliberately used instead of Node's overwrite-capable `rename` behavior: it atomically creates the final directory entry and fails if an existing final report wins the race. The code never deletes or replaces an existing final report. If writing, fsync, close, or publication fails, it closes descriptors, removes only the temporary file, and propagates the failure. If temporary cleanup also fails, the original failure remains included rather than being hidden.
+
+The implementation does not claim a directory-metadata fsync guarantee on Windows. Its mandatory guarantee is a complete fsynced same-directory temporary file followed by no-overwrite atomic final-path creation. A failed or incomplete final publication does not invalidate the already durable journal.
 
 ## Deterministic evidence
 
-The added deterministic tests prove that persistence completes before reversed invocation, observer failure stops before the next invocation, valid JSONL records survive a partial trailing write, duplicate invocation identities fail closed, existing attempts cannot be appended, and final reports refuse overwrite. A complete persisted trace set reconstructs the same Gate metrics; an incomplete set cannot publish them.
+The added deterministic tests prove that persistence completes before reversed invocation, observer failure stops before the next invocation, valid JSONL records survive a partial trailing write, duplicate invocation identities fail closed, existing attempts cannot be appended, and final reports refuse overwrite. They also prove complete temporary report content exists before final publication, existing final content is preserved, pre-publication fsync failure cleans the temporary file, and sequence gaps or non-one starts fail closed. A complete contiguous persisted trace set reconstructs the same Gate metrics; an incomplete set cannot publish them.
 
 No semantic Gate recovery run is authorized by this checkpoint. `SupportAgentRuntime` integration and a V2.3 release tag remain prohibited pending a separately authorized, fully durable real-model Gate execution.

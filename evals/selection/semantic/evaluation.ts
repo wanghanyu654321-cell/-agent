@@ -396,6 +396,15 @@ export function reconstructSemanticSelectionEvaluation(
 			}
 		}
 	}
+	if (!reason) {
+		const sortedBySequence = [...traceByInvocation.values()].sort((left, right) => left.sequence - right.sequence);
+		for (const [index, trace] of sortedBySequence.entries()) {
+			if (trace.sequence !== index + 1) {
+				reason = `persisted trace sequences are not contiguous from 1; found ${trace.sequence} at position ${index + 1}`;
+				break;
+			}
+		}
+	}
 	if (reason)
 		return {
 			status: "infrastructure_blocked",

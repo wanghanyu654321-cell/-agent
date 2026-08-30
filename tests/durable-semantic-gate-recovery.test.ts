@@ -70,4 +70,28 @@ describe("durable semantic Gate reconstruction", () => {
 		expect(recovery).toMatchObject({ status: "infrastructure_blocked", gatePassed: false });
 		expect(recovery.reason).toContain("duplicate");
 	});
+
+	it("fails closed when complete case coverage contains a sequence gap", async () => {
+		const evaluation = await runSemanticSelectionEvaluation(cases, goldSelector);
+		const recovery = reconstructSemanticSelectionEvaluation(
+			cases,
+			evaluation.traces.map((trace, index) => ({ ...trace, sequence: index === 0 ? 1 : 3 })),
+		);
+
+		expect(recovery).toMatchObject({ status: "infrastructure_blocked", gatePassed: false });
+		expect(recovery.metrics).toBeUndefined();
+		expect(recovery.reason).toContain("contiguous");
+	});
+
+	it("fails closed when contiguous sequences begin after one", async () => {
+		const evaluation = await runSemanticSelectionEvaluation(cases, goldSelector);
+		const recovery = reconstructSemanticSelectionEvaluation(
+			cases,
+			evaluation.traces.map((trace, index) => ({ ...trace, sequence: index + 2 })),
+		);
+
+		expect(recovery).toMatchObject({ status: "infrastructure_blocked", gatePassed: false });
+		expect(recovery.metrics).toBeUndefined();
+		expect(recovery.reason).toContain("contiguous");
+	});
 });
