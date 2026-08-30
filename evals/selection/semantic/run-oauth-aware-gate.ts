@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { GovernedKnowledgeRetrievalService } from "../../../src/knowledge.ts";
 import {
 	createPiSemanticEvidenceSelector,
@@ -23,9 +23,9 @@ import { bootstrapOAuthAwareModelRuntime } from "./oauth-aware-runtime.ts";
 
 export const REAL_MODEL_EVAL_TIMEOUT_MS = 15_000;
 export const OAUTH_AWARE_GATE_REPORT = "oauth-aware-semantic-gate-run.json";
-export const OAUTH_AWARE_GATE_RECOVERY_ATTEMPT_MANIFEST = "oauth-aware-semantic-gate-recovery-attempt-manifest.json";
-export const OAUTH_AWARE_GATE_RECOVERY_TRACES = "oauth-aware-semantic-gate-recovery-traces.jsonl";
-export const OAUTH_AWARE_GATE_RECOVERY_REPORT = "oauth-aware-semantic-gate-recovery-run.json";
+export const OAUTH_AWARE_GATE_RECOVERY_ATTEMPT_MANIFEST = "oauth-aware-semantic-gate-recovery-2-attempt-manifest.json";
+export const OAUTH_AWARE_GATE_RECOVERY_TRACES = "oauth-aware-semantic-gate-recovery-2-traces.jsonl";
+export const OAUTH_AWARE_GATE_RECOVERY_REPORT = "oauth-aware-semantic-gate-recovery-2-run.json";
 const PROVIDER = "openai-codex";
 const MODEL = "gpt-5.6-sol";
 const EXPECTED_PROMPT_VERSION = "v2.3.0";
@@ -43,6 +43,21 @@ function hash(value: unknown): string {
 
 export function hashFrozenPrompt(prompt: string): string {
 	return createHash("sha256").update(prompt).digest("hex");
+}
+
+/** Resolves the executing commit without weakening Git ownership protection outside this repository. */
+export function resolveSourceCommit(
+	repositoryDirectory: string = process.cwd(),
+	execute: typeof execFileSync = execFileSync,
+): string {
+	const exactRepositoryDirectory = resolve(repositoryDirectory);
+	const gitSafeDirectory = exactRepositoryDirectory.replaceAll("\\", "/");
+	return String(
+		execute("git", ["-c", `safe.directory=${gitSafeDirectory}`, "rev-parse", "HEAD"], {
+			cwd: exactRepositoryDirectory,
+			encoding: "utf8",
+		}),
+	).trim();
 }
 
 async function buildFrozenCases(): Promise<{
@@ -100,7 +115,7 @@ async function main(): Promise<void> {
 	if (!bootstrap.authConfigured)
 		throw new Error("Pi OAuth credential resolution is not configured for the frozen provider.");
 	mkdirSync(reports, { recursive: true });
-	const sourceCommit = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+	const sourceCommit = resolveSourceCommit();
 	const journal = createDurableSemanticGateAttempt(
 		{
 			manifestPath: join(reports, OAUTH_AWARE_GATE_RECOVERY_ATTEMPT_MANIFEST),
@@ -109,7 +124,7 @@ async function main(): Promise<void> {
 		},
 		{
 			kind: "V2_3_OAUTH_AWARE_SEMANTIC_GATE_RECOVERY_ATTEMPT",
-			attemptId: "v2.3-oauth-aware-semantic-gate-recovery-1",
+			attemptId: "v2.3-oauth-aware-semantic-gate-recovery-2",
 			createdAt: new Date().toISOString(),
 			status: "running",
 			provider,

@@ -6,6 +6,7 @@ import {
 	OAUTH_AWARE_GATE_RECOVERY_REPORT,
 	OAUTH_AWARE_GATE_RECOVERY_TRACES,
 	REAL_MODEL_EVAL_TIMEOUT_MS,
+	resolveSourceCommit,
 } from "../evals/selection/semantic/run-oauth-aware-gate.ts";
 
 describe("V2.3 OAuth-aware semantic Gate runner", () => {
@@ -21,11 +22,42 @@ describe("V2.3 OAuth-aware semantic Gate runner", () => {
 		expect(hashFrozenPrompt("prompt")).toBe("cf07194ee232eb531e15f690000d19846dea69cf05504782658afcfacb9228a2");
 	});
 
-	it("uses a distinct write-once recovery identity for the future authorized rerun", () => {
+	it("uses a distinct write-once recovery-2 identity for the authorized rerun", () => {
 		expect(OAUTH_AWARE_GATE_RECOVERY_ATTEMPT_MANIFEST).toBe(
-			"oauth-aware-semantic-gate-recovery-attempt-manifest.json",
+			"oauth-aware-semantic-gate-recovery-2-attempt-manifest.json",
 		);
-		expect(OAUTH_AWARE_GATE_RECOVERY_TRACES).toBe("oauth-aware-semantic-gate-recovery-traces.jsonl");
-		expect(OAUTH_AWARE_GATE_RECOVERY_REPORT).toBe("oauth-aware-semantic-gate-recovery-run.json");
+		expect(OAUTH_AWARE_GATE_RECOVERY_TRACES).toBe("oauth-aware-semantic-gate-recovery-2-traces.jsonl");
+		expect(OAUTH_AWARE_GATE_RECOVERY_REPORT).toBe("oauth-aware-semantic-gate-recovery-2-run.json");
+	});
+
+	it("resolves provenance through one repository-scoped safe.directory Git invocation", () => {
+		const calls: unknown[][] = [];
+		const sourceCommit = resolveSourceCommit("D:\\workspace\\customer-support-agent", ((
+			command: string,
+			args: string[],
+			options: unknown,
+		) => {
+			calls.push([command, args, options]);
+			return "  abc123  \n";
+		}) as never);
+
+		expect(sourceCommit).toBe("abc123");
+		expect(calls).toEqual([
+			[
+				"git",
+				["-c", "safe.directory=D:/workspace/customer-support-agent", "rev-parse", "HEAD"],
+				{ cwd: "D:\\workspace\\customer-support-agent", encoding: "utf8" },
+			],
+		]);
+		expect(JSON.stringify(calls)).not.toContain("safe.directory=*");
+		expect(JSON.stringify(calls)).not.toContain("config --global");
+	});
+
+	it("propagates provenance resolution failure before a durable attempt can begin", () => {
+		expect(() =>
+			resolveSourceCommit("D:\\workspace\\customer-support-agent", (() => {
+				throw new Error("Git provenance unavailable");
+			}) as never),
+		).toThrow("Git provenance unavailable");
 	});
 });
