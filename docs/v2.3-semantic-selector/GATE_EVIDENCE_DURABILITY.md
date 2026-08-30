@@ -48,4 +48,8 @@ The implementation does not claim a directory-metadata fsync guarantee on Window
 
 The added deterministic tests prove that persistence completes before reversed invocation, observer failure stops before the next invocation, valid JSONL records survive a partial trailing write, duplicate invocation identities fail closed, existing attempts cannot be appended, and final reports refuse overwrite. They also prove complete temporary report content exists before final publication, existing final content is preserved, pre-publication fsync failure cleans the temporary file, and sequence gaps or non-one starts fail closed. A complete contiguous persisted trace set reconstructs the same Gate metrics; an incomplete set cannot publish them.
 
-No semantic Gate recovery run is authorized by this checkpoint. `SupportAgentRuntime` integration and a V2.3 release tag remain prohibited pending a separately authorized, fully durable real-model Gate execution.
+## Authorized recovery execution record
+
+The one subsequently authorized Recovery Gate process was started at source HEAD `df9cefdd1d10bb8764658798bbdbec766176e5ce` with the frozen `openai-codex/gpt-5.6-sol` environment. It terminated before manifest creation, journal creation, final-report publication, or any semantic model completion: the runner's local `git rev-parse HEAD` provenance command was rejected by Git's worktree ownership protection. The runner reaches that command before `createDurableSemanticGateAttempt()`, so the resulting manifest, JSONL journal, and final report are all absent and the exact real semantic call count is `0`.
+
+This is **SEMANTIC GATE INFRASTRUCTURE BLOCKED**, not a semantic PASS or semantic failure. The process is not retried under this authorization. `SupportAgentRuntime` integration and a V2.3 release tag remain prohibited pending independent review and a separately authorized recovery execution.
