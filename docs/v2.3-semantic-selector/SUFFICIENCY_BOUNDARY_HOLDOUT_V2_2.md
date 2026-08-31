@@ -2,7 +2,7 @@
 
 ## Status
 
-**FROZEN, NOT YET EXPOSED TO A MODEL.** This is an isolated 12-case population designed to distinguish evidence that directly answers “there is not one uniquely mandated option” from evidence that merely omits the exact fact requested.
+**GATE FAILED WITH COMPLETE DURABLE EVIDENCE.** The one authorized 24-call first-exposure run completed with 7 false selections in true-insufficiency cases (2 primary and 5 reversed). The 4 direct non-uniqueness cases passed in both orders. No retry, tuning, runtime integration, tag, or release is authorized; see [SUFFICIENCY_BOUNDARY_V2_2_GATE_REPORT.md](SUFFICIENCY_BOUNDARY_V2_2_GATE_REPORT.md).
 
 ## Inputs
 
