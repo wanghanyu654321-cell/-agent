@@ -59,6 +59,10 @@ The V2.3.1 offline Runtime Integration Design is now implemented only as bounded
 
 **V2.3.1 CONTRACT HARDENING APPROVED. FINAL UNSEEN GATE EVIDENCE PRESERVED. SEMANTIC CAPABILITY NOT VALIDLY ESTABLISHED. BOUNDED KNOWLEDGE ROUTING IS A RUNTIME INTEGRATION CANDIDATE FOR INDEPENDENT REVIEW; SEMANTIC-SELECTOR INTEGRATION, RELEASE, AND MERGE REMAIN NOT AUTHORIZED.**
 
+Portfolio V1 now has an implementation-candidate thin `node:http` adapter around an injected `SupportAgentRuntime`: `GET /healthz` is runtime-free and `POST /api/v1/support/respond` maps the existing bounded request/result contracts without exposing session events, raw Pi messages, audit data, or provider details. It does not bootstrap a provider, authenticate a caller, authorize demo-supplied identity fields, add CORS, or alter Runtime semantics. See [HTTP_API_V1.md](../portfolio/HTTP_API_V1.md).
+
+**PORTFOLIO HTTP ADAPTER = IMPLEMENTATION CANDIDATE.**
+
 The product source of truth is `wanghanyu654321-cell/-agent`. The Pi working tree at source commit `6026a439cc345969f708a820990dd3fe8d88f0b7` remains historical frozen evidence and a read-only reference implementation checkpoint.
 
 ## Included V0 behavior

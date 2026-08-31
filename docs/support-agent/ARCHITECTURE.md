@@ -3,8 +3,9 @@
 This repository is the product source of truth for Customer Support Agent Runtime V0. Pi is an upstream runtime dependency and a read-only engineering reference.
 
 ```text
-SupportRequest
-  -> SupportAgentRuntime
+HTTP Adapter (Portfolio V1, optional/injected)
+  -> SupportRequest
+    -> SupportAgentRuntime
        -> Pi Agent and Pi session APIs
        -> four product-owned business tools
        -> product-owned RetrievalService, session mapping, and audit metadata
@@ -49,3 +50,4 @@ budgets. See [V2_3_1_RUNTIME_ROUTING_IMPLEMENTATION_REPORT.md](../v2.3-semantic-
 Business Skills live in `skills/`. Matching instructions are loaded server-side by Pi's public Skills API; no filesystem or generic mutation tool is exposed to a customer conversation. `RetrievalService` accepts an `AbortSignal`, so timeout cancellation reaches the retrieval implementation. `InMemoryRetrievalService` is the deterministic V0 backend; no vector infrastructure is included.
 
 See [Pi integration](../architecture/PI_INTEGRATION.md) and the [extraction manifest](../extraction/EXTRACTION_MANIFEST.md).
+The Portfolio-facing HTTP boundary is documented in [HTTP_API_V1.md](../portfolio/HTTP_API_V1.md).
