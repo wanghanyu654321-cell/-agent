@@ -18,6 +18,7 @@
 		"eval:selection:semantic": "node evals/selection/semantic/run-real.ts",
 		"eval:selection:semantic:oauth-gate": "node evals/selection/semantic/run-oauth-aware-gate.ts",
 		"eval:selection:semantic:holdout-v2.1": "node evals/selection/semantic/run-holdout-v2-1-gate.ts",
+		"eval:selection:semantic:holdout-v2.2-boundary": "node evals/selection/semantic/run-holdout-v2-2-boundary-gate.ts",
 		"integrity": "node scripts/verify-integrity.mjs",
 		"test": "vitest --run"
 	},
