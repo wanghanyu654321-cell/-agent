@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
 	ensureGateReportDoesNotExist,
@@ -32,7 +33,8 @@ describe("V2.3 OAuth-aware semantic Gate runner", () => {
 
 	it("resolves provenance through one repository-scoped safe.directory Git invocation", () => {
 		const calls: unknown[][] = [];
-		const sourceCommit = resolveSourceCommit("D:\\workspace\\customer-support-agent", ((
+		const repositoryDirectory = resolve(process.cwd(), "workspace", "customer-support-agent");
+		const sourceCommit = resolveSourceCommit(repositoryDirectory, ((
 			command: string,
 			args: string[],
 			options: unknown,
@@ -45,8 +47,8 @@ describe("V2.3 OAuth-aware semantic Gate runner", () => {
 		expect(calls).toEqual([
 			[
 				"git",
-				["-c", "safe.directory=D:/workspace/customer-support-agent", "rev-parse", "HEAD"],
-				{ cwd: "D:\\workspace\\customer-support-agent", encoding: "utf8" },
+				["-c", `safe.directory=${repositoryDirectory.replaceAll("\\", "/")}`, "rev-parse", "HEAD"],
+				{ cwd: repositoryDirectory, encoding: "utf8" },
 			],
 		]);
 		expect(JSON.stringify(calls)).not.toContain("safe.directory=*");
@@ -54,8 +56,9 @@ describe("V2.3 OAuth-aware semantic Gate runner", () => {
 	});
 
 	it("propagates provenance resolution failure before a durable attempt can begin", () => {
+		const repositoryDirectory = resolve(process.cwd(), "workspace", "customer-support-agent");
 		expect(() =>
-			resolveSourceCommit("D:\\workspace\\customer-support-agent", (() => {
+			resolveSourceCommit(repositoryDirectory, (() => {
 				throw new Error("Git provenance unavailable");
 			}) as never),
 		).toThrow("Git provenance unavailable");
