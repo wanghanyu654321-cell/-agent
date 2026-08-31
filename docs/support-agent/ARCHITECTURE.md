@@ -18,6 +18,15 @@ admission, safety precedence, bounded routing, authorization, audit, and output 
 remain inside `SupportAgentRuntime`. See
 [the deterministic demo composition](../portfolio/DEMO_COMPOSITION_V1.md).
 
+## Enterprise identity boundary (Phase 2A candidate)
+
+`createEnterpriseHttpServer()` is separate from the backwards-compatible demo HTTP
+adapter. It resolves an opaque session to user, membership, code-owned role/capabilities,
+and tenant/store scope before projecting that server-derived authority to the unchanged
+Runtime request contract. PostgreSQL identity repositories and explicit SQL migrations
+are available, while Runtime ticket/handoff/conversation/audit persistence remains Phase
+2B work. See [identity and tenancy](../enterprise/IDENTITY_AND_TENANCY.md).
+
 ```text
 HTTP Adapter (Portfolio V1, optional/injected)
   -> SupportRequest

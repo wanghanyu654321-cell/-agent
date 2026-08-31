@@ -2,13 +2,25 @@
 
 ## Portfolio V1
 
-`PORTFOLIO DEMO COMPOSITION = IMPLEMENTATION CANDIDATE`.
+`PORTFOLIO THIN HTTP API = APPROVED`.
+
+`PORTFOLIO DETERMINISTIC DEMO COMPOSITION = APPROVED`.
 
 The candidate is a local deterministic composition around the existing HTTP adapter
 and `SupportAgentRuntime`. It exercises real FAQ, governed knowledge, bounded 0/1/2+
 routing, safety escalation, ticket, and handoff paths with synthetic Portfolio-only
 fixtures and no external model or semantic-selector calls. Production authentication,
 a database platform, and the thin frontend remain unimplemented.
+
+## Enterprise identity and tenancy
+
+`ENTERPRISE IDENTITY & TENANCY FOUNDATION = IMPLEMENTATION CANDIDATE`.
+
+Phase 2A adds a separate, opt-in enterprise HTTP boundary with server-side opaque
+sessions, user/membership/RBAC capability resolution, tenant/store authority, explicit
+PostgreSQL migrations, and PostgreSQL repository implementations. The existing demo
+adapter and `SupportAgentRuntime` remain behaviorally unchanged. Persistent Runtime
+business records are deferred to Phase 2B; production enterprise IAM is not claimed.
 
 ## Status
 
