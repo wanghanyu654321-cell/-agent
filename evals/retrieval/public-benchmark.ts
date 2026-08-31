@@ -127,7 +127,7 @@ export function measurePublicRuntimeObservation(
 				!providerTextExposed,
 		ambiguousKnowledgeRouting: ambiguous,
 		ambiguousEvidenceFailClosed,
-		routedOutcomeAccurate: evidenceTraceAccurate || ambiguousEvidenceFailClosed,
+		routedOutcomeAccurate: ambiguous ? ambiguousEvidenceFailClosed : evidenceTraceAccurate,
 	};
 }
 

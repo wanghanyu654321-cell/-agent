@@ -163,6 +163,74 @@ describe("V2.1 public real-world retrieval benchmark", () => {
 		).toMatchObject({ noEvidenceFailClosed: false, unsupportedBusinessFact: true });
 	});
 
+	it("rejects valid-but-wrong non-ambiguous evidence while accepting an ambiguous fail-closed route", () => {
+		const measure = (
+			publicBenchmarkModule as unknown as {
+				measurePublicRuntimeObservation: (observation: unknown) => {
+					evidenceTraceAccurate: boolean;
+					evidenceVersionTraceAccurate: boolean;
+					ambiguousKnowledgeRouting: boolean;
+					ambiguousEvidenceFailClosed: boolean;
+					routedOutcomeAccurate: boolean;
+				};
+			}
+		).measurePublicRuntimeObservation;
+		const summarize = (
+			publicBenchmarkModule as unknown as {
+				summarizePublicRuntimeMeasurements: (measurements: unknown[]) => { gatePassed: boolean };
+			}
+		).summarizePublicRuntimeMeasurements;
+		const [expectedEntry, wrongEntry] = loadPublicBenchmarkEntries();
+		const expectedReference = {
+			id: expectedEntry.id,
+			version: expectedEntry.version,
+			sourceRef: expectedEntry.sourceRef,
+			kind: expectedEntry.kind,
+		};
+		const wrongReference = {
+			id: wrongEntry.id,
+			version: wrongEntry.version,
+			sourceRef: wrongEntry.sourceRef,
+			kind: wrongEntry.kind,
+		};
+		const answerableCase = {
+			...publicBenchmarkCases[0],
+			expectedAnswerable: true,
+			expectedEvidenceIds: [expectedEntry.id],
+		};
+		const validButWrong = measure({
+			testCase: answerableCase,
+			result: { type: "answer", text: wrongEntry.content, evidence: [wrongReference] },
+			auditEvidence: [wrongReference],
+			corpusEvidence: [
+				{ reference: expectedReference, text: expectedEntry.content },
+				{ reference: wrongReference, text: wrongEntry.content },
+			],
+		});
+		expect(validButWrong).toMatchObject({
+			evidenceTraceAccurate: false,
+			evidenceVersionTraceAccurate: true,
+			ambiguousKnowledgeRouting: false,
+			routedOutcomeAccurate: false,
+		});
+		expect(summarize([validButWrong]).gatePassed).toBe(false);
+
+		const ambiguousFailClosed = measure({
+			testCase: answerableCase,
+			result: { type: "fallback", text: "No governed knowledge evidence found.", evidence: [] },
+			auditEvidence: [],
+			knowledgeRoutingDecision: "AMBIGUOUS_MULTIPLE_CANDIDATES",
+			corpusEvidence: [{ reference: expectedReference, text: expectedEntry.content }],
+			providerText: "UNTRUSTED_PROVIDER_TEXT",
+		});
+		expect(ambiguousFailClosed).toMatchObject({
+			evidenceTraceAccurate: false,
+			ambiguousKnowledgeRouting: true,
+			ambiguousEvidenceFailClosed: true,
+			routedOutcomeAccurate: true,
+		});
+	});
+
 	it("fails the runtime gate when independently measured negative controls are present", () => {
 		const measure = (
 			publicBenchmarkModule as unknown as {

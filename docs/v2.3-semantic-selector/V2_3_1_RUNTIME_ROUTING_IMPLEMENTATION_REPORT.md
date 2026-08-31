@@ -97,8 +97,11 @@ measurements. Its runtime observation now separately records legacy
 `evidenceTraceAccuracy` and the stronger `routedOutcomeAccuracy`: a public
 answerable query with multiple admitted candidates is a correct fail-closed
 runtime outcome only when it returns no evidence, no provider text, and an
-ambiguous routing audit. This makes the deliberate loss of multi-candidate
-answer coverage visible instead of masking it as a retrieval-quality success.
+ambiguous routing audit. A non-ambiguous route must still satisfy the
+historical expected-evidence trace contract; a valid version/source reference
+for the wrong corpus evidence does not count as routed-correct. This makes the
+deliberate loss of multi-candidate answer coverage visible without masking a
+single-candidate evidence-selection error as a retrieval-quality success.
 
 ## Explicitly unchanged
 

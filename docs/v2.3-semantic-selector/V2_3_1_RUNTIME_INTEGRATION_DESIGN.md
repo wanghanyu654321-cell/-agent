@@ -194,11 +194,11 @@ eligible but not authorized. Neither field contains bodies or hidden reasoning.
 
 Required alignment:
 
-| Decision | `semanticSelectorInvoked` | `authorizedEvidenceIds` |
-| --- | --- | --- |
-| `NO_CANDIDATE` | `false` | `[]` |
-| `SINGLE_CANDIDATE` | `false` | exact single ID |
-| `AMBIGUOUS_MULTIPLE_CANDIDATES` | `false` | `[]` |
+| Decision | `semanticSelectorInvoked` | `eligibleEvidenceIds` | `authorizedEvidenceIds` |
+| --- | --- | --- | --- |
+| `NO_CANDIDATE` | `false` | `[]` | `[]` |
+| `SINGLE_CANDIDATE` | `false` | exact single ID | exact single ID only if the final `SupportResult` uses it; otherwise `[]` |
+| `AMBIGUOUS_MULTIPLE_CANDIDATES` | `false` | `[]` | `[]` |
 
 The audit must not duplicate candidate bodies or persist hidden reasoning. When
 evidence is authorized, existing version, sourceRef, kind, tenant/store
