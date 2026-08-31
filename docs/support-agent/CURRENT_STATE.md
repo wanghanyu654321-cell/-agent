@@ -51,6 +51,10 @@ V2.1 remains mechanically **FAILED**, but a subsequent independent boundary inte
 
 V2.2 remains mechanically **FAILED** with 24/24 durable calls, but its `TRUE_INSUFFICIENCY` candidate content contained evaluator-authored absence summaries visible to the selector. The seven historical false selections therefore cannot adjudicate semantic capability: **TRUE_INSUFFICIENCY CONTRACT INVALID FOR CAPABILITY ADJUDICATION**. Its five same-query/same-candidate `SELECT`/`ABSTAIN` reverse-order disagreements remain an independent, confirmed **ORDER ROBUSTNESS FAILURE**. V2.3.0 is **NOT RUNTIME ELIGIBLE** and no further V2.3.0 real-model Gate is authorized. V2.3.1 is **CONTRACT HARDENING IN PROGRESS / OFFLINE ONLY** with prompt `v2.3.1`; Runtime Integration and release remain **NOT AUTHORIZED**. See [V2_2_SEMANTIC_CONTRACT_REVIEW.md](../v2.3-semantic-selector/V2_2_SEMANTIC_CONTRACT_REVIEW.md) and [V2_3_1_SELECTOR_CONTRACT.md](../v2.3-semantic-selector/V2_3_1_SELECTOR_CONTRACT.md).
 
+V2.3.1 now has a separate final fresh unseen capability holdout, frozen for independent human review only: 12 official-first-party, evaluation-only evidence records; 12 primary cases with a 4/4/4 direct/true-insufficiency/hard-related-insufficiency split; and 12 deterministic reverse diagnostics. Candidate evidence contains only source-supported positive propositions; case-level audit metadata, never model-visible content, records the reasoning about a missing requested fact. No real-model call has been made or authorized by this freeze. **REAL-MODEL GATE NOT YET AUTHORIZED; Runtime Integration and release remain NOT AUTHORIZED.** See [FINAL_UNSEEN_HOLDOUT_V2_3_1.md](../v2.3-semantic-selector/FINAL_UNSEEN_HOLDOUT_V2_3_1.md).
+
+**V2.3.1 CONTRACT HARDENING APPROVED. FINAL UNSEEN HOLDOUT FROZEN. REAL-MODEL GATE NOT YET AUTHORIZED. RUNTIME INTEGRATION NOT AUTHORIZED. RELEASE NOT AUTHORIZED.**
+
 The product source of truth is `wanghanyu654321-cell/-agent`. The Pi working tree at source commit `6026a439cc345969f708a820990dd3fe8d88f0b7` remains historical frozen evidence and a read-only reference implementation checkpoint.
 
 ## Included V0 behavior
