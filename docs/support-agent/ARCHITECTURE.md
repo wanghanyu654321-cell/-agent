@@ -4,7 +4,7 @@ This repository is the product source of truth for Customer Support Agent Runtim
 
 ## Portfolio demo composition
 
-The local Portfolio V1 candidate wraps the existing HTTP adapter without changing
+The independently approved deterministic Portfolio V1 demonstration wraps the existing HTTP adapter without changing
 Runtime semantics:
 
 ```text

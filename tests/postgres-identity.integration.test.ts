@@ -1,6 +1,6 @@
 import { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { EnterpriseAuthService } from "../src/enterprise/auth.ts";
+import { EnterpriseAuthService, hashSessionToken } from "../src/enterprise/auth.ts";
 import { seedPortfolioEnterpriseDemoData } from "../src/enterprise/demo-data.ts";
 import { applyEnterpriseIdentityMigrations, PostgresIdentityRepository } from "../src/enterprise/postgres.ts";
 
@@ -24,7 +24,25 @@ describePostgres("PostgreSQL enterprise identity integration", () => {
 		await pool.end();
 	});
 
-	it("persists a hashed auth session and resolves only Alice's tenant/store membership", async () => {
+	it("applies the migration and persists the complete synthetic identity scope", async () => {
+		const tables = await pool.query<{ table_name: string }>(
+			"SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = ANY($1::text[])",
+			[["users", "tenants", "stores", "memberships", "auth_sessions"]],
+		);
+		expect(tables.rows.map((row) => row.table_name).sort()).toEqual([
+			"auth_sessions",
+			"memberships",
+			"stores",
+			"tenants",
+			"users",
+		]);
+		const counts = await pool.query<{ users: string; tenants: string; stores: string; memberships: string }>(
+			"SELECT (SELECT count(*) FROM users) AS users, (SELECT count(*) FROM tenants) AS tenants, (SELECT count(*) FROM stores) AS stores, (SELECT count(*) FROM memberships) AS memberships",
+		);
+		expect(counts.rows[0]).toEqual({ users: "3", tenants: "2", stores: "2", memberships: "3" });
+	});
+
+	it("persists only Alice's session-token hash and resolves only Tenant A / Store A1", async () => {
 		const auth = new EnterpriseAuthService(repository);
 		const login = await auth.login(demo.credentials.alice.email, demo.credentials.alice.password);
 		expect(login).toBeDefined();
@@ -39,6 +57,16 @@ describePostgres("PostgreSQL enterprise identity integration", () => {
 		).toBeUndefined();
 	});
 
+	it("resolves Bob only to Tenant B / Store B1", async () => {
+		const auth = new EnterpriseAuthService(repository);
+		const login = await auth.login(demo.credentials.bob.email, demo.credentials.bob.password);
+		expect(login).toBeDefined();
+		expect(await auth.resolveExecutionContext(login!.token, "postgres-bob-context")).toMatchObject({
+			scope: { tenantId: demo.tenants.b.id, storeId: demo.stores.b1.id },
+		});
+		expect(await repository.findMembership(demo.users.bob.id, demo.tenants.a.id, demo.stores.a1.id)).toBeUndefined();
+	});
+
 	it("enforces the store-tenant relationship in PostgreSQL", async () => {
 		await expect(
 			repository.createMembership({
@@ -50,5 +78,28 @@ describePostgres("PostgreSQL enterprise identity integration", () => {
 				createdAt: new Date("2026-08-31T00:00:00.000Z"),
 			}),
 		).rejects.toThrow();
+	});
+
+	it("deletes a PostgreSQL-backed session on logout", async () => {
+		const auth = new EnterpriseAuthService(repository);
+		const login = await auth.login(demo.credentials.alice.email, demo.credentials.alice.password);
+		expect(login).toBeDefined();
+		await auth.logout(login!.token);
+		expect(await auth.resolveExecutionContext(login!.token, "postgres-after-logout")).toBeUndefined();
+		expect(await repository.findAuthSessionByTokenHash(hashSessionToken(login!.token))).toBeUndefined();
+	});
+
+	it("rejects and removes an expired PostgreSQL-backed session", async () => {
+		const issuedAt = new Date("2026-08-31T00:00:00.000Z");
+		const issuingAuth = new EnterpriseAuthService(repository, { now: () => issuedAt, sessionTtlMs: 60_000 });
+		const login = await issuingAuth.login(demo.credentials.alice.email, demo.credentials.alice.password);
+		expect(login).toBeDefined();
+		const expiredAuth = new EnterpriseAuthService(repository, {
+			now: () => new Date(issuedAt.getTime() + 61_000),
+			sessionTtlMs: 60_000,
+		});
+		expect(await expiredAuth.resolveExecutionContext(login!.token, "postgres-expired")).toBeUndefined();
+		const sessions = await repository.findAuthSessionByUserId(demo.users.alice.id);
+		expect(sessions.some((session) => session.tokenHash === hashSessionToken(login!.token))).toBe(false);
 	});
 });

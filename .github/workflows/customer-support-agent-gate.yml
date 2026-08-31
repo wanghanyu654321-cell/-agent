@@ -14,6 +14,20 @@ on:
 jobs:
   independent-gate:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: customer_support_agent_ci
+          POSTGRES_USER: customer_support_agent_ci
+          POSTGRES_PASSWORD: customer_support_agent_ci_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U customer_support_agent_ci -d customer_support_agent_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Checkout complete repository history and tags
         uses: actions/checkout@v4
@@ -36,6 +50,11 @@ jobs:
 
       - name: Run unit and runtime tests
         run: npm test
+
+      - name: Run mandatory PostgreSQL identity integration gate
+        run: npm run test:postgres-identity
+        env:
+          POSTGRES_TEST_URL: postgresql://customer_support_agent_ci:customer_support_agent_ci_password@localhost:5432/customer_support_agent_ci
 
       - name: Build package
         run: npm run build

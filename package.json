@@ -23,7 +23,7 @@
 		"eval:selection:semantic:final-v2.3.1": "node evals/selection/semantic/run-final-v2-3-1-true-unseen-gate.ts",
 		"eval:selection:semantic:latency-v2.3.1": "node evals/selection/semantic/run-latency-v2-3-1-characterization.ts",
 		"integrity": "node scripts/verify-integrity.mjs",
-		"test:postgres-identity": "vitest --run tests/postgres-identity.integration.test.ts",
+		"test:postgres-identity": "node -e \"if (!process.env.POSTGRES_TEST_URL) { throw new Error('POSTGRES_TEST_URL is required for the PostgreSQL identity gate.') }\" && vitest --run tests/postgres-identity.integration.test.ts",
 		"test": "vitest --run"
 	},
 	"dependencies": {

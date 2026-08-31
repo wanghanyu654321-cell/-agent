@@ -71,4 +71,5 @@ does not act as a general offline assistant or invent business facts.
 
 The composition does not demonstrate production authentication, a database platform,
 CORS, a customer frontend, a real model provider, OAuth, or semantic-selector runtime
-calls. The next phase is a thin frontend using this same local server origin.
+calls. It remains a frozen deterministic demonstration path while enterprise delivery
+closure proceeds separately.

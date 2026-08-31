@@ -55,3 +55,11 @@ implements the same identity repository contract as the deterministic in-memory 
 repository. To run the real integration suite, point `POSTGRES_TEST_URL` at a disposable
 PostgreSQL database, then run `npm run test:postgres-identity`. The suite applies the
 migration and truncates the listed enterprise tables, so it must never target production.
+
+## Phase 2B hard entry condition
+
+Phase 2A does not connect `conversations`, `tickets`, `handoffs`, or `audit_events` to
+`SupportAgentRuntime`. Before conversation-linked records can support any multi-tenant
+persistence claim in Phase 2B, their database constraints must enforce that each linked
+conversation has the same tenant and store ownership as the record. That constraint is
+not implemented or claimed in Phase 2A.
