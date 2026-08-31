@@ -7,6 +7,11 @@ the existing `SupportAgentRuntime`. It does not construct a model, resolve
 provider credentials, or change Runtime policy. The host application injects a
 valid Runtime through the server factory.
 
+For a deterministic local portfolio composition only, run `npm run demo`. That
+entrypoint injects deterministic faux Pi actions into the real Runtime and keeps this
+HTTP adapter unchanged; see [the demo composition](DEMO_COMPOSITION_V1.md). It is not
+a production model-provider or authentication bootstrap.
+
 ```text
 Portfolio frontend
   -> node:http adapter

@@ -1,5 +1,15 @@
 # Customer Support Agent Current State
 
+## Portfolio V1
+
+`PORTFOLIO DEMO COMPOSITION = IMPLEMENTATION CANDIDATE`.
+
+The candidate is a local deterministic composition around the existing HTTP adapter
+and `SupportAgentRuntime`. It exercises real FAQ, governed knowledge, bounded 0/1/2+
+routing, safety escalation, ticket, and handoff paths with synthetic Portfolio-only
+fixtures and no external model or semantic-selector calls. Production authentication,
+a database platform, and the thin frontend remain unimplemented.
+
 ## Status
 
 CUSTOMER SUPPORT AGENT RUNTIME V0

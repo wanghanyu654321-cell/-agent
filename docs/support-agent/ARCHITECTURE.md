@@ -2,6 +2,22 @@
 
 This repository is the product source of truth for Customer Support Agent Runtime V0. Pi is an upstream runtime dependency and a read-only engineering reference.
 
+## Portfolio demo composition
+
+The local Portfolio V1 candidate wraps the existing HTTP adapter without changing
+Runtime semantics:
+
+```text
+Portfolio Demo Composition (deterministic Faux Pi actions)
+  -> Thin HTTP Adapter
+  -> SupportAgentRuntime
+```
+
+The faux layer supplies only deterministic tool-request messages. FAQ/knowledge
+admission, safety precedence, bounded routing, authorization, audit, and output guards
+remain inside `SupportAgentRuntime`. See
+[the deterministic demo composition](../portfolio/DEMO_COMPOSITION_V1.md).
+
 ```text
 HTTP Adapter (Portfolio V1, optional/injected)
   -> SupportRequest

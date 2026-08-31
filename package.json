@@ -9,6 +9,7 @@
 	"scripts": {
 		"build": "tsgo -p tsconfig.json",
 		"check": "biome check --error-on-warnings . && tsgo --noEmit",
+		"demo": "node src/portfolio-demo.ts",
 		"eval:safety": "node evals/safety/runner.ts",
 		"eval:safety:holdout": "node evals/safety/holdout/runner.ts",
 		"eval:safety:robustness": "node evals/safety/robustness/runner.ts",
