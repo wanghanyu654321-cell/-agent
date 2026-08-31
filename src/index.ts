@@ -211,6 +211,16 @@ export interface SupportResult {
 	evidence: GroundingReference[];
 }
 
+type KnowledgeRoutingDecision = "NO_CANDIDATE" | "SINGLE_CANDIDATE" | "AMBIGUOUS_MULTIPLE_CANDIDATES";
+
+interface KnowledgeRoutingAudit {
+	admittedCandidateCount: number;
+	candidateEvidenceIds: string[];
+	decision: KnowledgeRoutingDecision;
+	semanticSelectorInvoked: false;
+	eligibleEvidenceIds: string[];
+}
+
 const DEFAULT_LIMITS: SupportAgentLimits = {
 	maxAgentTurns: 4,
 	maxToolCalls: 6,
@@ -311,6 +321,7 @@ export class SupportAgentRuntime {
 		let verifiedKnowledgeEvidence = false;
 		let groundingQuery: string | undefined;
 		let groundingEvidence: RetrievalEvidence[] = [];
+		let knowledgeRouting: KnowledgeRoutingAudit | undefined;
 		const safetyRisk = detectSafetyRisk(request.text);
 		let safetyEvidence: SafetyEvidence[] = [];
 		let safetyRetrievalQuery: string | undefined;
@@ -349,6 +360,13 @@ export class SupportAgentRuntime {
 					),
 				);
 				verifiedKnowledgeEvidence = groundingEvidence.length > 0;
+				if (!verifiedKnowledgeEvidence) noKnowledgeEvidence = true;
+			},
+			(query, evidence, routing) => {
+				groundingQuery = query;
+				groundingEvidence = evidence;
+				verifiedKnowledgeEvidence = evidence.length === 1;
+				knowledgeRouting = routing;
 				if (!verifiedKnowledgeEvidence) noKnowledgeEvidence = true;
 			},
 			(query, evidence) => {
@@ -482,6 +500,7 @@ export class SupportAgentRuntime {
 			if (reservedHandoff && !this.options.store.findHandoff(request.conversationId)) {
 				this.options.store.releaseHandoffReservation(request.conversationId);
 			}
+			const routingAudit = knowledgeRouting;
 			sessionManager.appendCustomEntry("support-agent.audit", {
 				conversationId: request.conversationId,
 				outcome: result.type,
@@ -508,6 +527,14 @@ export class SupportAgentRuntime {
 							retrievalQuery: groundingQuery,
 							admissible: verifiedKnowledgeEvidence,
 							evidence: groundingReferences(),
+						}
+					: undefined,
+				knowledgeRouting: routingAudit
+					? {
+							...routingAudit,
+							authorizedEvidenceIds: result.evidence
+								.map((reference) => reference.id)
+								.filter((id) => routingAudit.candidateEvidenceIds.includes(id)),
 						}
 					: undefined,
 			});
@@ -682,6 +709,11 @@ export class SupportAgentRuntime {
 		onEscalate: () => void,
 		onNoKnowledgeEvidence: () => void,
 		onKnowledgeEvidence: (query: string, evidence: RetrievalEvidence[]) => void,
+		onOrdinaryKnowledgeRouting: (
+			query: string,
+			evidence: RetrievalEvidence[],
+			routing: KnowledgeRoutingAudit,
+		) => void,
 		onSafetyEvidence: (query: string, evidence: RetrievalEvidence[]) => void,
 		overallSignal: AbortSignal,
 	): AgentTool[] {
@@ -755,17 +787,40 @@ export class SupportAgentRuntime {
 						storeId: request.storeId,
 					});
 					if (signal.aborted) throw new Error("Knowledge search aborted.");
-					if (evidence.length === 0) onNoKnowledgeEvidence();
-					onKnowledgeEvidence(params.query, evidence);
 					onSafetyEvidence(params.query, evidence);
+					const admitted = evidence.filter((item) =>
+						isAdmissibleKnowledgeEvidence(
+							item.knowledge,
+							{ tenantId: request.tenantId, storeId: request.storeId },
+							this.options.allowSyntheticTestKnowledge ?? false,
+						),
+					);
+					const routing: KnowledgeRoutingAudit = {
+						admittedCandidateCount: admitted.length,
+						candidateEvidenceIds: admitted.map((item) => item.id),
+						decision:
+							admitted.length === 0
+								? "NO_CANDIDATE"
+								: admitted.length === 1
+									? "SINGLE_CANDIDATE"
+									: "AMBIGUOUS_MULTIPLE_CANDIDATES",
+						semanticSelectorInvoked: false,
+						eligibleEvidenceIds: admitted.length === 1 ? admitted.map((item) => item.id) : [],
+					};
+					const authorized = admitted.length === 1 ? admitted : [];
+					onOrdinaryKnowledgeRouting(params.query, authorized, routing);
 					return {
 						content: [
 							{
 								type: "text" as const,
-								text: evidence.map((item) => item.text).join("\n") || "No knowledge-base evidence found.",
+								text:
+									authorized[0]?.text ??
+									(admitted.length === 0
+										? "No admissible knowledge-base evidence found."
+										: "Multiple admissible knowledge-base candidates found; no evidence was authorized."),
 							},
 						],
-						details: { evidenceIds: evidence.map((item) => item.id) },
+						details: { evidenceIds: authorized.map((item) => item.id) },
 					};
 				}),
 		};

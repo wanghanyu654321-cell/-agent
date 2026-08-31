@@ -26,16 +26,23 @@ The only customer-facing tools are `search_faq`, `search_knowledge`, `create_tic
 
 The output guard fails closed for missing evidence, unsupported factual support claims, empty or failed provider output, unsafe completion promises, required escalation, invalid tool arguments, and timeout or limit outcomes.
 
-## V2.3.1 offline routing design
+## V2.3.1 bounded runtime evidence routing
 
-The semantic selector remains offline and outside `SupportAgentRuntime`. Its
-latency characterization shows that it is not authorized as a mandatory
-synchronous dependency under the current `10000ms` overall-turn and `2000ms`
-per-tool budgets. The approved design candidate preserves governed routing as:
-zero admitted candidates -> fail closed; one -> existing single-evidence path;
-two or three -> ambiguous with no evidence authorized or exposed to Pi. Safety
-and FAQ pre-model admission remain independent. This is not implemented runtime
-behavior; see [V2_3_1_RUNTIME_INTEGRATION_DESIGN.md](../v2.3-semantic-selector/V2_3_1_RUNTIME_INTEGRATION_DESIGN.md).
+The implemented ordinary-knowledge route in `search_knowledge` performs
+governed admission before constructing a Pi tool result: zero admitted
+candidates fail closed; one uses the existing governed single-evidence path;
+two or more are ambiguous and expose no ordinary evidence body to Pi. Safety
+continues to extract its evidence from raw retrieval output and retains higher
+final-result precedence. FAQ retains its separate pre-model admission path.
+
+The runtime adds non-sensitive `support-agent.audit.knowledgeRouting` metadata
+for ordinary knowledge. It distinguishes a routing-stage eligible candidate
+from evidence actually used by the final `SupportResult`, so an ordinary
+candidate can be eligible but unauthorized when Safety or handoff precedence
+wins. The semantic selector remains offline: its measured
+`openai-codex/gpt-5.6-sol` path is not authorized as a mandatory synchronous
+dependency under the unchanged `10000ms` overall-turn and `2000ms` per-tool
+budgets. See [V2_3_1_RUNTIME_ROUTING_IMPLEMENTATION_REPORT.md](../v2.3-semantic-selector/V2_3_1_RUNTIME_ROUTING_IMPLEMENTATION_REPORT.md).
 
 ## Skills and retrieval
 

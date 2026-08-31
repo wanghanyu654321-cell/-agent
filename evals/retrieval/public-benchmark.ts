@@ -29,6 +29,7 @@ export interface PublicRuntimeObservation {
 	testCase: RetrievalEvalCase;
 	result: RuntimeResult;
 	auditEvidence: GroundingReference[];
+	knowledgeRoutingDecision?: "NO_CANDIDATE" | "SINGLE_CANDIDATE" | "AMBIGUOUS_MULTIPLE_CANDIDATES";
 	corpusEvidence: Array<{ reference: GroundingReference; text: string }>;
 	providerText?: string;
 }
@@ -42,6 +43,9 @@ export interface PublicRuntimeMeasurement {
 	evidenceTraceAccurate: boolean;
 	evidenceVersionTraceAccurate: boolean;
 	noEvidenceFailClosed: boolean;
+	ambiguousKnowledgeRouting: boolean;
+	ambiguousEvidenceFailClosed: boolean;
+	routedOutcomeAccurate: boolean;
 }
 
 export interface PublicRuntimeMetrics {
@@ -49,6 +53,8 @@ export interface PublicRuntimeMetrics {
 	evidenceTraceAccuracy: number;
 	evidenceVersionTraceAccuracy: number;
 	noEvidenceFailClosedRate: number;
+	ambiguousEvidenceFailClosedRate: number;
+	routedOutcomeAccuracy: number;
 }
 
 function hasBusinessFactualContent(text: string): boolean {
@@ -97,13 +103,21 @@ export function measurePublicRuntimeObservation(
 			(observation.result.evidence.length === 0
 				? hasBusinessFactualContent(observation.result.text)
 				: !resultMatchesCorpus || observation.result.text !== expectedGroundedText));
+	const ambiguous = observation.knowledgeRoutingDecision === "AMBIGUOUS_MULTIPLE_CANDIDATES";
+	const ambiguousEvidenceFailClosed =
+		!ambiguous ||
+		(observation.result.type === "fallback" &&
+			observation.result.evidence.length === 0 &&
+			observation.auditEvidence.length === 0 &&
+			!providerTextExposed);
+	const evidenceTraceAccurate = observation.testCase.expectedAnswerable
+		? expectedEvidencePresent && auditMatchesResult
+		: observation.result.evidence.length === 0 && observation.auditEvidence.length === 0;
 	return {
 		caseId: observation.testCase.caseId,
 		expectedAnswerable: observation.testCase.expectedAnswerable,
 		unsupportedBusinessFact,
-		evidenceTraceAccurate: observation.testCase.expectedAnswerable
-			? expectedEvidencePresent && auditMatchesResult
-			: observation.result.evidence.length === 0 && observation.auditEvidence.length === 0,
+		evidenceTraceAccurate,
 		evidenceVersionTraceAccurate: resultMatchesCorpus && auditMatchesResult,
 		noEvidenceFailClosed: observation.testCase.expectedAnswerable
 			? true
@@ -111,6 +125,9 @@ export function measurePublicRuntimeObservation(
 				observation.result.evidence.length === 0 &&
 				observation.auditEvidence.length === 0 &&
 				!providerTextExposed,
+		ambiguousKnowledgeRouting: ambiguous,
+		ambiguousEvidenceFailClosed,
+		routedOutcomeAccurate: evidenceTraceAccurate || ambiguousEvidenceFailClosed,
 	};
 }
 
@@ -123,25 +140,35 @@ export function summarizePublicRuntimeMeasurements(
 			| "evidenceTraceAccurate"
 			| "evidenceVersionTraceAccurate"
 			| "noEvidenceFailClosed"
+			| "ambiguousKnowledgeRouting"
+			| "ambiguousEvidenceFailClosed"
+			| "routedOutcomeAccurate"
 		>
 	>,
 ): { metrics: PublicRuntimeMetrics; gatePassed: boolean } {
 	const rate = <T>(items: T[], predicate: (item: T) => boolean): number =>
 		items.filter(predicate).length / Math.max(1, items.length);
 	const noEvidenceMeasurements = measurements.filter((measurement) => !measurement.expectedAnswerable);
+	const ambiguousMeasurements = measurements.filter((measurement) => measurement.ambiguousKnowledgeRouting);
 	const metrics = {
 		unsupportedBusinessFactRate: rate(measurements, (measurement) => measurement.unsupportedBusinessFact),
 		evidenceTraceAccuracy: rate(measurements, (measurement) => measurement.evidenceTraceAccurate),
 		evidenceVersionTraceAccuracy: rate(measurements, (measurement) => measurement.evidenceVersionTraceAccurate),
 		noEvidenceFailClosedRate: rate(noEvidenceMeasurements, (measurement) => measurement.noEvidenceFailClosed),
+		ambiguousEvidenceFailClosedRate: rate(
+			ambiguousMeasurements,
+			(measurement) => measurement.ambiguousEvidenceFailClosed,
+		),
+		routedOutcomeAccuracy: rate(measurements, (measurement) => measurement.routedOutcomeAccurate),
 	};
 	return {
 		metrics,
 		gatePassed:
 			metrics.unsupportedBusinessFactRate === 0 &&
-			metrics.evidenceTraceAccuracy === 1 &&
 			metrics.evidenceVersionTraceAccuracy === 1 &&
-			metrics.noEvidenceFailClosedRate === 1,
+			metrics.noEvidenceFailClosedRate === 1 &&
+			metrics.ambiguousEvidenceFailClosedRate === 1 &&
+			metrics.routedOutcomeAccuracy === 1,
 	};
 }
 
@@ -439,11 +466,19 @@ export async function runPublicBenchmarkRuntimeEvaluation() {
 				.getEntries()
 				.find(
 					(entry): entry is CustomEntry => entry.type === "custom" && entry.customType === "support-agent.audit",
-				)?.data as { grounding?: { evidence?: GroundingReference[] } } | undefined;
+				)?.data as
+				| {
+						grounding?: { evidence?: GroundingReference[] };
+						knowledgeRouting?: {
+							decision?: "NO_CANDIDATE" | "SINGLE_CANDIDATE" | "AMBIGUOUS_MULTIPLE_CANDIDATES";
+						};
+				  }
+				| undefined;
 			const measurement = measurePublicRuntimeObservation({
 				testCase,
 				result,
 				auditEvidence: audit?.grounding?.evidence ?? [],
+				knowledgeRoutingDecision: audit?.knowledgeRouting?.decision,
 				corpusEvidence,
 				providerText: "UNTRUSTED_PROVIDER_TEXT",
 			});
@@ -453,9 +488,10 @@ export async function runPublicBenchmarkRuntimeEvaluation() {
 				auditRead: Boolean(audit),
 				pass:
 					!measurement.unsupportedBusinessFact &&
-					measurement.evidenceTraceAccurate &&
 					measurement.evidenceVersionTraceAccurate &&
-					measurement.noEvidenceFailClosed,
+					measurement.noEvidenceFailClosed &&
+					measurement.ambiguousEvidenceFailClosed &&
+					measurement.routedOutcomeAccurate,
 			});
 		}
 		const summary = summarizePublicRuntimeMeasurements(results);

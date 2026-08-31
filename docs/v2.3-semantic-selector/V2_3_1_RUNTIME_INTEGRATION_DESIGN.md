@@ -2,8 +2,10 @@
 
 ## 1. Decision summary and authorization state
 
-This is a design checkpoint only. It authorizes neither Runtime Integration nor
-any model call.
+This document began as a design checkpoint. The bounded ordinary-knowledge
+routing described below is now implemented in `src/index.ts` with no semantic
+selector or provider call. It remains a candidate for independent review, not
+a release authorization.
 
 ```text
 V2.3.1 LATENCY CHARACTERIZATION = APPROVED AS DESIGN INPUT
@@ -18,7 +20,8 @@ V1 RUNTIME ROUTING DESIGN =
 
 SYNCHRONOUS SEMANTIC SELECTOR CALLS = 0
 ASYNC SEMANTIC SUBSYSTEM = NOT AUTHORIZED
-RUNTIME IMPLEMENTATION = NOT YET AUTHORIZED
+BOUNDED KNOWLEDGE ROUTING = IMPLEMENTED
+RUNTIME INTEGRATION CANDIDATE = READY FOR INDEPENDENT REVIEW
 FINAL TRUE UNSEEN GATE = INFRASTRUCTURE BLOCKED
 RELEASE = NOT AUTHORIZED
 ```
@@ -57,7 +60,7 @@ Increasing it to 10–15 seconds would conflict with the existing ten-second
 customer-support turn budget, so it is not the selected V1 architecture.
 This design changes none of those values.
 
-## 3. Current source facts and implementation seam
+## 3. Source facts and implemented routing seam
 
 `SupportAgentRuntime.run()` detects a safety risk before constructing its Pi
 Agent, records general grounding callbacks during tool execution, then gives
@@ -65,20 +68,21 @@ safety disposition precedence after the Agent turn and before the ordinary
 grounding result. It returns governed evidence bodies directly rather than a
 model-composed factual answer when `verifiedKnowledgeEvidence` is true.
 
-The future implementation seam is only the normal-knowledge portion of
+The implemented routing seam is the normal-knowledge portion of
 `SupportAgentRuntime.createTools()`:
 
 1. `search_knowledge` invokes `RetrievalService.search()` with tenant/store
    context.
-2. The existing run callback applies status, synthetic-fixture, tenant, and
-   store admission through `isAdmissibleKnowledgeEvidence`.
-3. Today, the unfiltered retrieval evidence is still rendered into the Pi tool
-   result in `search_knowledge` before that callback decides grounded output.
+2. `search_knowledge` applies status, synthetic-fixture, tenant, and store
+   admission through `isAdmissibleKnowledgeEvidence` before rendering a Pi
+   tool result.
+3. Raw evidence still feeds the independent Safety extraction path. Ordinary
+   raw, rejected, and ambiguous evidence bodies do not enter the Pi tool
+   result, persisted Pi session, or ordinary grounded output.
 
-Any future implementation must insert the candidate-count routing decision
-**after governed admission and before both the Pi tool result body and the
-ordinary grounding callback**. It must not be an output guard that runs after
-Pi has already received candidate text.
+The candidate-count routing decision is **after governed admission and before
+both the Pi tool result body and the ordinary grounding callback**. It is not
+an output guard that runs after Pi has already received candidate text.
 
 `GovernedKnowledgeRetrievalService` already preserves lifecycle and scope
 admission and may return a relevance-ranked Top3. That ranking may define the
@@ -166,11 +170,11 @@ AMBIGUOUS_MULTIPLE_CANDIDATES -> SupportResult.evidence = []
 
 No unselected or rejected candidate may appear in `SupportResult.evidence`.
 
-## 8. Minimal future audit contract
+## 8. Implemented audit contract
 
 The existing `support-agent.audit` entry already records ordinary grounding
 query, admissibility, and evidence references, plus observable safety
-decisions. A future implementation may add only non-sensitive routing metadata:
+decisions. The implementation adds only non-sensitive routing metadata:
 
 ```text
 knowledgeRouting:
@@ -178,8 +182,15 @@ knowledgeRouting:
   candidateEvidenceIds: string[]
   decision: NO_CANDIDATE | SINGLE_CANDIDATE | AMBIGUOUS_MULTIPLE_CANDIDATES
   semanticSelectorInvoked: false
+  eligibleEvidenceIds: string[]
   authorizedEvidenceIds: string[]
 ```
+
+`eligibleEvidenceIds` records the one governed candidate that is permitted to
+be used on the single-candidate route. `authorizedEvidenceIds` is derived only
+at `finish()` from the actual `SupportResult.evidence` intersected with the
+candidate IDs. Consequently, a later Safety escalation can leave a candidate
+eligible but not authorized. Neither field contains bodies or hidden reasoning.
 
 Required alignment:
 
@@ -232,7 +243,7 @@ The successor code phase must add tests without weakening existing assertions.
 
 ## 10. Explicitly out of scope
 
-- Runtime integration or a production default change.
+- A semantic-selector runtime integration or a production default change.
 - Any synchronous semantic-selector call.
 - Background queues, workers, event buses, callbacks, or delayed answer mutation.
 - A second Agent, LLM judge, provider pool, speculative parallel selection, or
@@ -241,19 +252,21 @@ The successor code phase must add tests without weakening existing assertions.
   change, prompt change, provider/model change, or timeout tuning.
 - Safety policy, FAQ admission, Pi dependencies, tag, merge, or release.
 
-## 11. Validation required for this design checkpoint
+## 11. Validation required for the implemented bounded route
 
-The design checkpoint is valid only with unchanged runtime source and zero new
-model calls, while `npm test`, `npm run build`, `npm run check`, and
-`npm run integrity` pass. Pi remains pinned to exact `0.84.3`.
+The bounded route is valid only with zero new model calls, while `npm test`,
+`npm run build`, `npm run check`, and `npm run integrity` pass. Pi remains
+pinned to exact `0.84.3`.
 
 CUSTOMER SUPPORT AGENT V2.3.1
 
 OFFLINE RUNTIME INTEGRATION DESIGN COMPLETE
 
+BOUNDED KNOWLEDGE ROUTING IMPLEMENTED
+
 MANDATORY SYNCHRONOUS SEMANTIC SELECTOR NOT AUTHORIZED
 
-RUNTIME IMPLEMENTATION NOT YET AUTHORIZED
+SEMANTIC-SELECTOR RUNTIME INTEGRATION NOT AUTHORIZED
 
 FINAL TRUE UNSEEN GATE REMAINS INFRASTRUCTURE BLOCKED
 

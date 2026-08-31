@@ -46,9 +46,16 @@ describe("V2.1 public real-world retrieval benchmark", () => {
 		expect(retrieval.final.gatePassed).toBe(true);
 		expect(runtime.gatePassed).toBe(true);
 		expect(runtime.metrics.unsupportedBusinessFactRate).toBe(0);
-		expect(runtime.metrics.evidenceTraceAccuracy).toBe(1);
+		expect(runtime.metrics.evidenceTraceAccuracy).toBeLessThan(1);
 		expect(runtime.metrics.evidenceVersionTraceAccuracy).toBe(1);
 		expect(runtime.metrics.noEvidenceFailClosedRate).toBe(1);
+		expect(runtime.metrics.ambiguousEvidenceFailClosedRate).toBe(1);
+		expect(runtime.metrics.routedOutcomeAccuracy).toBe(1);
+		expect(runtime.results.some((result) => result.ambiguousKnowledgeRouting)).toBe(true);
+		expect(
+			runtime.results.filter((result) => result.expectedAnswerable && !result.evidenceTraceAccurate).length,
+		).toBeGreaterThan(0);
+		expect(runtime.results.every((result) => result.routedOutcomeAccurate)).toBe(true);
 		expect(runtime.results.every((result) => result.agentToolEvents.includes("search_knowledge"))).toBe(true);
 		expect(runtime.results.every((result) => result.auditRead)).toBe(true);
 	});
