@@ -254,7 +254,11 @@ function attemptManifest(sourceCommit: string, population: FinalV231Population):
 	};
 }
 
-function assertExistingAttempt(manifest: DurableSemanticGateAttemptManifest, population: FinalV231Population): void {
+export function assertExistingAttempt(
+	manifest: DurableSemanticGateAttemptManifest,
+	population: FinalV231Population,
+	sourceCommit: string,
+): void {
 	if (
 		manifest.kind !== "V2_3_1_FINAL_TRUE_UNSEEN_GATE_ATTEMPT" ||
 		manifest.provider !== FINAL_V231_PROVIDER ||
@@ -264,6 +268,7 @@ function assertExistingAttempt(manifest: DurableSemanticGateAttemptManifest, pop
 		manifest.holdoutEvidenceSha256 !== population.evidenceHash ||
 		manifest.holdoutCasesSha256 !== population.casesHash ||
 		manifest.holdoutFrozenCommit !== FINAL_V231_FROZEN_HOLDOUT_COMMIT ||
+		manifest.evaluationSourceCommit !== sourceCommit ||
 		manifest.evaluationTimeoutMs !== FINAL_V231_TIMEOUT_MS ||
 		manifest.expectedSemanticCalls !== FINAL_V231_EXPECTED_SEMANTIC_CALLS
 	)
@@ -287,7 +292,7 @@ function openAttempt(
 		const manifest = JSON.parse(
 			readFileSync(attemptPaths.manifestPath, "utf8"),
 		) as DurableSemanticGateAttemptManifest;
-		assertExistingAttempt(manifest, population);
+		assertExistingAttempt(manifest, population, sourceCommit);
 		const resumed = resumeDurableSemanticGateAttempt(attemptPaths);
 		if (resumed.traces.some((trace) => ["provider_error", "timeout", "invalid"].includes(trace.outcome)))
 			throw new Error("An infrastructure outcome is already durable; this Gate cannot replay or resume it.");

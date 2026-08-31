@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+import type { DurableSemanticGateAttemptManifest } from "../evals/selection/semantic/durable-journal.ts";
 import type { PersistedSemanticInvocationTrace } from "../evals/selection/semantic/evaluation.ts";
 import {
+	assertExistingAttempt,
 	assertFinalV231FrozenConfiguration,
 	buildFinalV231EvaluationCases,
 	FINAL_V231_EXPECTED_SEMANTIC_CALLS,
@@ -9,6 +11,30 @@ import {
 } from "../evals/selection/semantic/run-final-v2-3-1-true-unseen-gate.ts";
 
 describe("final V2.3.1 true unseen Gate runner", () => {
+	it("accepts a durable resume only from the exact committed evaluation source", () => {
+		const population = buildFinalV231EvaluationCases();
+		const sourceCommit = "c4fce1fc386d5c3f31291470206e8c48cac502d2";
+		const manifest: DurableSemanticGateAttemptManifest = {
+			kind: "V2_3_1_FINAL_TRUE_UNSEEN_GATE_ATTEMPT",
+			attemptId: "test-attempt",
+			createdAt: "2026-08-31T00:00:00.000Z",
+			status: "running",
+			provider: "openai-codex",
+			model: "gpt-5.6-sol",
+			promptVersion: "v2.3.1",
+			promptHash: "fabf617ce6ecd9cc4f91cd68e42c789f1c0be629297e046a3c782fe6bfe29869",
+			holdoutEvidenceSha256: population.evidenceHash,
+			holdoutCasesSha256: population.casesHash,
+			holdoutFrozenCommit: FINAL_V231_FROZEN_HOLDOUT_COMMIT,
+			evaluationSourceCommit: sourceCommit,
+			evaluationTimeoutMs: 15_000,
+			expectedSemanticCalls: FINAL_V231_EXPECTED_SEMANTIC_CALLS,
+		};
+
+		expect(() => assertExistingAttempt(manifest, population, sourceCommit)).not.toThrow();
+		expect(() => assertExistingAttempt(manifest, population, "another-runner-commit")).toThrow();
+	});
+
 	it("builds the exact frozen 12-primary / 24-invocation population without runtime admission", () => {
 		const population = buildFinalV231EvaluationCases();
 
