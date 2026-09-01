@@ -20,6 +20,9 @@ execution. A new conversation is inserted in the authenticated tenant/store. A s
 conversation may continue only for the same customer. A cross-scope conversation returns a
 generic not-found error and a same-scope customer rebind is rejected.
 
+`conversationId` is a globally unique opaque application identifier. A future React client
+must receive or generate it through the application flow; it is not a human-reusable identifier.
+
 ## Database enforcement
 
 `002_support_business_persistence.sql` adds `(id, tenant_id, store_id)` conversation
@@ -50,8 +53,8 @@ through the same durable port even when ordinary caller-driven handoff capabilit
 
 `GET /api/v1/conversations`, `/tickets`, and `/handoffs` require `conversation:read` and
 always use tenant/store from the authenticated session. `GET /api/v1/audit-events` requires
-`audit:read` (admin only). `tenantId` and `storeId` query parameters are rejected; no body
-or query value can widen scope.
+`audit:read` (admin only), enforced in both the HTTP boundary and `EnterpriseSupportService`.
+`tenantId` and `storeId` query parameters are rejected; no body or query value can widen scope.
 
 | Role | Conversations / tickets / handoffs | Audit events |
 | --- | --- | --- |

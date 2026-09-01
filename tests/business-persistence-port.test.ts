@@ -103,6 +103,45 @@ describe("SupportAgentRuntime persistent business port", () => {
 			}),
 		]);
 	});
+
+	it("releases a failed durable safety reservation so the same conversation can retry", async () => {
+		const faux = registerFauxProvider();
+		registrations.push(faux);
+		faux.setResponses([fauxAssistantMessage("请继续操作。"), fauxAssistantMessage("请继续操作。")]);
+		const durable = new FailingOnceHandoffStore();
+		const store = new InMemorySupportStore();
+		const runtime = new SupportAgentRuntime({
+			model: faux.getModel(),
+			streamFn: streamSimple,
+			retrieval: new InMemoryRetrievalService(),
+			store,
+			businessStore: durable,
+			faq: [],
+		});
+		const request = {
+			conversationId: "conversation-safety-retry",
+			tenantId: "tenant-a",
+			storeId: "store-a",
+			customerId: "customer-a",
+			text: "顾客操作中皮肤越来越痒，应该怎么继续？",
+			permissions: ["tickets:write"],
+			mayEscalate: false,
+		};
+
+		const first = await runtime.run(request);
+		expect(first.type).toBe("fallback");
+		expect(durable.handoffCreateCalls).toBe(1);
+		expect(durable.handoffs).toHaveLength(0);
+		expect(store.findHandoff(request.conversationId)).toBeUndefined();
+
+		const second = await runtime.run(request);
+		expect(second.type).toBe("escalation");
+		expect(durable.handoffCreateCalls).toBe(2);
+		expect(durable.handoffs).toEqual([expect.objectContaining({ conversationId: request.conversationId })]);
+		expect(store.findHandoff(request.conversationId)).toEqual(
+			expect.objectContaining({ conversationId: request.conversationId }),
+		);
+	});
 });
 
 class CapturingBusinessStore implements SupportBusinessStore {
@@ -160,5 +199,15 @@ class CapturingBusinessStore implements SupportBusinessStore {
 
 	async recordAudit(input: (typeof this.audits)[number]) {
 		this.audits.push(structuredClone(input));
+	}
+}
+
+class FailingOnceHandoffStore extends CapturingBusinessStore {
+	handoffCreateCalls = 0;
+
+	override async createHandoff(input: Omit<(typeof this.handoffs)[number], "id" | "createdAt">) {
+		this.handoffCreateCalls += 1;
+		if (this.handoffCreateCalls === 1) throw new Error("durable handoff unavailable");
+		return super.createHandoff(input);
 	}
 }

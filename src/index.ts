@@ -641,6 +641,7 @@ export class SupportAgentRuntime {
 				!this.options.store.findHandoff(request.conversationId) &&
 				this.options.store.reserveHandoff(request.conversationId)
 			) {
+				reservedHandoff = true;
 				try {
 					await this.createBusinessHandoff(
 						request,

@@ -5,19 +5,19 @@ import {
 	EnterpriseConversationNotFoundError,
 	EnterpriseSupportService,
 } from "../src/enterprise/business.ts";
-import { createSupportExecutionContext, type Membership } from "../src/enterprise/identity.ts";
+import { createSupportExecutionContext, type Membership, type Role } from "../src/enterprise/identity.ts";
 import type { SupportRuntimePort } from "../src/http-api.ts";
 import type { SupportRequest, SupportResult } from "../src/index.ts";
 
 const createdAt = new Date("2026-09-01T00:00:00.000Z");
 
-function context(tenantId = "tenant-a", storeId = "store-a") {
+function context(tenantId = "tenant-a", storeId = "store-a", role: Role = "agent") {
 	const membership: Membership = {
 		id: `membership-${tenantId}`,
 		userId: "user-a",
 		tenantId,
 		storeId,
-		role: "agent",
+		role,
 		createdAt,
 	};
 	return createSupportExecutionContext(membership, "request-1");
@@ -177,5 +177,20 @@ describe("EnterpriseSupportService", () => {
 				text: "继续处理",
 			}),
 		).rejects.toBeInstanceOf(EnterpriseConversationConflictError);
+	});
+
+	it("rejects audit-event reads without the existing audit:read capability", async () => {
+		const repository = new FakeBusinessRepository();
+		const service = new EnterpriseSupportService({
+			repository,
+			runtime: {
+				async run() {
+					return result();
+				},
+			},
+		});
+
+		await expect(service.listAuditEvents(context())).rejects.toThrow("Audit read permission denied.");
+		await expect(service.listAuditEvents(context("tenant-a", "store-a", "admin"))).resolves.toEqual([]);
 	});
 });

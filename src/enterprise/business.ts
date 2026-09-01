@@ -93,6 +93,7 @@ export class EnterpriseSupportService implements EnterpriseSupportPort {
 	}
 
 	async listAuditEvents(context: SupportExecutionContext): Promise<PersistentAuditEventRecord[]> {
+		if (!context.actor.capabilities.includes("audit:read")) throw new Error("Audit read permission denied.");
 		return this.repository.listAuditEvents(context.scope.tenantId, context.scope.storeId);
 	}
 
