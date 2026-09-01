@@ -31,6 +31,9 @@ describePostgres("enterprise application composition root", () => {
 			(await application.pool.query<{ count: string }>("SELECT count(*)::text AS count FROM memberships")).rows[0]
 				?.count,
 		).toBe("3");
+		expect(
+			(await application.pool.query<{ id: string }>("SELECT id FROM enterprise_schema_migrations ORDER BY id")).rows,
+		).toEqual([{ id: "001_enterprise_identity" }, { id: "002_support_business_persistence" }]);
 	});
 
 	it("is repeat-safe across application startup and shutdown", async () => {
