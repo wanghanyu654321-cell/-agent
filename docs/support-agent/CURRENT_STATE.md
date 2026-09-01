@@ -22,11 +22,21 @@ PostgreSQL migrations, and PostgreSQL repository implementations. Portfolio
 authentication / identity foundation is implemented and approved; production enterprise
 IAM is not claimed.
 
-`PERSISTENT BUSINESS BOUNDARY = IMPLEMENTATION CANDIDATE`.
+`PERSISTENT BUSINESS BOUNDARY = APPROVED`.
 
 Phase 2B adds conversation ownership checks, scoped PostgreSQL ticket/handoff/audit
-persistence, and a bounded optional Runtime business port. React frontend work has not
-started. The candidate requires independent PostgreSQL clean-runner review before approval.
+persistence, and a bounded optional Runtime business port. Its independent PostgreSQL
+clean-runner Gate passed; React frontend work has not started.
+
+`PHASE 2C-A TASK 1 APPLICATION COMPOSITION ROOT = LOCAL IMPLEMENTATION CHECKPOINT`.
+
+The enterprise application composition root now requires `DATABASE_URL`, verifies the
+PostgreSQL connection, applies the approved migrations, repeat-safely seeds the synthetic
+Alice/Susan/Bob portfolio identities, composes the existing repositories, auth service,
+business service, and `SupportAgentRuntime`, then serves the existing enterprise HTTP API.
+`npm run start:enterprise` is the product process entrypoint; shutdown closes the HTTP
+server and PostgreSQL pool. The new real-PostgreSQL composition integration test is pending
+the existing disposable PostgreSQL CI environment; no Phase 2C-A approval is claimed here.
 
 ## Status
 

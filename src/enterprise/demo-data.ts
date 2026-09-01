@@ -32,6 +32,17 @@ export async function seedPortfolioEnterpriseDemoData(
 		a1: { id: "demo-store-a1", tenantId: tenants.a.id, name: "Store A1", createdAt },
 		b1: { id: "demo-store-b1", tenantId: tenants.b.id, name: "Store B1", createdAt },
 	};
+	const existingAlice = await repository.findUserByEmail(credentials.alice.email);
+	const existingSusan = await repository.findUserByEmail(credentials.susan.email);
+	const existingBob = await repository.findUserByEmail(credentials.bob.email);
+	if (existingAlice && existingSusan && existingBob) {
+		return {
+			tenants,
+			stores,
+			users: { alice: existingAlice, susan: existingSusan, bob: existingBob },
+			credentials,
+		};
+	}
 	const users = {
 		alice: {
 			id: "demo-user-alice-agent",
