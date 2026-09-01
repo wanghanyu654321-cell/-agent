@@ -22,7 +22,8 @@ the context: `ticket:create` maps to `tickets:write`; `handoff:create` maps to
 `handoff:write` and `mayEscalate=true`. This adapter preserves the current Runtime's
 existing authorization semantics without changing its API or persistence model.
 
-`customerId`, `conversationId`, and text remain request payload data in Phase 2A. Their
-tenant-scoped persistent ownership is deferred to Phase 2B. The existing demo HTTP
-adapter remains demo-only and backwards compatible; enterprise authentication is exposed
-by the separate `createEnterpriseHttpServer()` boundary.
+`customerId`, `conversationId`, and text remain request payload data, but Phase 2B's
+`EnterpriseSupportService` now resolves their tenant/store-scoped conversation ownership
+before Runtime execution. The existing demo HTTP adapter remains demo-only and backwards
+compatible; enterprise authentication is exposed by the separate
+`createEnterpriseHttpServer()` boundary.

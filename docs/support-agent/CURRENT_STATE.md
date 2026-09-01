@@ -6,21 +6,27 @@
 
 `PORTFOLIO DETERMINISTIC DEMO COMPOSITION = APPROVED`.
 
-The candidate is a local deterministic composition around the existing HTTP adapter
+The approved deterministic demonstration is a local composition around the existing HTTP adapter
 and `SupportAgentRuntime`. It exercises real FAQ, governed knowledge, bounded 0/1/2+
 routing, safety escalation, ticket, and handoff paths with synthetic Portfolio-only
-fixtures and no external model or semantic-selector calls. Production authentication,
-a database platform, and the thin frontend remain unimplemented.
+fixtures and no external model or semantic-selector calls. The deterministic demo remains
+a frozen demonstration path while enterprise delivery closure proceeds separately.
 
 ## Enterprise identity and tenancy
 
-`ENTERPRISE IDENTITY & TENANCY FOUNDATION = IMPLEMENTATION CANDIDATE`.
+`ENTERPRISE IDENTITY & TENANCY FOUNDATION = APPROVED`.
 
 Phase 2A adds a separate, opt-in enterprise HTTP boundary with server-side opaque
 sessions, user/membership/RBAC capability resolution, tenant/store authority, explicit
-PostgreSQL migrations, and PostgreSQL repository implementations. The existing demo
-adapter and `SupportAgentRuntime` remain behaviorally unchanged. Persistent Runtime
-business records are deferred to Phase 2B; production enterprise IAM is not claimed.
+PostgreSQL migrations, and PostgreSQL repository implementations. Portfolio
+authentication / identity foundation is implemented and approved; production enterprise
+IAM is not claimed.
+
+`PERSISTENT BUSINESS BOUNDARY = IMPLEMENTATION CANDIDATE`.
+
+Phase 2B adds conversation ownership checks, scoped PostgreSQL ticket/handoff/audit
+persistence, and a bounded optional Runtime business port. React frontend work has not
+started. The candidate requires independent PostgreSQL clean-runner review before approval.
 
 ## Status
 

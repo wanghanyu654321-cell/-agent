@@ -1,16 +1,23 @@
 import { randomUUID } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { SupportRuntimePort } from "../http-api.ts";
-import type { SupportRequest, SupportResult } from "../index.ts";
+import type { SupportResult } from "../index.ts";
 import type { EnterpriseAuthService } from "./auth.ts";
-import type { Capability, SupportExecutionContext } from "./identity.ts";
+import {
+	EnterpriseConversationConflictError,
+	EnterpriseConversationNotFoundError,
+	type EnterpriseSupportPort,
+	runtimeRequest,
+} from "./business.ts";
+import type { SupportExecutionContext } from "./identity.ts";
 
 const BODY_LIMIT_BYTES = 64 * 1024;
 const SESSION_COOKIE = "support_session";
 
 export interface EnterpriseHttpServerOptions {
 	auth: EnterpriseAuthService;
-	runtime: SupportRuntimePort;
+	runtime?: SupportRuntimePort;
+	supportService?: EnterpriseSupportPort;
 	secureCookies?: boolean;
 }
 
@@ -25,7 +32,8 @@ async function handleRequest(
 	response: ServerResponse,
 	options: EnterpriseHttpServerOptions,
 ): Promise<void> {
-	const path = new URL(request.url ?? "/", "http://localhost").pathname;
+	const url = new URL(request.url ?? "/", "http://localhost");
+	const path = url.pathname;
 	try {
 		if (path === "/healthz")
 			return request.method === "GET"
@@ -39,8 +47,55 @@ async function handleRequest(
 			return request.method === "GET" ? me(request, response, options) : methodNotAllowed(response, "GET");
 		if (path === "/api/v1/support/respond")
 			return request.method === "POST" ? support(request, response, options) : methodNotAllowed(response, "POST");
+		if (path === "/api/v1/conversations")
+			return request.method === "GET"
+				? readBusiness(
+						request,
+						response,
+						options,
+						url,
+						"conversation:read",
+						(context) => options.supportService?.listConversations(context) ?? Promise.resolve([]),
+					)
+				: methodNotAllowed(response, "GET");
+		if (path === "/api/v1/tickets")
+			return request.method === "GET"
+				? readBusiness(
+						request,
+						response,
+						options,
+						url,
+						"conversation:read",
+						(context) => options.supportService?.listTickets(context) ?? Promise.resolve([]),
+					)
+				: methodNotAllowed(response, "GET");
+		if (path === "/api/v1/handoffs")
+			return request.method === "GET"
+				? readBusiness(
+						request,
+						response,
+						options,
+						url,
+						"conversation:read",
+						(context) => options.supportService?.listHandoffs(context) ?? Promise.resolve([]),
+					)
+				: methodNotAllowed(response, "GET");
+		if (path === "/api/v1/audit-events")
+			return request.method === "GET"
+				? readBusiness(
+						request,
+						response,
+						options,
+						url,
+						"audit:read",
+						(context) => options.supportService?.listAuditEvents(context) ?? Promise.resolve([]),
+					)
+				: methodNotAllowed(response, "GET");
 		return sendJson(response, 404, { error: "not_found" });
-	} catch {
+	} catch (error) {
+		if (error instanceof EnterpriseConversationNotFoundError) return sendJson(response, 404, { error: "not_found" });
+		if (error instanceof EnterpriseConversationConflictError)
+			return sendJson(response, 409, { error: "conversation_conflict" });
 		return sendJson(response, 500, { error: "internal_error" });
 	}
 }
@@ -92,8 +147,33 @@ async function support(
 	if (!context) return sendJson(response, 401, { error: "unauthenticated" });
 	if (!context.actor.capabilities.includes("agent:invoke")) return sendJson(response, 403, { error: "forbidden" });
 	const body = await readJsonBody(request);
-	const result = await options.runtime.run(legacySupportRequest(body, context));
+	const input = {
+		conversationId: requiredString(body, "conversationId"),
+		customerId: requiredString(body, "customerId"),
+		text: requiredString(body, "text"),
+	};
+	const result = options.supportService
+		? await options.supportService.respond(context, input)
+		: await requireRuntime(options).run(runtimeRequest(input, context));
 	return sendJson(response, 200, publicSupportResult(result));
+}
+
+async function readBusiness(
+	request: IncomingMessage,
+	response: ServerResponse,
+	options: EnterpriseHttpServerOptions,
+	url: URL,
+	requiredCapability: "conversation:read" | "audit:read",
+	list: (context: SupportExecutionContext) => Promise<unknown>,
+): Promise<void> {
+	if (url.searchParams.has("tenantId") || url.searchParams.has("storeId")) {
+		return sendJson(response, 400, { error: "invalid_scope_query" });
+	}
+	const context = await authenticatedContext(request, options.auth);
+	if (!context) return sendJson(response, 401, { error: "unauthenticated" });
+	if (!context.actor.capabilities.includes(requiredCapability)) return sendJson(response, 403, { error: "forbidden" });
+	if (!options.supportService) return sendJson(response, 404, { error: "not_found" });
+	return sendJson(response, 200, await list(context));
 }
 
 async function authenticatedContext(
@@ -103,20 +183,9 @@ async function authenticatedContext(
 	return auth.resolveExecutionContext(readCookie(request, SESSION_COOKIE), randomUUID());
 }
 
-function legacySupportRequest(body: Record<string, unknown>, context: SupportExecutionContext): SupportRequest {
-	const capabilities = new Set<Capability>(context.actor.capabilities);
-	return {
-		conversationId: requiredString(body, "conversationId"),
-		customerId: requiredString(body, "customerId"),
-		text: requiredString(body, "text"),
-		tenantId: context.scope.tenantId,
-		storeId: context.scope.storeId,
-		permissions: [
-			...(capabilities.has("ticket:create") ? ["tickets:write"] : []),
-			...(capabilities.has("handoff:create") ? ["handoff:write"] : []),
-		],
-		mayEscalate: capabilities.has("handoff:create"),
-	};
+function requireRuntime(options: EnterpriseHttpServerOptions): SupportRuntimePort {
+	if (!options.runtime) throw new Error("Enterprise support runtime is not configured.");
+	return options.runtime;
 }
 
 async function readJsonBody(request: IncomingMessage): Promise<Record<string, unknown>> {

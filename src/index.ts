@@ -77,6 +77,50 @@ export interface SupportTicket {
 	idempotencyKey: string;
 }
 
+export interface PersistentSupportTicket extends SupportTicket {
+	conversationId: string;
+	createdAt: Date;
+}
+
+export interface PersistentSupportHandoff {
+	id: string;
+	tenantId: string;
+	storeId: string;
+	conversationId: string;
+	reason: string;
+	createdAt: Date;
+}
+
+export interface SupportBusinessAuditRecord {
+	tenantId: string;
+	storeId: string;
+	conversationId: string;
+	eventType: "support-agent.audit";
+	payload: Record<string, unknown>;
+}
+
+/**
+ * Optional durable business-effects port. Pi session recovery intentionally remains
+ * in InMemorySupportStore/SessionManager; this port is only for product records.
+ */
+export interface SupportBusinessStore {
+	findTicket(tenantId: string, idempotencyKey: string): Promise<PersistentSupportTicket | undefined>;
+	createTicket(input: Omit<PersistentSupportTicket, "id" | "createdAt">): Promise<{
+		ticket: PersistentSupportTicket;
+		duplicate: boolean;
+	}>;
+	findHandoff(
+		tenantId: string,
+		storeId: string,
+		conversationId: string,
+	): Promise<PersistentSupportHandoff | undefined>;
+	createHandoff(input: Omit<PersistentSupportHandoff, "id" | "createdAt">): Promise<{
+		handoff: PersistentSupportHandoff;
+		duplicate: boolean;
+	}>;
+	recordAudit(record: SupportBusinessAuditRecord): Promise<void>;
+}
+
 export interface SupportSessionMapping {
 	conversationId: string;
 	tenantId: string;
@@ -195,6 +239,7 @@ export interface SupportAgentRuntimeOptions {
 	streamFn: StreamFn;
 	retrieval: RetrievalService;
 	store: InMemorySupportStore;
+	businessStore?: SupportBusinessStore;
 	faq: FaqEntry[];
 	sessionDirectory?: string;
 	skillsDirectory?: string;
@@ -399,6 +444,9 @@ export class SupportAgentRuntime {
 				}
 				if (toolCall.name === "create_ticket") {
 					const idempotencyKey = (args as Static<typeof ticketSchema>).idempotencyKey;
+					if (await this.options.businessStore?.findTicket(request.tenantId, idempotencyKey)) {
+						return { block: true, terminate: true, reason: "Duplicate ticket action blocked before execution." };
+					}
 					if (!this.options.store.reserveTicket(request.tenantId, idempotencyKey)) {
 						return { block: true, terminate: true, reason: "Duplicate ticket action blocked before execution." };
 					}
@@ -411,6 +459,15 @@ export class SupportAgentRuntime {
 					return { block: true, terminate: true, reason: "Escalation permission denied." };
 				}
 				if (toolCall.name === "handoff_to_human") {
+					if (
+						await this.options.businessStore?.findHandoff(
+							request.tenantId,
+							request.storeId,
+							request.conversationId,
+						)
+					) {
+						return { block: true, terminate: true, reason: "Duplicate human handoff blocked before execution." };
+					}
 					if (!this.options.store.reserveHandoff(request.conversationId)) {
 						return { block: true, terminate: true, reason: "Duplicate human handoff blocked before execution." };
 					}
@@ -481,7 +538,7 @@ export class SupportAgentRuntime {
 				const reference = groundingReference(item);
 				return reference ? [reference] : [];
 			});
-		const finish = (result: SupportResult): SupportResult => {
+		const finish = async (result: SupportResult): Promise<SupportResult> => {
 			if (timedOut) {
 				for (const unsubscribe of unsubscribeEventListeners) unsubscribe();
 				unsubscribeEventListeners.clear();
@@ -501,7 +558,7 @@ export class SupportAgentRuntime {
 				this.options.store.releaseHandoffReservation(request.conversationId);
 			}
 			const routingAudit = knowledgeRouting;
-			sessionManager.appendCustomEntry("support-agent.audit", {
+			const auditPayload: Record<string, unknown> = {
 				conversationId: request.conversationId,
 				outcome: result.type,
 				toolsCalled,
@@ -537,7 +594,8 @@ export class SupportAgentRuntime {
 								.filter((id) => routingAudit.candidateEvidenceIds.includes(id)),
 						}
 					: undefined,
-			});
+			};
+			sessionManager.appendCustomEntry("support-agent.audit", auditPayload);
 			this.options.store.setSession({
 				conversationId: request.conversationId,
 				tenantId: request.tenantId,
@@ -547,6 +605,15 @@ export class SupportAgentRuntime {
 				sessionFile: sessionManager.getSessionFile(),
 				sessionManager,
 			});
+			if (this.options.businessStore) {
+				await this.options.businessStore.recordAudit({
+					tenantId: request.tenantId,
+					storeId: request.storeId,
+					conversationId: request.conversationId,
+					eventType: "support-agent.audit",
+					payload: auditPayload,
+				});
+			}
 			return result;
 		};
 		if (timedOut) {
@@ -574,10 +641,21 @@ export class SupportAgentRuntime {
 				!this.options.store.findHandoff(request.conversationId) &&
 				this.options.store.reserveHandoff(request.conversationId)
 			) {
-				this.options.store.createHandoff(
-					request.conversationId,
-					`qualified_professional_required:${safetyDecision.riskCategory}:${safetyDecision.reason}`,
-				);
+				try {
+					await this.createBusinessHandoff(
+						request,
+						`qualified_professional_required:${safetyDecision.riskCategory}:${safetyDecision.reason}`,
+					);
+				} catch {
+					return finish(
+						fallback(
+							"当前存在需要专业确认的安全风险，请暂停当前操作；人工转交暂未完成，请立即联系合格专业人员。",
+							piSessionId,
+							toolsCalled,
+							sessionEvents,
+						),
+					);
+				}
 			}
 			escalationRequested = true;
 			return finish({
@@ -834,13 +912,7 @@ export class SupportAgentRuntime {
 			execute: async (_id, params: Static<typeof ticketSchema>) =>
 				withToolTimeout(async (signal) => {
 					if (signal.aborted) throw new Error("Ticket creation aborted.");
-					const ticket = this.options.store.createTicket({
-						id: `ticket-${this.options.store.getTickets().length + 1}`,
-						tenantId: request.tenantId,
-						storeId: request.storeId,
-						summary: params.summary,
-						idempotencyKey: params.idempotencyKey,
-					});
+					const ticket = await this.createBusinessTicket(request, params.summary, params.idempotencyKey);
 					return {
 						content: [
 							{
@@ -864,17 +936,77 @@ export class SupportAgentRuntime {
 			execute: async (_id, params: Static<typeof handoffSchema>) =>
 				withToolTimeout(async (signal) => {
 					if (signal.aborted) throw new Error("Human handoff aborted.");
-					this.options.store.createHandoff(request.conversationId, params.reason);
+					const handoff = await this.createBusinessHandoff(request, params.reason);
 					onEscalate();
 					return {
-						content: [{ type: "text" as const, text: "Human handoff created." }],
-						details: { reason: params.reason },
+						content: [
+							{
+								type: "text" as const,
+								text: handoff.duplicate ? "Duplicate human handoff prevented." : "Human handoff created.",
+							},
+						],
+						details: { reason: handoff.handoff.reason, duplicate: handoff.duplicate },
 						terminate: true,
 					};
 				}),
 		};
 
 		return [searchFaq, searchKnowledge, createTicket, handoffToHuman];
+	}
+
+	private async createBusinessTicket(
+		request: SupportRequest,
+		summary: string,
+		idempotencyKey: string,
+	): Promise<{ ticket: SupportTicket; duplicate: boolean }> {
+		if (!this.options.businessStore) {
+			return this.options.store.createTicket({
+				id: `ticket-${this.options.store.getTickets().length + 1}`,
+				tenantId: request.tenantId,
+				storeId: request.storeId,
+				summary,
+				idempotencyKey,
+			});
+		}
+		const persisted = await this.options.businessStore.createTicket({
+			tenantId: request.tenantId,
+			storeId: request.storeId,
+			conversationId: request.conversationId,
+			summary,
+			idempotencyKey,
+		});
+		this.options.store.createTicket(persisted.ticket);
+		return persisted;
+	}
+
+	private async createBusinessHandoff(
+		request: SupportRequest,
+		reason: string,
+	): Promise<{ handoff: PersistentSupportHandoff; duplicate: boolean }> {
+		if (!this.options.businessStore) {
+			this.options.store.createHandoff(request.conversationId, reason);
+			return {
+				handoff: {
+					id: `handoff-${this.options.store.getHandoffs().length}`,
+					tenantId: request.tenantId,
+					storeId: request.storeId,
+					conversationId: request.conversationId,
+					reason,
+					createdAt: new Date(),
+				},
+				duplicate: false,
+			};
+		}
+		const persisted = await this.options.businessStore.createHandoff({
+			tenantId: request.tenantId,
+			storeId: request.storeId,
+			conversationId: request.conversationId,
+			reason,
+		});
+		if (!this.options.store.findHandoff(request.conversationId)) {
+			this.options.store.createHandoff(request.conversationId, persisted.handoff.reason);
+		}
+		return persisted;
 	}
 
 	private validateRequest(request: SupportRequest): void {

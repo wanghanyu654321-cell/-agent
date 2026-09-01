@@ -19,9 +19,10 @@ Roles are code-owned and intentionally non-configurable:
 
 `stores.tenant_id` is a foreign key to `tenants`; a membership has a composite
 foreign key to `(stores.id, stores.tenant_id)`. A membership therefore cannot name a
-store from another tenant. The migration also creates the migration-ready, scoped
-business tables `conversations`, `tickets`, `handoffs`, and `audit_events`; Phase 2A
-does not connect `SupportAgentRuntime` persistence to them.
+store from another tenant. The immutable Phase 2A migration creates the migration-ready,
+scoped business tables. Phase 2B's separate `002_support_business_persistence.sql` adds
+conversation-scope constraints and connects an optional business port; see
+[the persistent business boundary](PERSISTENT_BUSINESS_BOUNDARY.md).
 
 ## Authentication
 
@@ -56,10 +57,9 @@ repository. To run the real integration suite, point `POSTGRES_TEST_URL` at a di
 PostgreSQL database, then run `npm run test:postgres-identity`. The suite applies the
 migration and truncates the listed enterprise tables, so it must never target production.
 
-## Phase 2B hard entry condition
+## Phase 2B boundary
 
-Phase 2A does not connect `conversations`, `tickets`, `handoffs`, or `audit_events` to
-`SupportAgentRuntime`. Before conversation-linked records can support any multi-tenant
-persistence claim in Phase 2B, their database constraints must enforce that each linked
-conversation has the same tenant and store ownership as the record. That constraint is
-not implemented or claimed in Phase 2A.
+Phase 2B is an implementation candidate, not an approval or production IAM claim. Its
+database constraints enforce tenant/store-consistent ownership for conversation-linked
+business records. Future business persistence must preserve those database-level
+ownership guarantees.
