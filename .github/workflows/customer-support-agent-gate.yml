@@ -1,0 +1,104 @@
+name: Customer Support Agent Gate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - feat/v1.2-blind-eval-ci
+      - feat/v2.0-knowledge-grounding
+      - fix/v2.0.1-faq-admission
+      - feat/v2.1-real-knowledge-retrieval
+      - fix/v2.1.1-eval-integrity
+
+jobs:
+  independent-gate:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: customer_support_agent_ci
+          POSTGRES_USER: customer_support_agent_ci
+          POSTGRES_PASSWORD: customer_support_agent_ci_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U customer_support_agent_ci -d customer_support_agent_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout complete repository history and tags
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use supported Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+
+      - name: Verify Node version
+        run: node -e "const [major, minor] = process.versions.node.split('.').map(Number); if (major < 22 || (major === 22 && minor < 19)) process.exit(1); console.log(process.versions.node)"
+
+      - name: Install declared dependencies from lockfile
+        run: npm ci --ignore-scripts
+
+      - name: Verify immutable tags, Pi pins, and architecture boundaries
+        run: node scripts/verify-integrity.mjs
+
+      - name: Run unit and runtime tests
+        run: npm test
+
+      - name: Run mandatory PostgreSQL identity integration gate
+        run: npm run test:postgres-identity
+        env:
+          POSTGRES_TEST_URL: postgresql://customer_support_agent_ci:customer_support_agent_ci_password@localhost:5432/customer_support_agent_ci
+
+      - name: Run mandatory PostgreSQL business integration gate
+        run: npm run test:postgres-business
+        env:
+          POSTGRES_TEST_URL: postgresql://customer_support_agent_ci:customer_support_agent_ci_password@localhost:5432/customer_support_agent_ci
+
+      - name: Build package
+        run: npm run build
+
+      - name: Run format, lint, and type checks
+        run: npm run check
+
+      - name: Run V1 controlled safety evaluation
+        run: npm run eval:safety
+
+      - name: Run V1.1 robustness evaluation
+        run: npm run eval:safety:robustness
+
+      - name: Run V1.2 blind holdout evaluation
+        run: npm run eval:safety:holdout
+
+      - name: Run V2.0 governed knowledge evaluation
+        run: npm run eval:knowledge
+
+      - name: Run V2.1 public sanitized retrieval regression
+        run: npm run eval:retrieval:public
+
+      - name: Run V2.1 public real-world retrieval and V2.1.1 integrity evaluation
+        run: npm run eval:retrieval:public-real
+
+      - name: Upload evaluation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: customer-support-agent-evaluations
+          if-no-files-found: error
+          path: |
+            evals/safety/robustness/reports/latest.json
+            evals/safety/holdout/reports/first-run.json
+            evals/safety/holdout/reports/latest.json
+            evals/knowledge/reports/latest.json
+            evals/knowledge/reports/latest.md
+            evals/retrieval/reports/public-latest.json
+            evals/retrieval/reports/public-latest.md
+            evals/retrieval/reports/first-run.json
+            evals/retrieval/reports/public-real-world-final.json
+            evals/retrieval/reports/public-real-world-v2.1.1-final.json

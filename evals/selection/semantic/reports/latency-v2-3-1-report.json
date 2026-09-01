@@ -1,0 +1,1158 @@
+{
+  "kind": "V2_3_1_LATENCY_CHARACTERIZATION_RUN",
+  "provider": "openai-codex",
+  "model": "gpt-5.6-sol",
+  "promptVersion": "v2.3.1",
+  "promptHash": "fabf617ce6ecd9cc4f91cd68e42c789f1c0be629297e046a3c782fe6bfe29869",
+  "latencyPopulationSha256": "12ecb05c89d7a75a078ae16047e5fbca07635a8720f31705681eb85ee01362c4",
+  "evaluationSourceCommit": "aed4b29179deeb439d28d767bc00ceb3e367274b",
+  "executedAt": "2026-08-31T07:54:07.989Z",
+  "observationTimeoutMs": 30000,
+  "journalPath": "latency-v2-3-1-traces.jsonl",
+  "journalRecordCount": 30,
+  "journalSequenceRange": {
+    "first": 1,
+    "last": 30
+  },
+  "metrics": {
+    "scheduledCalls": 30,
+    "actualCalls": 30,
+    "successfulResponses": 29,
+    "timeouts": 0,
+    "providerErrors": 1,
+    "invalidOutputs": 0,
+    "latency": {
+      "sampleCount": 30,
+      "minMs": 2833,
+      "meanMs": 8436,
+      "p50Ms": 7354,
+      "p75Ms": 8566,
+      "p90Ms": 11471,
+      "p95Ms": 16665,
+      "maxMs": 27779
+    },
+    "perRound": [
+      {
+        "round": 1,
+        "p50Ms": 7354,
+        "maxMs": 16665,
+        "sampleCount": 10
+      },
+      {
+        "round": 2,
+        "p50Ms": 7287,
+        "maxMs": 9893,
+        "sampleCount": 10
+      },
+      {
+        "round": 3,
+        "p50Ms": 7196,
+        "maxMs": 27779,
+        "sampleCount": 10
+      }
+    ],
+    "counterfactualBudgets": [
+      {
+        "budgetMs": 2000,
+        "exceededCount": 30,
+        "exceededRate": 1
+      },
+      {
+        "budgetMs": 3000,
+        "exceededCount": 29,
+        "exceededRate": 0.9666666666666667
+      },
+      {
+        "budgetMs": 4000,
+        "exceededCount": 28,
+        "exceededRate": 0.9333333333333333
+      },
+      {
+        "budgetMs": 5000,
+        "exceededCount": 28,
+        "exceededRate": 0.9333333333333333
+      },
+      {
+        "budgetMs": 6000,
+        "exceededCount": 25,
+        "exceededRate": 0.8333333333333334
+      },
+      {
+        "budgetMs": 8000,
+        "exceededCount": 11,
+        "exceededRate": 0.36666666666666664
+      },
+      {
+        "budgetMs": 10000,
+        "exceededCount": 5,
+        "exceededRate": 0.16666666666666666
+      },
+      {
+        "budgetMs": 15000,
+        "exceededCount": 2,
+        "exceededRate": 0.06666666666666667
+      },
+      {
+        "budgetMs": 20000,
+        "exceededCount": 1,
+        "exceededRate": 0.03333333333333333
+      },
+      {
+        "budgetMs": 30000,
+        "exceededCount": 0,
+        "exceededRate": 0
+      }
+    ]
+  },
+  "traces": [
+    {
+      "sequence": 1,
+      "latencyInputId": "latency-v2.3.1-01",
+      "historicalSourceCaseId": "public-01",
+      "historicalPopulationSource": "RECOVERY_2",
+      "round": 1,
+      "candidateCount": 2,
+      "modelInputBytes": 683,
+      "caseId": "latency-v2.3.1-01-round-1",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "PB-MT-VOUCHER-USE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "PB-MT-EXPIRED-AUTO-REFUND"
+        }
+      ],
+      "expectedEvidenceId": "PB-MT-VOUCHER-USE",
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "PB-MT-VOUCHER-USE",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 7354,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": true
+    },
+    {
+      "sequence": 2,
+      "latencyInputId": "latency-v2.3.1-02",
+      "historicalSourceCaseId": "public-02",
+      "historicalPopulationSource": "RECOVERY_2",
+      "round": 1,
+      "candidateCount": 3,
+      "modelInputBytes": 1012,
+      "caseId": "latency-v2.3.1-02-round-1",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "PB-MT-VOUCHER-USE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "PB-MT-EXPIRED-AUTO-REFUND"
+        },
+        {
+          "label": "C",
+          "evidenceId": "PB-MT-UNCONSUMED-REFUND"
+        }
+      ],
+      "expectedEvidenceId": "PB-MT-VOUCHER-USE",
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "PB-MT-VOUCHER-USE",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 6544,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": true
+    },
+    {
+      "sequence": 3,
+      "latencyInputId": "latency-v2.3.1-03",
+      "historicalSourceCaseId": "public-10",
+      "historicalPopulationSource": "RECOVERY_2",
+      "round": 1,
+      "candidateCount": 3,
+      "modelInputBytes": 1062,
+      "caseId": "latency-v2.3.1-03-round-1",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "PB-MT-CHANGE-REFUND"
+        },
+        {
+          "label": "B",
+          "evidenceId": "PB-MT-MERCHANT-CANNOT-FULFILL"
+        },
+        {
+          "label": "C",
+          "evidenceId": "PB-MT-AFTERSALES-CONTACT"
+        }
+      ],
+      "expectedEvidenceId": "PB-MT-CHANGE-REFUND",
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "PB-MT-CHANGE-REFUND",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 6869,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": true
+    },
+    {
+      "sequence": 4,
+      "latencyInputId": "latency-v2.3.1-04",
+      "historicalSourceCaseId": "public-11",
+      "historicalPopulationSource": "RECOVERY_2",
+      "round": 1,
+      "candidateCount": 3,
+      "modelInputBytes": 1071,
+      "caseId": "latency-v2.3.1-04-round-1",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "PB-MT-MERCHANT-CANNOT-FULFILL"
+        },
+        {
+          "label": "B",
+          "evidenceId": "PB-MT-FULFILLMENT-ALTERNATIVE"
+        },
+        {
+          "label": "C",
+          "evidenceId": "PB-MT-FULFILLMENT-RESERVATION"
+        }
+      ],
+      "expectedEvidenceId": "PB-MT-MERCHANT-CANNOT-FULFILL",
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "PB-MT-MERCHANT-CANNOT-FULFILL",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 5600,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": true
+    },
+    {
+      "sequence": 5,
+      "latencyInputId": "latency-v2.3.1-05",
+      "historicalSourceCaseId": "boundary-v2.2-01",
+      "historicalPopulationSource": "V2_2_BOUNDARY",
+      "round": 1,
+      "candidateCount": 2,
+      "modelInputBytes": 688,
+      "caseId": "latency-v2.3.1-05-round-1",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "H22-MT-FOODSAFETY-AFTERMEAL-CHANNELS"
+        },
+        {
+          "label": "B",
+          "evidenceId": "H22-MT-DISPUTE-BEYOND-AUTHORITY"
+        }
+      ],
+      "expectedEvidenceId": "H22-MT-FOODSAFETY-AFTERMEAL-CHANNELS",
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "H22-MT-FOODSAFETY-AFTERMEAL-CHANNELS",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 7030,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": true
+    },
+    {
+      "sequence": 6,
+      "latencyInputId": "latency-v2.3.1-06",
+      "historicalSourceCaseId": "boundary-v2.2-03",
+      "historicalPopulationSource": "V2_2_BOUNDARY",
+      "round": 1,
+      "candidateCount": 2,
+      "modelInputBytes": 558,
+      "caseId": "latency-v2.3.1-06-round-1",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "H22-MT-DINEIN-ORDERDIVERSION-FEEDBACK-CHANNELS"
+        },
+        {
+          "label": "B",
+          "evidenceId": "H22-MT-DELIVERY-INFO-ACCURACY"
+        }
+      ],
+      "expectedEvidenceId": "H22-MT-DINEIN-ORDERDIVERSION-FEEDBACK-CHANNELS",
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "H22-MT-DINEIN-ORDERDIVERSION-FEEDBACK-CHANNELS",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 7740,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": true
+    },
+    {
+      "sequence": 7,
+      "latencyInputId": "latency-v2.3.1-07",
+      "historicalSourceCaseId": "boundary-v2.2-05",
+      "historicalPopulationSource": "V2_2_BOUNDARY",
+      "round": 1,
+      "candidateCount": 2,
+      "modelInputBytes": 574,
+      "caseId": "latency-v2.3.1-07-round-1",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "H22-MT-INFO-FORCEMAJEURE-DELIST-TIMING"
+        },
+        {
+          "label": "B",
+          "evidenceId": "H22-MT-DELIVERY-APPEAL-EVIDENCE"
+        }
+      ],
+      "expectedEvidenceId": "ABSTAIN",
+      "outcome": "abstained",
+      "selection": "ABSTAIN",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "127ea4c48fc0d5640602f1fc85a1043eb371a5e4ef3a7294166bb47424a86a49",
+      "rawOutputLength": 23,
+      "elapsedMs": 11610,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": true
+    },
+    {
+      "sequence": 8,
+      "latencyInputId": "latency-v2.3.1-08",
+      "historicalSourceCaseId": "boundary-v2.2-07",
+      "historicalPopulationSource": "V2_2_BOUNDARY",
+      "round": 1,
+      "candidateCount": 2,
+      "modelInputBytes": 607,
+      "caseId": "latency-v2.3.1-08-round-1",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "H22-MT-DELIVERY-INFO-ACCURACY"
+        },
+        {
+          "label": "B",
+          "evidenceId": "H22-MT-FOODSAFETY-COMPENSATION-RIGHT"
+        }
+      ],
+      "expectedEvidenceId": "ABSTAIN",
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "H22-MT-DELIVERY-INFO-ACCURACY",
+      "classification": "wrong",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 11471,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": false
+    },
+    {
+      "sequence": 9,
+      "latencyInputId": "latency-v2.3.1-09",
+      "historicalSourceCaseId": "boundary-v2.2-09",
+      "historicalPopulationSource": "V2_2_BOUNDARY",
+      "round": 1,
+      "candidateCount": 2,
+      "modelInputBytes": 604,
+      "caseId": "latency-v2.3.1-09-round-1",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "H22-MT-DELIVERY-APPEAL-EVIDENCE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "H22-MT-FOODSAFETY-AFTERMEAL-CHANNELS"
+        }
+      ],
+      "expectedEvidenceId": "ABSTAIN",
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "H22-MT-DELIVERY-APPEAL-EVIDENCE",
+      "classification": "wrong",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 16665,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": false
+    },
+    {
+      "sequence": 10,
+      "latencyInputId": "latency-v2.3.1-10",
+      "historicalSourceCaseId": "boundary-v2.2-12",
+      "historicalPopulationSource": "V2_2_BOUNDARY",
+      "round": 1,
+      "candidateCount": 2,
+      "modelInputBytes": 601,
+      "caseId": "latency-v2.3.1-10-round-1",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "H22-MT-FOODSAFETY-COMPENSATION-RIGHT"
+        },
+        {
+          "label": "B",
+          "evidenceId": "H22-MT-INFO-FORCEMAJEURE-DELIST-TIMING"
+        }
+      ],
+      "expectedEvidenceId": "ABSTAIN",
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "H22-MT-FOODSAFETY-COMPENSATION-RIGHT",
+      "classification": "wrong",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 10521,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": false
+    },
+    {
+      "sequence": 11,
+      "latencyInputId": "latency-v2.3.1-01",
+      "historicalSourceCaseId": "public-01",
+      "historicalPopulationSource": "RECOVERY_2",
+      "round": 2,
+      "candidateCount": 2,
+      "modelInputBytes": 683,
+      "caseId": "latency-v2.3.1-01-round-2",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "PB-MT-VOUCHER-USE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "PB-MT-EXPIRED-AUTO-REFUND"
+        }
+      ],
+      "expectedEvidenceId": "PB-MT-VOUCHER-USE",
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "PB-MT-VOUCHER-USE",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 6817,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": true
+    },
+    {
+      "sequence": 12,
+      "latencyInputId": "latency-v2.3.1-02",
+      "historicalSourceCaseId": "public-02",
+      "historicalPopulationSource": "RECOVERY_2",
+      "round": 2,
+      "candidateCount": 3,
+      "modelInputBytes": 1012,
+      "caseId": "latency-v2.3.1-02-round-2",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "PB-MT-VOUCHER-USE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "PB-MT-EXPIRED-AUTO-REFUND"
+        },
+        {
+          "label": "C",
+          "evidenceId": "PB-MT-UNCONSUMED-REFUND"
+        }
+      ],
+      "expectedEvidenceId": "PB-MT-VOUCHER-USE",
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "PB-MT-VOUCHER-USE",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 9893,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": true
+    },
+    {
+      "sequence": 13,
+      "latencyInputId": "latency-v2.3.1-03",
+      "historicalSourceCaseId": "public-10",
+      "historicalPopulationSource": "RECOVERY_2",
+      "round": 2,
+      "candidateCount": 3,
+      "modelInputBytes": 1062,
+      "caseId": "latency-v2.3.1-03-round-2",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "PB-MT-CHANGE-REFUND"
+        },
+        {
+          "label": "B",
+          "evidenceId": "PB-MT-MERCHANT-CANNOT-FULFILL"
+        },
+        {
+          "label": "C",
+          "evidenceId": "PB-MT-AFTERSALES-CONTACT"
+        }
+      ],
+      "expectedEvidenceId": "PB-MT-CHANGE-REFUND",
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "PB-MT-CHANGE-REFUND",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 7689,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": true
+    },
+    {
+      "sequence": 14,
+      "latencyInputId": "latency-v2.3.1-04",
+      "historicalSourceCaseId": "public-11",
+      "historicalPopulationSource": "RECOVERY_2",
+      "round": 2,
+      "candidateCount": 3,
+      "modelInputBytes": 1071,
+      "caseId": "latency-v2.3.1-04-round-2",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "PB-MT-MERCHANT-CANNOT-FULFILL"
+        },
+        {
+          "label": "B",
+          "evidenceId": "PB-MT-FULFILLMENT-ALTERNATIVE"
+        },
+        {
+          "label": "C",
+          "evidenceId": "PB-MT-FULFILLMENT-RESERVATION"
+        }
+      ],
+      "expectedEvidenceId": "PB-MT-MERCHANT-CANNOT-FULFILL",
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "PB-MT-MERCHANT-CANNOT-FULFILL",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 6746,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": true
+    },
+    {
+      "sequence": 15,
+      "latencyInputId": "latency-v2.3.1-05",
+      "historicalSourceCaseId": "boundary-v2.2-01",
+      "historicalPopulationSource": "V2_2_BOUNDARY",
+      "round": 2,
+      "candidateCount": 2,
+      "modelInputBytes": 688,
+      "caseId": "latency-v2.3.1-05-round-2",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "H22-MT-FOODSAFETY-AFTERMEAL-CHANNELS"
+        },
+        {
+          "label": "B",
+          "evidenceId": "H22-MT-DISPUTE-BEYOND-AUTHORITY"
+        }
+      ],
+      "expectedEvidenceId": "H22-MT-FOODSAFETY-AFTERMEAL-CHANNELS",
+      "outcome": "provider_error",
+      "selection": "ABSTAIN",
+      "classification": "non_selection",
+      "elapsedMs": 3341,
+      "timeout": false,
+      "providerError": true,
+      "invalid": false,
+      "matchedHistoricalExpectation": false
+    },
+    {
+      "sequence": 16,
+      "latencyInputId": "latency-v2.3.1-06",
+      "historicalSourceCaseId": "boundary-v2.2-03",
+      "historicalPopulationSource": "V2_2_BOUNDARY",
+      "round": 2,
+      "candidateCount": 2,
+      "modelInputBytes": 558,
+      "caseId": "latency-v2.3.1-06-round-2",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "H22-MT-DINEIN-ORDERDIVERSION-FEEDBACK-CHANNELS"
+        },
+        {
+          "label": "B",
+          "evidenceId": "H22-MT-DELIVERY-INFO-ACCURACY"
+        }
+      ],
+      "expectedEvidenceId": "H22-MT-DINEIN-ORDERDIVERSION-FEEDBACK-CHANNELS",
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "H22-MT-DINEIN-ORDERDIVERSION-FEEDBACK-CHANNELS",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 7287,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": true
+    },
+    {
+      "sequence": 17,
+      "latencyInputId": "latency-v2.3.1-07",
+      "historicalSourceCaseId": "boundary-v2.2-05",
+      "historicalPopulationSource": "V2_2_BOUNDARY",
+      "round": 2,
+      "candidateCount": 2,
+      "modelInputBytes": 574,
+      "caseId": "latency-v2.3.1-07-round-2",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "H22-MT-INFO-FORCEMAJEURE-DELIST-TIMING"
+        },
+        {
+          "label": "B",
+          "evidenceId": "H22-MT-DELIVERY-APPEAL-EVIDENCE"
+        }
+      ],
+      "expectedEvidenceId": "ABSTAIN",
+      "outcome": "abstained",
+      "selection": "ABSTAIN",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "127ea4c48fc0d5640602f1fc85a1043eb371a5e4ef3a7294166bb47424a86a49",
+      "rawOutputLength": 23,
+      "elapsedMs": 8290,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": true
+    },
+    {
+      "sequence": 18,
+      "latencyInputId": "latency-v2.3.1-08",
+      "historicalSourceCaseId": "boundary-v2.2-07",
+      "historicalPopulationSource": "V2_2_BOUNDARY",
+      "round": 2,
+      "candidateCount": 2,
+      "modelInputBytes": 607,
+      "caseId": "latency-v2.3.1-08-round-2",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "H22-MT-DELIVERY-INFO-ACCURACY"
+        },
+        {
+          "label": "B",
+          "evidenceId": "H22-MT-FOODSAFETY-COMPENSATION-RIGHT"
+        }
+      ],
+      "expectedEvidenceId": "ABSTAIN",
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "H22-MT-DELIVERY-INFO-ACCURACY",
+      "classification": "wrong",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 7837,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": false
+    },
+    {
+      "sequence": 19,
+      "latencyInputId": "latency-v2.3.1-09",
+      "historicalSourceCaseId": "boundary-v2.2-09",
+      "historicalPopulationSource": "V2_2_BOUNDARY",
+      "round": 2,
+      "candidateCount": 2,
+      "modelInputBytes": 604,
+      "caseId": "latency-v2.3.1-09-round-2",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "H22-MT-DELIVERY-APPEAL-EVIDENCE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "H22-MT-FOODSAFETY-AFTERMEAL-CHANNELS"
+        }
+      ],
+      "expectedEvidenceId": "ABSTAIN",
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "H22-MT-DELIVERY-APPEAL-EVIDENCE",
+      "classification": "wrong",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 8346,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": false
+    },
+    {
+      "sequence": 20,
+      "latencyInputId": "latency-v2.3.1-10",
+      "historicalSourceCaseId": "boundary-v2.2-12",
+      "historicalPopulationSource": "V2_2_BOUNDARY",
+      "round": 2,
+      "candidateCount": 2,
+      "modelInputBytes": 601,
+      "caseId": "latency-v2.3.1-10-round-2",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "H22-MT-FOODSAFETY-COMPENSATION-RIGHT"
+        },
+        {
+          "label": "B",
+          "evidenceId": "H22-MT-INFO-FORCEMAJEURE-DELIST-TIMING"
+        }
+      ],
+      "expectedEvidenceId": "ABSTAIN",
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "H22-MT-FOODSAFETY-COMPENSATION-RIGHT",
+      "classification": "wrong",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 5772,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": false
+    },
+    {
+      "sequence": 21,
+      "latencyInputId": "latency-v2.3.1-01",
+      "historicalSourceCaseId": "public-01",
+      "historicalPopulationSource": "RECOVERY_2",
+      "round": 3,
+      "candidateCount": 2,
+      "modelInputBytes": 683,
+      "caseId": "latency-v2.3.1-01-round-3",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "PB-MT-VOUCHER-USE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "PB-MT-EXPIRED-AUTO-REFUND"
+        }
+      ],
+      "expectedEvidenceId": "PB-MT-VOUCHER-USE",
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "PB-MT-VOUCHER-USE",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 7196,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": true
+    },
+    {
+      "sequence": 22,
+      "latencyInputId": "latency-v2.3.1-02",
+      "historicalSourceCaseId": "public-02",
+      "historicalPopulationSource": "RECOVERY_2",
+      "round": 3,
+      "candidateCount": 3,
+      "modelInputBytes": 1012,
+      "caseId": "latency-v2.3.1-02-round-3",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "PB-MT-VOUCHER-USE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "PB-MT-EXPIRED-AUTO-REFUND"
+        },
+        {
+          "label": "C",
+          "evidenceId": "PB-MT-UNCONSUMED-REFUND"
+        }
+      ],
+      "expectedEvidenceId": "PB-MT-VOUCHER-USE",
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "PB-MT-VOUCHER-USE",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 2833,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": true
+    },
+    {
+      "sequence": 23,
+      "latencyInputId": "latency-v2.3.1-03",
+      "historicalSourceCaseId": "public-10",
+      "historicalPopulationSource": "RECOVERY_2",
+      "round": 3,
+      "candidateCount": 3,
+      "modelInputBytes": 1062,
+      "caseId": "latency-v2.3.1-03-round-3",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "PB-MT-CHANGE-REFUND"
+        },
+        {
+          "label": "B",
+          "evidenceId": "PB-MT-MERCHANT-CANNOT-FULFILL"
+        },
+        {
+          "label": "C",
+          "evidenceId": "PB-MT-AFTERSALES-CONTACT"
+        }
+      ],
+      "expectedEvidenceId": "PB-MT-CHANGE-REFUND",
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "PB-MT-CHANGE-REFUND",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 27779,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": true
+    },
+    {
+      "sequence": 24,
+      "latencyInputId": "latency-v2.3.1-04",
+      "historicalSourceCaseId": "public-11",
+      "historicalPopulationSource": "RECOVERY_2",
+      "round": 3,
+      "candidateCount": 3,
+      "modelInputBytes": 1071,
+      "caseId": "latency-v2.3.1-04-round-3",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "PB-MT-MERCHANT-CANNOT-FULFILL"
+        },
+        {
+          "label": "B",
+          "evidenceId": "PB-MT-FULFILLMENT-ALTERNATIVE"
+        },
+        {
+          "label": "C",
+          "evidenceId": "PB-MT-FULFILLMENT-RESERVATION"
+        }
+      ],
+      "expectedEvidenceId": "PB-MT-MERCHANT-CANNOT-FULFILL",
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "PB-MT-MERCHANT-CANNOT-FULFILL",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 7926,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": true
+    },
+    {
+      "sequence": 25,
+      "latencyInputId": "latency-v2.3.1-05",
+      "historicalSourceCaseId": "boundary-v2.2-01",
+      "historicalPopulationSource": "V2_2_BOUNDARY",
+      "round": 3,
+      "candidateCount": 2,
+      "modelInputBytes": 688,
+      "caseId": "latency-v2.3.1-05-round-3",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "H22-MT-FOODSAFETY-AFTERMEAL-CHANNELS"
+        },
+        {
+          "label": "B",
+          "evidenceId": "H22-MT-DISPUTE-BEYOND-AUTHORITY"
+        }
+      ],
+      "expectedEvidenceId": "H22-MT-FOODSAFETY-AFTERMEAL-CHANNELS",
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "H22-MT-FOODSAFETY-AFTERMEAL-CHANNELS",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 6440,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": true
+    },
+    {
+      "sequence": 26,
+      "latencyInputId": "latency-v2.3.1-06",
+      "historicalSourceCaseId": "boundary-v2.2-03",
+      "historicalPopulationSource": "V2_2_BOUNDARY",
+      "round": 3,
+      "candidateCount": 2,
+      "modelInputBytes": 558,
+      "caseId": "latency-v2.3.1-06-round-3",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "H22-MT-DINEIN-ORDERDIVERSION-FEEDBACK-CHANNELS"
+        },
+        {
+          "label": "B",
+          "evidenceId": "H22-MT-DELIVERY-INFO-ACCURACY"
+        }
+      ],
+      "expectedEvidenceId": "H22-MT-DINEIN-ORDERDIVERSION-FEEDBACK-CHANNELS",
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "H22-MT-DINEIN-ORDERDIVERSION-FEEDBACK-CHANNELS",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 6358,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": true
+    },
+    {
+      "sequence": 27,
+      "latencyInputId": "latency-v2.3.1-07",
+      "historicalSourceCaseId": "boundary-v2.2-05",
+      "historicalPopulationSource": "V2_2_BOUNDARY",
+      "round": 3,
+      "candidateCount": 2,
+      "modelInputBytes": 574,
+      "caseId": "latency-v2.3.1-07-round-3",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "H22-MT-INFO-FORCEMAJEURE-DELIST-TIMING"
+        },
+        {
+          "label": "B",
+          "evidenceId": "H22-MT-DELIVERY-APPEAL-EVIDENCE"
+        }
+      ],
+      "expectedEvidenceId": "ABSTAIN",
+      "outcome": "abstained",
+      "selection": "ABSTAIN",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "127ea4c48fc0d5640602f1fc85a1043eb371a5e4ef3a7294166bb47424a86a49",
+      "rawOutputLength": 23,
+      "elapsedMs": 8566,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": true
+    },
+    {
+      "sequence": 28,
+      "latencyInputId": "latency-v2.3.1-08",
+      "historicalSourceCaseId": "boundary-v2.2-07",
+      "historicalPopulationSource": "V2_2_BOUNDARY",
+      "round": 3,
+      "candidateCount": 2,
+      "modelInputBytes": 607,
+      "caseId": "latency-v2.3.1-08-round-3",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "H22-MT-DELIVERY-INFO-ACCURACY"
+        },
+        {
+          "label": "B",
+          "evidenceId": "H22-MT-FOODSAFETY-COMPENSATION-RIGHT"
+        }
+      ],
+      "expectedEvidenceId": "ABSTAIN",
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "H22-MT-DELIVERY-INFO-ACCURACY",
+      "classification": "wrong",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 5691,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": false
+    },
+    {
+      "sequence": 29,
+      "latencyInputId": "latency-v2.3.1-09",
+      "historicalSourceCaseId": "boundary-v2.2-09",
+      "historicalPopulationSource": "V2_2_BOUNDARY",
+      "round": 3,
+      "candidateCount": 2,
+      "modelInputBytes": 604,
+      "caseId": "latency-v2.3.1-09-round-3",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "H22-MT-DELIVERY-APPEAL-EVIDENCE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "H22-MT-FOODSAFETY-AFTERMEAL-CHANNELS"
+        }
+      ],
+      "expectedEvidenceId": "ABSTAIN",
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "H22-MT-DELIVERY-APPEAL-EVIDENCE",
+      "classification": "wrong",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 8251,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": false
+    },
+    {
+      "sequence": 30,
+      "latencyInputId": "latency-v2.3.1-10",
+      "historicalSourceCaseId": "boundary-v2.2-12",
+      "historicalPopulationSource": "V2_2_BOUNDARY",
+      "round": 3,
+      "candidateCount": 2,
+      "modelInputBytes": 601,
+      "caseId": "latency-v2.3.1-10-round-3",
+      "order": "primary",
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "H22-MT-FOODSAFETY-COMPENSATION-RIGHT"
+        },
+        {
+          "label": "B",
+          "evidenceId": "H22-MT-INFO-FORCEMAJEURE-DELIST-TIMING"
+        }
+      ],
+      "expectedEvidenceId": "ABSTAIN",
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "H22-MT-FOODSAFETY-COMPENSATION-RIGHT",
+      "classification": "wrong",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 8603,
+      "timeout": false,
+      "providerError": false,
+      "invalid": false,
+      "matchedHistoricalExpectation": false
+    }
+  ]
+}

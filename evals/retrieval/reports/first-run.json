@@ -1,0 +1,1000 @@
+{
+  "results": [
+    {
+      "caseId": "public-01",
+      "queryProvenance": "PUBLIC_REAL_CASE",
+      "category": "group-buy voucher usage",
+      "difficulty": "direct",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-VOUCHER-USE"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-02",
+      "queryProvenance": "PUBLIC_REAL_CASE",
+      "category": "group-buy voucher usage",
+      "difficulty": "direct",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-VOUCHER-USE"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-03",
+      "queryProvenance": "PUBLIC_REAL_CASE",
+      "category": "group-buy voucher usage",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-VOUCHER-USE"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-04",
+      "queryProvenance": "PUBLIC_REAL_CASE",
+      "category": "group-buy voucher usage",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-VOUCHER-USE"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-05",
+      "queryProvenance": "PUBLIC_REAL_CASE",
+      "category": "group-buy voucher usage",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-VOUCHER-USE"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-06",
+      "queryProvenance": "PUBLIC_REAL_CASE",
+      "category": "rescheduling / cancellation",
+      "difficulty": "direct",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-CHANGE-REFUND"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-07",
+      "queryProvenance": "PUBLIC_REAL_CASE",
+      "category": "rescheduling / cancellation",
+      "difficulty": "direct",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-CHANGE-REFUND"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-08",
+      "queryProvenance": "PUBLIC_REAL_CASE",
+      "category": "rescheduling / cancellation",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-CHANGE-REFUND"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-09",
+      "queryProvenance": "PUBLIC_REAL_CASE",
+      "category": "rescheduling / cancellation",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-CHANGE-REFUND"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-10",
+      "queryProvenance": "PUBLIC_REAL_CASE",
+      "category": "rescheduling / cancellation",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-CHANGE-REFUND"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-11",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "merchant inability to provide purchased service",
+      "difficulty": "direct",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-MERCHANT-CANNOT-FULFILL"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-12",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "merchant inability to provide purchased service",
+      "difficulty": "direct",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-MERCHANT-CANNOT-FULFILL"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-13",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "merchant inability to provide purchased service",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-MERCHANT-CANNOT-FULFILL"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-14",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "merchant inability to provide purchased service",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-MERCHANT-CANNOT-FULFILL"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-15",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "merchant inability to provide purchased service",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-MERCHANT-CANNOT-FULFILL"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-16",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "customer after-sales flow",
+      "difficulty": "direct",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-AFTERSALES-CONTACT"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-17",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "customer after-sales flow",
+      "difficulty": "direct",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-AFTERSALES-CONTACT"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-18",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "customer after-sales flow",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-AFTERSALES-CONTACT"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-19",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "customer after-sales flow",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-AFTERSALES-CONTACT"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-20",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "customer after-sales flow",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-AFTERSALES-CONTACT"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-21",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "refund processing / original-payment return",
+      "difficulty": "direct",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-REFUND-ORIGINAL-PAYMENT"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-22",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "refund processing / original-payment return",
+      "difficulty": "direct",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-REFUND-ORIGINAL-PAYMENT"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-23",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "refund processing / original-payment return",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-REFUND-ORIGINAL-PAYMENT"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-24",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "refund processing / original-payment return",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-REFUND-ORIGINAL-PAYMENT"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-25",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "refund processing / original-payment return",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-REFUND-ORIGINAL-PAYMENT"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-26",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "refund eligibility",
+      "difficulty": "direct",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-UNCONSUMED-REFUND"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-27",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "refund eligibility",
+      "difficulty": "direct",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-UNCONSUMED-REFUND"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-28",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "refund eligibility",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-UNCONSUMED-REFUND"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-29",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "refund eligibility",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-UNCONSUMED-REFUND"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-30",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "refund eligibility",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-UNCONSUMED-REFUND"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-31",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "unconsumed voucher handling",
+      "difficulty": "direct",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-EXPIRED-AUTO-REFUND"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-32",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "unconsumed voucher handling",
+      "difficulty": "direct",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-EXPIRED-AUTO-REFUND"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-33",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "unconsumed voucher handling",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-EXPIRED-AUTO-REFUND"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-34",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "unconsumed voucher handling",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-EXPIRED-AUTO-REFUND"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-35",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "unconsumed voucher handling",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-EXPIRED-AUTO-REFUND"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-36",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "appointment / reservation handling",
+      "difficulty": "direct",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-FULFILLMENT-RESERVATION"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-37",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "appointment / reservation handling",
+      "difficulty": "direct",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-FULFILLMENT-RESERVATION"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-38",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "appointment / reservation handling",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-FULFILLMENT-RESERVATION"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-39",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "appointment / reservation handling",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-FULFILLMENT-RESERVATION"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-40",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "appointment / reservation handling",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-FULFILLMENT-RESERVATION"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-41",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "category": "merchant fulfillment after reservation",
+      "difficulty": "direct",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-FULFILLMENT-CLOSURE"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-42",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "category": "merchant fulfillment after reservation",
+      "difficulty": "direct",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-FULFILLMENT-CLOSURE"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-43",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "category": "merchant fulfillment after reservation",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-FULFILLMENT-CLOSURE"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-44",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "category": "merchant fulfillment after reservation",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-FULFILLMENT-CLOSURE"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-45",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "category": "merchant fulfillment after reservation",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-FULFILLMENT-CLOSURE"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-46",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "category": "ordinary customer-service escalation",
+      "difficulty": "direct",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-FULFILLMENT-ALTERNATIVE"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-47",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "category": "ordinary customer-service escalation",
+      "difficulty": "direct",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-FULFILLMENT-ALTERNATIVE"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-48",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "category": "ordinary customer-service escalation",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-FULFILLMENT-ALTERNATIVE"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-49",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "category": "ordinary customer-service escalation",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-FULFILLMENT-ALTERNATIVE"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-50",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "category": "ordinary customer-service escalation",
+      "difficulty": "customer-variant",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "PB-MT-FULFILLMENT-ALTERNATIVE"
+      ],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-no-answer-1",
+      "queryProvenance": "PUBLIC_REAL_CASE",
+      "category": "no-answer",
+      "difficulty": "fail-closed",
+      "expectedAnswerable": false,
+      "expectedEvidenceIds": [],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": true,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-no-answer-2",
+      "queryProvenance": "PUBLIC_REAL_CASE",
+      "category": "no-answer",
+      "difficulty": "fail-closed",
+      "expectedAnswerable": false,
+      "expectedEvidenceIds": [],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": true,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-no-answer-3",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "no-answer",
+      "difficulty": "fail-closed",
+      "expectedAnswerable": false,
+      "expectedEvidenceIds": [],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": true,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-no-answer-4",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "no-answer",
+      "difficulty": "fail-closed",
+      "expectedAnswerable": false,
+      "expectedEvidenceIds": [],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": true,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-no-answer-5",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "no-answer",
+      "difficulty": "fail-closed",
+      "expectedAnswerable": false,
+      "expectedEvidenceIds": [],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": true,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-no-answer-6",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "no-answer",
+      "difficulty": "fail-closed",
+      "expectedAnswerable": false,
+      "expectedEvidenceIds": [],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": true,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-no-answer-7",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "category": "no-answer",
+      "difficulty": "fail-closed",
+      "expectedAnswerable": false,
+      "expectedEvidenceIds": [],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": true,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-no-answer-8",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "category": "no-answer",
+      "difficulty": "fail-closed",
+      "expectedAnswerable": false,
+      "expectedEvidenceIds": [],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": true,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-no-answer-9",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "category": "no-answer",
+      "difficulty": "fail-closed",
+      "expectedAnswerable": false,
+      "expectedEvidenceIds": [],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": true,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-no-answer-10",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "category": "no-answer",
+      "difficulty": "fail-closed",
+      "expectedAnswerable": false,
+      "expectedEvidenceIds": [],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": true,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-cross-tenant",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "category": "scope",
+      "difficulty": "scope",
+      "expectedAnswerable": false,
+      "expectedEvidenceIds": [],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": true,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-cross-store",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "category": "scope",
+      "difficulty": "scope",
+      "expectedAnswerable": false,
+      "expectedEvidenceIds": [],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": true,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    }
+  ],
+  "metrics": {
+    "top1HitRate": 0,
+    "recallAt3": 0,
+    "noAnswerCorrectRejectionRate": 1,
+    "wrongEvidenceRate": 0,
+    "crossTenantLeakageRate": 0,
+    "crossStoreLeakageRate": 0,
+    "unauthorizedKnowledgeExposureRate": 0,
+    "queryProvenanceBreakdown": {
+      "HUMAN_AUTHORED": 0.14285714285714285,
+      "PUBLIC_REAL_CASE": 0.16666666666666666,
+      "SYNTHETIC_QUERY": 0.3333333333333333
+    },
+    "categoryBreakdown": {
+      "appointment / reservation handling": 0,
+      "customer after-sales flow": 0,
+      "group-buy voucher usage": 0,
+      "merchant fulfillment after reservation": 0,
+      "merchant inability to provide purchased service": 0,
+      "no-answer": 1,
+      "ordinary customer-service escalation": 0,
+      "refund eligibility": 0,
+      "refund processing / original-payment return": 0,
+      "rescheduling / cancellation": 0,
+      "scope": 1,
+      "unconsumed voucher handling": 0
+    }
+  }
+}

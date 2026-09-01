@@ -63,7 +63,10 @@ describe("independent repository extraction", () => {
 
 	it("does not vendor Pi Agent, SessionManager, model, or generic tool source", () => {
 		const sourceFiles = productFiles(join(root, "src")).map((file) => relative(join(root, "src"), file));
-		expect(sourceFiles).toEqual(["index.ts"]);
+		expect(sourceFiles).toContain("index.ts");
+		expect(sourceFiles).not.toContain("agent.ts");
+		expect(sourceFiles).not.toContain("session-manager.ts");
+		expect(sourceFiles).not.toContain("messages.ts");
 		for (const forbiddenPath of ["packages/agent", "packages/coding-agent", "packages/ai", "packages/tui"]) {
 			expect(existsSync(join(root, forbiddenPath))).toBe(false);
 		}

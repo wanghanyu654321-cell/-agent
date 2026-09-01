@@ -1,0 +1,88 @@
+{
+  "corpusClassification": "SYNTHETIC_FIXTURE",
+  "queryProvenance": "SYNTHETIC_QUERY",
+  "gatePassed": true,
+  "results": [
+    {
+      "caseId": "public-alpha",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "category": "controlled",
+      "difficulty": "direct",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "public-controlled-alpha"
+      ],
+      "actualEvidenceIds": [
+        "public-controlled-alpha"
+      ],
+      "top1Hit": true,
+      "recallAt3Hit": true,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-beta",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "category": "controlled",
+      "difficulty": "direct",
+      "expectedAnswerable": true,
+      "expectedEvidenceIds": [
+        "public-controlled-beta"
+      ],
+      "actualEvidenceIds": [
+        "public-controlled-beta"
+      ],
+      "top1Hit": true,
+      "recallAt3Hit": true,
+      "noAnswerRejected": false,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-no-answer",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "category": "no-answer",
+      "difficulty": "direct",
+      "expectedAnswerable": false,
+      "expectedEvidenceIds": [],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": true,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    },
+    {
+      "caseId": "public-cross-tenant",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "category": "scope",
+      "difficulty": "scope",
+      "expectedAnswerable": false,
+      "expectedEvidenceIds": [],
+      "actualEvidenceIds": [],
+      "top1Hit": false,
+      "recallAt3Hit": false,
+      "noAnswerRejected": true,
+      "wrongEvidence": false,
+      "unauthorizedKnowledgeExposure": false
+    }
+  ],
+  "metrics": {
+    "top1HitRate": 1,
+    "recallAt3": 1,
+    "noAnswerCorrectRejectionRate": 1,
+    "wrongEvidenceRate": 0,
+    "crossTenantLeakageRate": 0,
+    "crossStoreLeakageRate": 0,
+    "unauthorizedKnowledgeExposureRate": 0,
+    "queryProvenanceBreakdown": {
+      "SYNTHETIC_QUERY": 1
+    },
+    "categoryBreakdown": {
+      "controlled": 1,
+      "no-answer": 1,
+      "scope": 1
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "kind": "V2_3_PROVIDER_RESPONSE_ENVELOPE_DIAGNOSTIC",
+  "provider": "openai-codex",
+  "model": "gpt-5.6-sol",
+  "promptVersion": "v2.3.0",
+  "transport": "auto",
+  "mode": "control",
+  "phase": "oauth_aware_completion",
+  "caseId": "control-return-exactly-ok",
+  "candidateCount": 0,
+  "authConfigured": true,
+  "timeoutMs": 15000,
+  "elapsedMs": 2962,
+  "outcome": "assistant_message",
+  "envelope": {
+    "provider": "openai-codex",
+    "model": "gpt-5.6-sol",
+    "stopReason": "stop",
+    "rawStopReason": "completed",
+    "errorMessagePresent": false,
+    "responseIdPresent": true,
+    "contentBlockCount": 1,
+    "contentBlockTypes": [
+      "text"
+    ],
+    "textBlockCount": 1,
+    "totalTextLength": 2,
+    "thinkingBlockCount": 0,
+    "totalThinkingLength": 0,
+    "usage": {
+      "input": 16,
+      "output": 5,
+      "reasoning": 0,
+      "totalTokens": 21
+    },
+    "diagnosticTypes": [],
+    "diagnosticCodes": []
+  }
+}

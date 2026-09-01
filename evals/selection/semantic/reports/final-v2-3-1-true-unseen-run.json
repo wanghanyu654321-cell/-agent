@@ -1,0 +1,540 @@
+{
+  "kind": "V2_3_1_FINAL_TRUE_UNSEEN_GATE_RUN",
+  "provider": "openai-codex",
+  "model": "gpt-5.6-sol",
+  "promptVersion": "v2.3.1",
+  "promptHash": "fabf617ce6ecd9cc4f91cd68e42c789f1c0be629297e046a3c782fe6bfe29869",
+  "holdoutEvidenceSha256": "7a17e6496da4d4e0019781d2f2ec624b660cf445bc5a174b599e5a17be7bf01d",
+  "holdoutCasesSha256": "9e7ada4c9117c575dd265c81223e7b1f229305fd704686f19cee09f30ab9b118",
+  "holdoutFrozenCommit": "001ee12fb2f04c335f75a05f6b54546c89fe5cc9",
+  "evaluationSourceCommit": "780735bf43f049f111467dcaf14c4a3d43733d41",
+  "executedAt": "2026-08-31T04:53:43.254Z",
+  "evaluationTimeoutMs": 15000,
+  "expectedSemanticCalls": 24,
+  "actualSemanticCalls": 20,
+  "journalPath": "final-v2-3-1-true-unseen-traces.jsonl",
+  "journalRecordCount": 20,
+  "journalIncompleteTrailingLine": false,
+  "journalSequenceRange": {
+    "first": 1,
+    "last": 20
+  },
+  "segments": {
+    "clearDirectAnswer": {
+      "primary": {
+        "correct": 4,
+        "wrong": 0,
+        "abstain": 0
+      },
+      "reversed": {
+        "correct": 4,
+        "wrong": 0,
+        "abstain": 0
+      }
+    },
+    "trueInsufficiency": {
+      "primary": {
+        "abstain": 4,
+        "unsupportedSelection": 0
+      },
+      "reversed": {
+        "abstain": 4,
+        "unsupportedSelection": 0
+      }
+    },
+    "hardRelatedInsufficient": {
+      "primary": {
+        "abstain": 2,
+        "unsupportedSelection": 0
+      },
+      "reversed": {
+        "abstain": 1,
+        "unsupportedSelection": 0
+      }
+    }
+  },
+  "latency": {
+    "minMs": 2420,
+    "p50Ms": 3339,
+    "p95Ms": 5035,
+    "maxMs": 15000
+  },
+  "traces": [
+    {
+      "caseId": "final-v2.3.1-01",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HF231-DP-REVIEW-BENEFIT-EXCHANGE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HF231-DP-REVIEW-WRONG-STORE"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "HF231-DP-REVIEW-BENEFIT-EXCHANGE",
+      "expectedEvidenceId": "HF231-DP-REVIEW-BENEFIT-EXCHANGE",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 3364,
+      "sequence": 1
+    },
+    {
+      "caseId": "final-v2.3.1-01",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HF231-DP-REVIEW-WRONG-STORE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HF231-DP-REVIEW-BENEFIT-EXCHANGE"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "B",
+      "mappedEvidenceId": "HF231-DP-REVIEW-BENEFIT-EXCHANGE",
+      "expectedEvidenceId": "HF231-DP-REVIEW-BENEFIT-EXCHANGE",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "53d10566d19552a683542f141514df7031300bdff88fd2cd92bd17060732665c",
+      "rawOutputLength": 17,
+      "elapsedMs": 5035,
+      "sequence": 2
+    },
+    {
+      "caseId": "final-v2.3.1-02",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HF231-DP-REVIEW-WRONG-STORE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HF231-DP-REVIEW-FALSE-APPEAL"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "HF231-DP-REVIEW-WRONG-STORE",
+      "expectedEvidenceId": "HF231-DP-REVIEW-WRONG-STORE",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 3870,
+      "sequence": 3
+    },
+    {
+      "caseId": "final-v2.3.1-02",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HF231-DP-REVIEW-FALSE-APPEAL"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HF231-DP-REVIEW-WRONG-STORE"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "B",
+      "mappedEvidenceId": "HF231-DP-REVIEW-WRONG-STORE",
+      "expectedEvidenceId": "HF231-DP-REVIEW-WRONG-STORE",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "53d10566d19552a683542f141514df7031300bdff88fd2cd92bd17060732665c",
+      "rawOutputLength": 17,
+      "elapsedMs": 2681,
+      "sequence": 4
+    },
+    {
+      "caseId": "final-v2.3.1-03",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HF231-DP-REVIEW-FALSE-APPEAL"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HF231-DP-REVIEW-NINE-POINT-PENALTY"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "HF231-DP-REVIEW-FALSE-APPEAL",
+      "expectedEvidenceId": "HF231-DP-REVIEW-FALSE-APPEAL",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 4648,
+      "sequence": 5
+    },
+    {
+      "caseId": "final-v2.3.1-03",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HF231-DP-REVIEW-NINE-POINT-PENALTY"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HF231-DP-REVIEW-FALSE-APPEAL"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "B",
+      "mappedEvidenceId": "HF231-DP-REVIEW-FALSE-APPEAL",
+      "expectedEvidenceId": "HF231-DP-REVIEW-FALSE-APPEAL",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "53d10566d19552a683542f141514df7031300bdff88fd2cd92bd17060732665c",
+      "rawOutputLength": 17,
+      "elapsedMs": 2724,
+      "sequence": 6
+    },
+    {
+      "caseId": "final-v2.3.1-04",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HF231-DP-REVIEW-NINE-POINT-PENALTY"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HF231-MT-PRICE-APPEAL-DEADLINE"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "HF231-DP-REVIEW-NINE-POINT-PENALTY",
+      "expectedEvidenceId": "HF231-DP-REVIEW-NINE-POINT-PENALTY",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 3638,
+      "sequence": 7
+    },
+    {
+      "caseId": "final-v2.3.1-04",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HF231-MT-PRICE-APPEAL-DEADLINE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HF231-DP-REVIEW-NINE-POINT-PENALTY"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "B",
+      "mappedEvidenceId": "HF231-DP-REVIEW-NINE-POINT-PENALTY",
+      "expectedEvidenceId": "HF231-DP-REVIEW-NINE-POINT-PENALTY",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "53d10566d19552a683542f141514df7031300bdff88fd2cd92bd17060732665c",
+      "rawOutputLength": 17,
+      "elapsedMs": 4083,
+      "sequence": 8
+    },
+    {
+      "caseId": "final-v2.3.1-05",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HF231-MT-PRICE-ACTIVITY-PERIOD"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HF231-MT-PRICE-APPEAL-DEADLINE"
+        }
+      ],
+      "outcome": "abstained",
+      "expectedEvidenceId": "ABSTAIN",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "127ea4c48fc0d5640602f1fc85a1043eb371a5e4ef3a7294166bb47424a86a49",
+      "rawOutputLength": 23,
+      "elapsedMs": 2993,
+      "sequence": 9
+    },
+    {
+      "caseId": "final-v2.3.1-05",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HF231-MT-PRICE-APPEAL-DEADLINE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HF231-MT-PRICE-ACTIVITY-PERIOD"
+        }
+      ],
+      "outcome": "abstained",
+      "expectedEvidenceId": "ABSTAIN",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "127ea4c48fc0d5640602f1fc85a1043eb371a5e4ef3a7294166bb47424a86a49",
+      "rawOutputLength": 23,
+      "elapsedMs": 2510,
+      "sequence": 10
+    },
+    {
+      "caseId": "final-v2.3.1-06",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HF231-MT-PRICE-VOUCHER-CONDITIONS"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HF231-MT-PRICE-ACTIVITY-PERIOD"
+        }
+      ],
+      "outcome": "abstained",
+      "expectedEvidenceId": "ABSTAIN",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "127ea4c48fc0d5640602f1fc85a1043eb371a5e4ef3a7294166bb47424a86a49",
+      "rawOutputLength": 23,
+      "elapsedMs": 3670,
+      "sequence": 11
+    },
+    {
+      "caseId": "final-v2.3.1-06",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HF231-MT-PRICE-ACTIVITY-PERIOD"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HF231-MT-PRICE-VOUCHER-CONDITIONS"
+        }
+      ],
+      "outcome": "abstained",
+      "expectedEvidenceId": "ABSTAIN",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "127ea4c48fc0d5640602f1fc85a1043eb371a5e4ef3a7294166bb47424a86a49",
+      "rawOutputLength": 23,
+      "elapsedMs": 2420,
+      "sequence": 12
+    },
+    {
+      "caseId": "final-v2.3.1-07",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HF231-MT-PRICE-APPEAL-DEADLINE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HF231-MT-PRICE-APPEAL-REVIEW"
+        }
+      ],
+      "outcome": "abstained",
+      "expectedEvidenceId": "ABSTAIN",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "127ea4c48fc0d5640602f1fc85a1043eb371a5e4ef3a7294166bb47424a86a49",
+      "rawOutputLength": 23,
+      "elapsedMs": 2730,
+      "sequence": 13
+    },
+    {
+      "caseId": "final-v2.3.1-07",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HF231-MT-PRICE-APPEAL-REVIEW"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HF231-MT-PRICE-APPEAL-DEADLINE"
+        }
+      ],
+      "outcome": "abstained",
+      "expectedEvidenceId": "ABSTAIN",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "127ea4c48fc0d5640602f1fc85a1043eb371a5e4ef3a7294166bb47424a86a49",
+      "rawOutputLength": 23,
+      "elapsedMs": 3339,
+      "sequence": 14
+    },
+    {
+      "caseId": "final-v2.3.1-08",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HF231-MT-DELIVERY-REPLY-WINDOW"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HF231-MT-DELIVERY-ADDITION-WINDOW"
+        }
+      ],
+      "outcome": "abstained",
+      "expectedEvidenceId": "ABSTAIN",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "127ea4c48fc0d5640602f1fc85a1043eb371a5e4ef3a7294166bb47424a86a49",
+      "rawOutputLength": 23,
+      "elapsedMs": 2762,
+      "sequence": 15
+    },
+    {
+      "caseId": "final-v2.3.1-08",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HF231-MT-DELIVERY-ADDITION-WINDOW"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HF231-MT-DELIVERY-REPLY-WINDOW"
+        }
+      ],
+      "outcome": "abstained",
+      "expectedEvidenceId": "ABSTAIN",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "127ea4c48fc0d5640602f1fc85a1043eb371a5e4ef3a7294166bb47424a86a49",
+      "rawOutputLength": 23,
+      "elapsedMs": 3374,
+      "sequence": 16
+    },
+    {
+      "caseId": "final-v2.3.1-09",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HF231-DP-REVIEW-BENEFIT-EXCHANGE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HF231-DP-REVIEW-NINE-POINT-PENALTY"
+        }
+      ],
+      "outcome": "abstained",
+      "expectedEvidenceId": "ABSTAIN",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "127ea4c48fc0d5640602f1fc85a1043eb371a5e4ef3a7294166bb47424a86a49",
+      "rawOutputLength": 23,
+      "elapsedMs": 4492,
+      "sequence": 17
+    },
+    {
+      "caseId": "final-v2.3.1-09",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HF231-DP-REVIEW-NINE-POINT-PENALTY"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HF231-DP-REVIEW-BENEFIT-EXCHANGE"
+        }
+      ],
+      "outcome": "abstained",
+      "expectedEvidenceId": "ABSTAIN",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "127ea4c48fc0d5640602f1fc85a1043eb371a5e4ef3a7294166bb47424a86a49",
+      "rawOutputLength": 23,
+      "elapsedMs": 3287,
+      "sequence": 18
+    },
+    {
+      "caseId": "final-v2.3.1-10",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HF231-MT-DELIVERY-REPLY-WINDOW"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HF231-MT-DELIVERY-DELETE-EFFECT"
+        }
+      ],
+      "outcome": "abstained",
+      "expectedEvidenceId": "ABSTAIN",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "127ea4c48fc0d5640602f1fc85a1043eb371a5e4ef3a7294166bb47424a86a49",
+      "rawOutputLength": 23,
+      "elapsedMs": 2495,
+      "sequence": 19
+    },
+    {
+      "caseId": "final-v2.3.1-10",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HF231-MT-DELIVERY-DELETE-EFFECT"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HF231-MT-DELIVERY-REPLY-WINDOW"
+        }
+      ],
+      "outcome": "timeout",
+      "expectedEvidenceId": "ABSTAIN",
+      "classification": "non_selection",
+      "elapsedMs": 15000,
+      "sequence": 20
+    }
+  ],
+  "gateStatus": "infrastructure_blocked",
+  "gatePassed": false,
+  "infrastructureReason": "timeout at final-v2.3.1-10/reversed"
+}

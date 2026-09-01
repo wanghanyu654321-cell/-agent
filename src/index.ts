@@ -9,6 +9,20 @@ import {
 	SessionManager,
 } from "@earendil-works/pi-coding-agent";
 import { type Static, Type } from "typebox";
+import {
+	type GroundingReference,
+	groundingReference,
+	isAdmissibleKnowledgeEvidence,
+	type KnowledgeEvidenceMetadata,
+	type KnowledgeStatus,
+} from "./knowledge.ts";
+import {
+	decideSafety,
+	detectSafetyRisk,
+	formatSafetySupportedResponse,
+	type SafetyDecision,
+	type SafetyEvidence,
+} from "./safety.ts";
 
 export interface SupportRequest {
 	conversationId: string;
@@ -24,10 +38,21 @@ export interface SupportRequest {
 export interface RetrievalEvidence {
 	id: string;
 	text: string;
+	safety?: SafetyEvidence;
+	knowledge?: KnowledgeEvidenceMetadata;
+	relevance?: {
+		score: number;
+		rank: number;
+	};
+}
+
+export interface RetrievalContext {
+	tenantId: string;
+	storeId: string;
 }
 
 export interface RetrievalService {
-	search(query: string, signal: AbortSignal): Promise<RetrievalEvidence[]>;
+	search(query: string, signal: AbortSignal, context?: RetrievalContext): Promise<RetrievalEvidence[]>;
 }
 
 export class InMemoryRetrievalService implements RetrievalService {
@@ -37,7 +62,7 @@ export class InMemoryRetrievalService implements RetrievalService {
 		this.evidence = evidence;
 	}
 
-	async search(query: string, signal: AbortSignal): Promise<RetrievalEvidence[]> {
+	async search(query: string, signal: AbortSignal, _context?: RetrievalContext): Promise<RetrievalEvidence[]> {
 		if (signal.aborted) throw new Error("Knowledge search aborted.");
 		const normalized = query.trim().toLowerCase();
 		return this.evidence.filter((item) => item.text.toLowerCase().includes(normalized));
@@ -50,6 +75,50 @@ export interface SupportTicket {
 	storeId: string;
 	summary: string;
 	idempotencyKey: string;
+}
+
+export interface PersistentSupportTicket extends SupportTicket {
+	conversationId: string;
+	createdAt: Date;
+}
+
+export interface PersistentSupportHandoff {
+	id: string;
+	tenantId: string;
+	storeId: string;
+	conversationId: string;
+	reason: string;
+	createdAt: Date;
+}
+
+export interface SupportBusinessAuditRecord {
+	tenantId: string;
+	storeId: string;
+	conversationId: string;
+	eventType: "support-agent.audit";
+	payload: Record<string, unknown>;
+}
+
+/**
+ * Optional durable business-effects port. Pi session recovery intentionally remains
+ * in InMemorySupportStore/SessionManager; this port is only for product records.
+ */
+export interface SupportBusinessStore {
+	findTicket(tenantId: string, idempotencyKey: string): Promise<PersistentSupportTicket | undefined>;
+	createTicket(input: Omit<PersistentSupportTicket, "id" | "createdAt">): Promise<{
+		ticket: PersistentSupportTicket;
+		duplicate: boolean;
+	}>;
+	findHandoff(
+		tenantId: string,
+		storeId: string,
+		conversationId: string,
+	): Promise<PersistentSupportHandoff | undefined>;
+	createHandoff(input: Omit<PersistentSupportHandoff, "id" | "createdAt">): Promise<{
+		handoff: PersistentSupportHandoff;
+		duplicate: boolean;
+	}>;
+	recordAudit(record: SupportBusinessAuditRecord): Promise<void>;
 }
 
 export interface SupportSessionMapping {
@@ -147,8 +216,14 @@ export class InMemorySupportStore {
 }
 
 export interface FaqEntry {
+	id: string;
 	question: string;
 	answer: string;
+	status: KnowledgeStatus;
+	version: string;
+	sourceRef: string;
+	tenantScope?: string;
+	storeScope?: string;
 }
 
 export interface SupportAgentLimits {
@@ -164,9 +239,11 @@ export interface SupportAgentRuntimeOptions {
 	streamFn: StreamFn;
 	retrieval: RetrievalService;
 	store: InMemorySupportStore;
+	businessStore?: SupportBusinessStore;
 	faq: FaqEntry[];
 	sessionDirectory?: string;
 	skillsDirectory?: string;
+	allowSyntheticTestKnowledge?: boolean;
 	limits?: Partial<SupportAgentLimits>;
 }
 
@@ -176,6 +253,17 @@ export interface SupportResult {
 	piSessionId: string;
 	toolsCalled: string[];
 	sessionEvents: AgentEvent[];
+	evidence: GroundingReference[];
+}
+
+type KnowledgeRoutingDecision = "NO_CANDIDATE" | "SINGLE_CANDIDATE" | "AMBIGUOUS_MULTIPLE_CANDIDATES";
+
+interface KnowledgeRoutingAudit {
+	admittedCandidateCount: number;
+	candidateEvidenceIds: string[];
+	decision: KnowledgeRoutingDecision;
+	semanticSelectorInvoked: false;
+	eligibleEvidenceIds: string[];
 }
 
 const DEFAULT_LIMITS: SupportAgentLimits = {
@@ -210,7 +298,7 @@ function fallback(
 	toolsCalled: string[],
 	sessionEvents: AgentEvent[],
 ): SupportResult {
-	return { type: "fallback", text, piSessionId, toolsCalled, sessionEvents };
+	return { type: "fallback", text, piSessionId, toolsCalled, sessionEvents, evidence: [] };
 }
 
 function hasPermission(request: SupportRequest, permission: string): boolean {
@@ -276,6 +364,13 @@ export class SupportAgentRuntime {
 		let toolFailed = false;
 		let noKnowledgeEvidence = false;
 		let verifiedKnowledgeEvidence = false;
+		let groundingQuery: string | undefined;
+		let groundingEvidence: RetrievalEvidence[] = [];
+		let knowledgeRouting: KnowledgeRoutingAudit | undefined;
+		const safetyRisk = detectSafetyRisk(request.text);
+		let safetyEvidence: SafetyEvidence[] = [];
+		let safetyRetrievalQuery: string | undefined;
+		let safetyDecision: SafetyDecision | undefined;
 		const reservedTicketKeys = new Set<string>();
 		let reservedHandoff = false;
 		const abortController = new AbortController();
@@ -300,8 +395,28 @@ export class SupportAgentRuntime {
 			() => {
 				noKnowledgeEvidence = true;
 			},
-			() => {
-				verifiedKnowledgeEvidence = true;
+			(query, evidence) => {
+				groundingQuery = query;
+				groundingEvidence = evidence.filter((item) =>
+					isAdmissibleKnowledgeEvidence(
+						item.knowledge,
+						{ tenantId: request.tenantId, storeId: request.storeId },
+						this.options.allowSyntheticTestKnowledge ?? false,
+					),
+				);
+				verifiedKnowledgeEvidence = groundingEvidence.length > 0;
+				if (!verifiedKnowledgeEvidence) noKnowledgeEvidence = true;
+			},
+			(query, evidence, routing) => {
+				groundingQuery = query;
+				groundingEvidence = evidence;
+				verifiedKnowledgeEvidence = evidence.length === 1;
+				knowledgeRouting = routing;
+				if (!verifiedKnowledgeEvidence) noKnowledgeEvidence = true;
+			},
+			(query, evidence) => {
+				safetyRetrievalQuery = query;
+				safetyEvidence = evidence.flatMap((item) => (item.safety ? [item.safety] : []));
 			},
 			abortController.signal,
 		);
@@ -329,6 +444,9 @@ export class SupportAgentRuntime {
 				}
 				if (toolCall.name === "create_ticket") {
 					const idempotencyKey = (args as Static<typeof ticketSchema>).idempotencyKey;
+					if (await this.options.businessStore?.findTicket(request.tenantId, idempotencyKey)) {
+						return { block: true, terminate: true, reason: "Duplicate ticket action blocked before execution." };
+					}
 					if (!this.options.store.reserveTicket(request.tenantId, idempotencyKey)) {
 						return { block: true, terminate: true, reason: "Duplicate ticket action blocked before execution." };
 					}
@@ -341,6 +459,15 @@ export class SupportAgentRuntime {
 					return { block: true, terminate: true, reason: "Escalation permission denied." };
 				}
 				if (toolCall.name === "handoff_to_human") {
+					if (
+						await this.options.businessStore?.findHandoff(
+							request.tenantId,
+							request.storeId,
+							request.conversationId,
+						)
+					) {
+						return { block: true, terminate: true, reason: "Duplicate human handoff blocked before execution." };
+					}
 					if (!this.options.store.reserveHandoff(request.conversationId)) {
 						return { block: true, terminate: true, reason: "Duplicate human handoff blocked before execution." };
 					}
@@ -403,9 +530,15 @@ export class SupportAgentRuntime {
 				| undefined;
 		}
 		clearTimeout(timeout);
+		if (safetyRisk) safetyDecision = decideSafety(safetyRisk, safetyEvidence, false, "pause");
 
 		const piSessionId = sessionManager.getSessionId();
-		const finish = (result: SupportResult): SupportResult => {
+		const groundingReferences = (): GroundingReference[] =>
+			groundingEvidence.flatMap((item) => {
+				const reference = groundingReference(item);
+				return reference ? [reference] : [];
+			});
+		const finish = async (result: SupportResult): Promise<SupportResult> => {
 			if (timedOut) {
 				for (const unsubscribe of unsubscribeEventListeners) unsubscribe();
 				unsubscribeEventListeners.clear();
@@ -424,7 +557,8 @@ export class SupportAgentRuntime {
 			if (reservedHandoff && !this.options.store.findHandoff(request.conversationId)) {
 				this.options.store.releaseHandoffReservation(request.conversationId);
 			}
-			sessionManager.appendCustomEntry("support-agent.audit", {
+			const routingAudit = knowledgeRouting;
+			const auditPayload: Record<string, unknown> = {
 				conversationId: request.conversationId,
 				outcome: result.type,
 				toolsCalled,
@@ -434,7 +568,34 @@ export class SupportAgentRuntime {
 				limitReached,
 				escalationRequested,
 				toolFailed,
-			});
+				safety: safetyRisk
+					? {
+							riskCategory: safetyRisk,
+							retrievalQuery: safetyRetrievalQuery,
+							evidenceIds: safetyEvidence.map((item) => item.id),
+							evidenceApprovalStatus: safetyEvidence.map((item) => item.status),
+							disposition: safetyDecision?.disposition,
+							handoffResult: this.options.store.findHandoff(request.conversationId) ? "created" : "not_created",
+							guardResult: safetyDecision?.reason,
+						}
+					: undefined,
+				grounding: groundingQuery
+					? {
+							retrievalQuery: groundingQuery,
+							admissible: verifiedKnowledgeEvidence,
+							evidence: groundingReferences(),
+						}
+					: undefined,
+				knowledgeRouting: routingAudit
+					? {
+							...routingAudit,
+							authorizedEvidenceIds: result.evidence
+								.map((reference) => reference.id)
+								.filter((id) => routingAudit.candidateEvidenceIds.includes(id)),
+						}
+					: undefined,
+			};
+			sessionManager.appendCustomEntry("support-agent.audit", auditPayload);
 			this.options.store.setSession({
 				conversationId: request.conversationId,
 				tenantId: request.tenantId,
@@ -444,6 +605,15 @@ export class SupportAgentRuntime {
 				sessionFile: sessionManager.getSessionFile(),
 				sessionManager,
 			});
+			if (this.options.businessStore) {
+				await this.options.businessStore.recordAudit({
+					tenantId: request.tenantId,
+					storeId: request.storeId,
+					conversationId: request.conversationId,
+					eventType: "support-agent.audit",
+					payload: auditPayload,
+				});
+			}
 			return result;
 		};
 		if (timedOut) {
@@ -466,6 +636,48 @@ export class SupportAgentRuntime {
 				),
 			);
 		}
+		if (safetyDecision?.disposition === "escalate") {
+			if (
+				!this.options.store.findHandoff(request.conversationId) &&
+				this.options.store.reserveHandoff(request.conversationId)
+			) {
+				reservedHandoff = true;
+				try {
+					await this.createBusinessHandoff(
+						request,
+						`qualified_professional_required:${safetyDecision.riskCategory}:${safetyDecision.reason}`,
+					);
+				} catch {
+					return finish(
+						fallback(
+							"当前存在需要专业确认的安全风险，请暂停当前操作；人工转交暂未完成，请立即联系合格专业人员。",
+							piSessionId,
+							toolsCalled,
+							sessionEvents,
+						),
+					);
+				}
+			}
+			escalationRequested = true;
+			return finish({
+				type: "escalation",
+				text: "当前存在需要专业确认的安全风险，请暂停当前操作并由合格专业人员跟进。",
+				piSessionId,
+				toolsCalled,
+				sessionEvents,
+				evidence: [],
+			});
+		}
+		if (safetyDecision?.disposition === "supported") {
+			return finish({
+				type: "answer",
+				text: formatSafetySupportedResponse(safetyDecision.options),
+				piSessionId,
+				toolsCalled,
+				sessionEvents,
+				evidence: [],
+			});
+		}
 		if (escalationRequested) {
 			return finish({
 				type: "escalation",
@@ -473,6 +685,7 @@ export class SupportAgentRuntime {
 				piSessionId,
 				toolsCalled,
 				sessionEvents,
+				evidence: [],
 			});
 		}
 		if (request.requiresEscalation) {
@@ -494,6 +707,16 @@ export class SupportAgentRuntime {
 					sessionEvents,
 				),
 			);
+		}
+		if (verifiedKnowledgeEvidence) {
+			return finish({
+				type: "answer",
+				text: groundingEvidence.map((item) => item.text).join("\n\n"),
+				piSessionId,
+				toolsCalled,
+				sessionEvents,
+				evidence: groundingReferences(),
+			});
 		}
 		if (lastAssistant?.stopReason === "error" || lastAssistant?.stopReason === "aborted") {
 			return finish(
@@ -521,7 +744,7 @@ export class SupportAgentRuntime {
 				fallback("抱歉，我无法确认该操作已经完成，请联系人工客服核实。", piSessionId, toolsCalled, sessionEvents),
 			);
 		}
-		return finish({ type: "answer", text, piSessionId, toolsCalled, sessionEvents });
+		return finish({ type: "answer", text, piSessionId, toolsCalled, sessionEvents, evidence: [] });
 	}
 
 	private getOrCreateSession(request: SupportRequest): SessionManager {
@@ -564,7 +787,13 @@ export class SupportAgentRuntime {
 		request: SupportRequest,
 		onEscalate: () => void,
 		onNoKnowledgeEvidence: () => void,
-		onVerifiedKnowledgeEvidence: () => void,
+		onKnowledgeEvidence: (query: string, evidence: RetrievalEvidence[]) => void,
+		onOrdinaryKnowledgeRouting: (
+			query: string,
+			evidence: RetrievalEvidence[],
+			routing: KnowledgeRoutingAudit,
+		) => void,
+		onSafetyEvidence: (query: string, evidence: RetrievalEvidence[]) => void,
 		overallSignal: AbortSignal,
 	): AgentTool[] {
 		const withToolTimeout = async <T>(operation: (signal: AbortSignal) => Promise<T>): Promise<T> => {
@@ -594,13 +823,31 @@ export class SupportAgentRuntime {
 			execute: async (_id, params: Static<typeof querySchema>) =>
 				withToolTimeout(async (signal) => {
 					if (signal.aborted) throw new Error("FAQ search aborted.");
-					const match = this.options.faq.find(
-						(item) => item.question.includes(params.query) || params.query.includes(item.question),
-					);
-					if (match) onVerifiedKnowledgeEvidence();
+					const match = this.options.faq
+						.filter((item) => item.question.includes(params.query) || params.query.includes(item.question))
+						.map<RetrievalEvidence>((item) => ({
+							id: item.id,
+							text: item.answer,
+							knowledge: {
+								kind: "faq",
+								status: item.status,
+								version: item.version,
+								sourceRef: item.sourceRef,
+								...(item.tenantScope ? { tenantScope: item.tenantScope } : {}),
+								...(item.storeScope ? { storeScope: item.storeScope } : {}),
+							},
+						}))
+						.find((item) =>
+							isAdmissibleKnowledgeEvidence(
+								item.knowledge,
+								{ tenantId: request.tenantId, storeId: request.storeId },
+								this.options.allowSyntheticTestKnowledge ?? false,
+							),
+						);
+					if (match) onKnowledgeEvidence(params.query, [match]);
 					else onNoKnowledgeEvidence();
 					return {
-						content: [{ type: "text" as const, text: match ? match.answer : "No FAQ evidence found." }],
+						content: [{ type: "text" as const, text: match?.text ?? "No FAQ evidence found." }],
 						details: { found: Boolean(match) },
 					};
 				}),
@@ -614,18 +861,45 @@ export class SupportAgentRuntime {
 			execute: async (_id, params: Static<typeof querySchema>) =>
 				withToolTimeout(async (signal) => {
 					if (signal.aborted) throw new Error("Knowledge search aborted.");
-					const evidence = await this.options.retrieval.search(params.query, signal);
+					const evidence = await this.options.retrieval.search(params.query, signal, {
+						tenantId: request.tenantId,
+						storeId: request.storeId,
+					});
 					if (signal.aborted) throw new Error("Knowledge search aborted.");
-					if (evidence.length === 0) onNoKnowledgeEvidence();
-					else onVerifiedKnowledgeEvidence();
+					onSafetyEvidence(params.query, evidence);
+					const admitted = evidence.filter((item) =>
+						isAdmissibleKnowledgeEvidence(
+							item.knowledge,
+							{ tenantId: request.tenantId, storeId: request.storeId },
+							this.options.allowSyntheticTestKnowledge ?? false,
+						),
+					);
+					const routing: KnowledgeRoutingAudit = {
+						admittedCandidateCount: admitted.length,
+						candidateEvidenceIds: admitted.map((item) => item.id),
+						decision:
+							admitted.length === 0
+								? "NO_CANDIDATE"
+								: admitted.length === 1
+									? "SINGLE_CANDIDATE"
+									: "AMBIGUOUS_MULTIPLE_CANDIDATES",
+						semanticSelectorInvoked: false,
+						eligibleEvidenceIds: admitted.length === 1 ? admitted.map((item) => item.id) : [],
+					};
+					const authorized = admitted.length === 1 ? admitted : [];
+					onOrdinaryKnowledgeRouting(params.query, authorized, routing);
 					return {
 						content: [
 							{
 								type: "text" as const,
-								text: evidence.map((item) => item.text).join("\n") || "No knowledge-base evidence found.",
+								text:
+									authorized[0]?.text ??
+									(admitted.length === 0
+										? "No admissible knowledge-base evidence found."
+										: "Multiple admissible knowledge-base candidates found; no evidence was authorized."),
 							},
 						],
-						details: { evidenceIds: evidence.map((item) => item.id) },
+						details: { evidenceIds: authorized.map((item) => item.id) },
 					};
 				}),
 		};
@@ -639,13 +913,7 @@ export class SupportAgentRuntime {
 			execute: async (_id, params: Static<typeof ticketSchema>) =>
 				withToolTimeout(async (signal) => {
 					if (signal.aborted) throw new Error("Ticket creation aborted.");
-					const ticket = this.options.store.createTicket({
-						id: `ticket-${this.options.store.getTickets().length + 1}`,
-						tenantId: request.tenantId,
-						storeId: request.storeId,
-						summary: params.summary,
-						idempotencyKey: params.idempotencyKey,
-					});
+					const ticket = await this.createBusinessTicket(request, params.summary, params.idempotencyKey);
 					return {
 						content: [
 							{
@@ -669,17 +937,77 @@ export class SupportAgentRuntime {
 			execute: async (_id, params: Static<typeof handoffSchema>) =>
 				withToolTimeout(async (signal) => {
 					if (signal.aborted) throw new Error("Human handoff aborted.");
-					this.options.store.createHandoff(request.conversationId, params.reason);
+					const handoff = await this.createBusinessHandoff(request, params.reason);
 					onEscalate();
 					return {
-						content: [{ type: "text" as const, text: "Human handoff created." }],
-						details: { reason: params.reason },
+						content: [
+							{
+								type: "text" as const,
+								text: handoff.duplicate ? "Duplicate human handoff prevented." : "Human handoff created.",
+							},
+						],
+						details: { reason: handoff.handoff.reason, duplicate: handoff.duplicate },
 						terminate: true,
 					};
 				}),
 		};
 
 		return [searchFaq, searchKnowledge, createTicket, handoffToHuman];
+	}
+
+	private async createBusinessTicket(
+		request: SupportRequest,
+		summary: string,
+		idempotencyKey: string,
+	): Promise<{ ticket: SupportTicket; duplicate: boolean }> {
+		if (!this.options.businessStore) {
+			return this.options.store.createTicket({
+				id: `ticket-${this.options.store.getTickets().length + 1}`,
+				tenantId: request.tenantId,
+				storeId: request.storeId,
+				summary,
+				idempotencyKey,
+			});
+		}
+		const persisted = await this.options.businessStore.createTicket({
+			tenantId: request.tenantId,
+			storeId: request.storeId,
+			conversationId: request.conversationId,
+			summary,
+			idempotencyKey,
+		});
+		this.options.store.createTicket(persisted.ticket);
+		return persisted;
+	}
+
+	private async createBusinessHandoff(
+		request: SupportRequest,
+		reason: string,
+	): Promise<{ handoff: PersistentSupportHandoff; duplicate: boolean }> {
+		if (!this.options.businessStore) {
+			this.options.store.createHandoff(request.conversationId, reason);
+			return {
+				handoff: {
+					id: `handoff-${this.options.store.getHandoffs().length}`,
+					tenantId: request.tenantId,
+					storeId: request.storeId,
+					conversationId: request.conversationId,
+					reason,
+					createdAt: new Date(),
+				},
+				duplicate: false,
+			};
+		}
+		const persisted = await this.options.businessStore.createHandoff({
+			tenantId: request.tenantId,
+			storeId: request.storeId,
+			conversationId: request.conversationId,
+			reason,
+		});
+		if (!this.options.store.findHandoff(request.conversationId)) {
+			this.options.store.createHandoff(request.conversationId, persisted.handoff.reason);
+		}
+		return persisted;
 	}
 
 	private validateRequest(request: SupportRequest): void {
@@ -714,6 +1042,7 @@ export class SupportAgentRuntime {
 		if (normalizedText.includes("退款")) matchingSkillNames.add("refund");
 		if (normalizedText.includes("人工") || normalizedText.includes("升级")) matchingSkillNames.add("escalation");
 		if (normalizedText.includes("你好") || normalizedText.includes("您好")) matchingSkillNames.add("greeting");
+		if (detectSafetyRisk(text)) matchingSkillNames.add("safety-escalation");
 		const matchingInstructions = loaded.skills
 			.filter((skill) => matchingSkillNames.has(skill.name))
 			.map((skill) => readFileSync(skill.filePath, "utf8"));
