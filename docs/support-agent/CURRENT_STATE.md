@@ -22,11 +22,43 @@ PostgreSQL migrations, and PostgreSQL repository implementations. Portfolio
 authentication / identity foundation is implemented and approved; production enterprise
 IAM is not claimed.
 
-`PERSISTENT BUSINESS BOUNDARY = IMPLEMENTATION CANDIDATE`.
+`PERSISTENT BUSINESS BOUNDARY = APPROVED`.
 
 Phase 2B adds conversation ownership checks, scoped PostgreSQL ticket/handoff/audit
-persistence, and a bounded optional Runtime business port. React frontend work has not
-started. The candidate requires independent PostgreSQL clean-runner review before approval.
+persistence, and a bounded optional Runtime business port. Its independent PostgreSQL
+clean-runner Gate passed; React frontend work has not started.
+
+`PHASE 2C-A TASK 1 APPLICATION COMPOSITION ROOT = APPROVED`.
+
+The enterprise application composition root now requires `DATABASE_URL`, verifies the
+PostgreSQL connection, applies the approved migrations, repeat-safely seeds the synthetic
+Alice/Susan/Bob portfolio identities, composes the existing repositories, auth service,
+business service, and `SupportAgentRuntime`, then serves the existing enterprise HTTP API.
+`npm run start:enterprise` is the product process entrypoint; shutdown closes the HTTP
+server and PostgreSQL pool. The real-PostgreSQL composition CI Gate exists and has run
+successfully for the prior composition checkpoint. This repair candidate makes the deterministic
+seed fail closed when any partial or inconsistent Alice/Susan/Bob identity graph is found; only a
+completely absent graph or a complete, exact graph is accepted. This approval does not authorize
+Task 2 beyond its separately governed execution directive.
+
+`PHASE 2C-A TASK 2 REACT/AUTH SHELL = APPROVED WITH CONDITIONS`.
+
+The same Enterprise origin now delivers the built React shell and the existing `/api/v1/*` boundary.
+The shell restores identity only through `/api/v1/auth/me`, displays the server-derived actor and
+tenant/store scope read-only, and clears its presentation state on logout or authenticated `401`.
+Task 3 Support Proof Workspace is **APPROVED** at `80c7ce0e3fd212c6179e916dcd91946484902ce7`;
+its authenticated-business-request condition is closed. Task 4 Durable Ticket/Handoff Persistence
+Proof is independently **APPROVED** at `248241627e88343f8485679883722215b9068975` (approval comment
+`5526113083`): it adds scoped read-back proof for durable Ticket/Handoff state while preserving the
+existing Runtime, authority, business store, and Safety contracts. Task 5 Bounded Admin Audit Proof is
+independently **APPROVED** at `91b347b9214bc58738e330c8e44c02908e8d8e5c` (approval comment
+`5527191224`): it adds only the synthetic Ava Admin fixture and a public-safe, capability-gated Audit
+projection. Actor attribution is not claimed because the current durable audit schema does not persist it.
+The Phase 2C-A Final Product Gate at `91b347b9214bc58738e330c8e44c02908e8d8e5c` is **REJECTED
+PENDING BOUNDED JOURNEY A/B COMPOSITION CLOSURE**. This closure is an implementation candidate pending
+fresh independent re-review; Phase 2C-B / Docker remains not started and not authorized. No real customer
+deployment, production IAM, real model provider, browser authority, semantic-selector hot-path, or Runtime
+semantics are claimed.
 
 ## Status
 

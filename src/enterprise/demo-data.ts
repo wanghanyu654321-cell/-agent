@@ -1,17 +1,27 @@
 import { hashPassword } from "./auth.ts";
-import type { IdentityRepository, Store, Tenant, User } from "./identity.ts";
+import type { IdentityRepository, Membership, Role, Store, Tenant, User } from "./identity.ts";
 
 export const portfolioEnterpriseDemoDisclaimer =
 	"DEMO / SYNTHETIC PORTFOLIO IDENTITIES — NOT PRODUCTION USERS OR CREDENTIALS.";
+export const portfolioEnterpriseDemoSeedInconsistencyMessage =
+	"Portfolio enterprise demo seed is partial or inconsistent.";
+
+export class PortfolioEnterpriseDemoSeedInconsistencyError extends Error {
+	constructor() {
+		super(portfolioEnterpriseDemoSeedInconsistencyMessage);
+		this.name = "PortfolioEnterpriseDemoSeedInconsistencyError";
+	}
+}
 
 export interface PortfolioEnterpriseDemoData {
 	tenants: { a: Tenant; b: Tenant };
 	stores: { a1: Store; b1: Store };
-	users: { alice: User; susan: User; bob: User };
+	users: { alice: User; susan: User; bob: User; ava: User };
 	credentials: {
 		alice: { email: string; password: string };
 		susan: { email: string; password: string };
 		bob: { email: string; password: string };
+		ava: { email: string; password: string };
 	};
 }
 
@@ -23,6 +33,7 @@ export async function seedPortfolioEnterpriseDemoData(
 		alice: { email: "alice.agent@demo.example", password: "AliceDemo!2026" },
 		susan: { email: "susan.supervisor@demo.example", password: "SusanDemo!2026" },
 		bob: { email: "bob.agent@demo.example", password: "BobDemo!2026" },
+		ava: { email: "ava.admin@demo.example", password: "AvaDemo!2026" },
 	};
 	const tenants = {
 		a: { id: "demo-tenant-a", name: "Demo Retail Group A", createdAt },
@@ -32,59 +43,179 @@ export async function seedPortfolioEnterpriseDemoData(
 		a1: { id: "demo-store-a1", tenantId: tenants.a.id, name: "Store A1", createdAt },
 		b1: { id: "demo-store-b1", tenantId: tenants.b.id, name: "Store B1", createdAt },
 	};
-	const users = {
-		alice: {
-			id: "demo-user-alice-agent",
-			email: credentials.alice.email,
-			displayName: "Alice Agent",
-			passwordHash: await hashPassword(credentials.alice.password),
+	const existingAlice = await repository.findUserByEmail(credentials.alice.email);
+	const existingSusan = await repository.findUserByEmail(credentials.susan.email);
+	const existingBob = await repository.findUserByEmail(credentials.bob.email);
+	const existingAva = await repository.findUserByEmail(credentials.ava.email);
+	const existingLegacyUsers = [existingAlice, existingSusan, existingBob];
+	const existingUsers = [...existingLegacyUsers, existingAva];
+	if (existingUsers.every((user) => !user)) {
+		const users = {
+			alice: {
+				id: "demo-user-alice-agent",
+				email: credentials.alice.email,
+				displayName: "Alice Agent",
+				passwordHash: await hashPassword(credentials.alice.password),
+				createdAt,
+			},
+			susan: {
+				id: "demo-user-susan-supervisor",
+				email: credentials.susan.email,
+				displayName: "Susan Supervisor",
+				passwordHash: await hashPassword(credentials.susan.password),
+				createdAt,
+			},
+			bob: {
+				id: "demo-user-bob-agent",
+				email: credentials.bob.email,
+				displayName: "Bob Agent",
+				passwordHash: await hashPassword(credentials.bob.password),
+				createdAt,
+			},
+			ava: {
+				id: "demo-user-ava-admin",
+				email: credentials.ava.email,
+				displayName: "Ava Admin",
+				passwordHash: await hashPassword(credentials.ava.password),
+				createdAt,
+			},
+		};
+		await repository.createTenant(tenants.a);
+		await repository.createTenant(tenants.b);
+		await repository.createStore(stores.a1);
+		await repository.createStore(stores.b1);
+		await repository.createUser(users.alice);
+		await repository.createUser(users.susan);
+		await repository.createUser(users.bob);
+		await repository.createUser(users.ava);
+		await repository.createMembership({
+			id: "demo-membership-alice-a1",
+			userId: users.alice.id,
+			tenantId: tenants.a.id,
+			storeId: stores.a1.id,
+			role: "agent",
 			createdAt,
-		},
-		susan: {
-			id: "demo-user-susan-supervisor",
-			email: credentials.susan.email,
-			displayName: "Susan Supervisor",
-			passwordHash: await hashPassword(credentials.susan.password),
+		});
+		await repository.createMembership({
+			id: "demo-membership-susan-a1",
+			userId: users.susan.id,
+			tenantId: tenants.a.id,
+			storeId: stores.a1.id,
+			role: "supervisor",
 			createdAt,
-		},
-		bob: {
-			id: "demo-user-bob-agent",
-			email: credentials.bob.email,
-			displayName: "Bob Agent",
-			passwordHash: await hashPassword(credentials.bob.password),
+		});
+		await repository.createMembership({
+			id: "demo-membership-bob-b1",
+			userId: users.bob.id,
+			tenantId: tenants.b.id,
+			storeId: stores.b1.id,
+			role: "agent",
 			createdAt,
-		},
-	};
-	await repository.createTenant(tenants.a);
-	await repository.createTenant(tenants.b);
-	await repository.createStore(stores.a1);
-	await repository.createStore(stores.b1);
-	await repository.createUser(users.alice);
-	await repository.createUser(users.susan);
-	await repository.createUser(users.bob);
-	await repository.createMembership({
-		id: "demo-membership-alice-a1",
-		userId: users.alice.id,
+		});
+		await repository.createMembership({
+			id: "demo-membership-ava-a1",
+			userId: users.ava.id,
+			tenantId: tenants.a.id,
+			storeId: stores.a1.id,
+			role: "admin",
+			createdAt,
+		});
+		return { tenants, stores, users, credentials };
+	}
+	if (existingLegacyUsers.some((user) => !user)) throw new PortfolioEnterpriseDemoSeedInconsistencyError();
+	await assertExistingDemoIdentity(repository, existingAlice!, {
+		userId: "demo-user-alice-agent",
+		email: credentials.alice.email,
+		membershipId: "demo-membership-alice-a1",
 		tenantId: tenants.a.id,
 		storeId: stores.a1.id,
 		role: "agent",
-		createdAt,
 	});
-	await repository.createMembership({
-		id: "demo-membership-susan-a1",
-		userId: users.susan.id,
+	await assertExistingDemoIdentity(repository, existingSusan!, {
+		userId: "demo-user-susan-supervisor",
+		email: credentials.susan.email,
+		membershipId: "demo-membership-susan-a1",
 		tenantId: tenants.a.id,
 		storeId: stores.a1.id,
 		role: "supervisor",
-		createdAt,
 	});
-	await repository.createMembership({
-		id: "demo-membership-bob-b1",
-		userId: users.bob.id,
+	await assertExistingDemoIdentity(repository, existingBob!, {
+		userId: "demo-user-bob-agent",
+		email: credentials.bob.email,
+		membershipId: "demo-membership-bob-b1",
 		tenantId: tenants.b.id,
 		storeId: stores.b1.id,
 		role: "agent",
-		createdAt,
 	});
-	return { tenants, stores, users, credentials };
+	if (!existingAva) {
+		const ava = {
+			id: "demo-user-ava-admin",
+			email: credentials.ava.email,
+			displayName: "Ava Admin",
+			passwordHash: await hashPassword(credentials.ava.password),
+			createdAt,
+		};
+		await repository.createUser(ava);
+		await repository.createMembership({
+			id: "demo-membership-ava-a1",
+			userId: ava.id,
+			tenantId: tenants.a.id,
+			storeId: stores.a1.id,
+			role: "admin",
+			createdAt,
+		});
+		return {
+			tenants,
+			stores,
+			users: { alice: existingAlice!, susan: existingSusan!, bob: existingBob!, ava },
+			credentials,
+		};
+	}
+	await assertExistingDemoIdentity(repository, existingAva, {
+		userId: "demo-user-ava-admin",
+		email: credentials.ava.email,
+		membershipId: "demo-membership-ava-a1",
+		tenantId: tenants.a.id,
+		storeId: stores.a1.id,
+		role: "admin",
+	});
+	return {
+		tenants,
+		stores,
+		users: { alice: existingAlice!, susan: existingSusan!, bob: existingBob!, ava: existingAva },
+		credentials,
+	};
+}
+
+interface ExpectedDemoIdentity {
+	userId: string;
+	email: string;
+	membershipId: string;
+	tenantId: string;
+	storeId: string;
+	role: Role;
+}
+
+async function assertExistingDemoIdentity(
+	repository: IdentityRepository,
+	user: User,
+	expected: ExpectedDemoIdentity,
+): Promise<void> {
+	if (user.id !== expected.userId || user.email !== expected.email) {
+		throw new PortfolioEnterpriseDemoSeedInconsistencyError();
+	}
+	const memberships = await repository.listMembershipsForUser(user.id);
+	if (memberships.length !== 1 || !isExpectedDemoMembership(memberships[0]!, expected)) {
+		throw new PortfolioEnterpriseDemoSeedInconsistencyError();
+	}
+}
+
+function isExpectedDemoMembership(membership: Membership, expected: ExpectedDemoIdentity): boolean {
+	return (
+		membership.id === expected.membershipId &&
+		membership.userId === expected.userId &&
+		membership.tenantId === expected.tenantId &&
+		membership.storeId === expected.storeId &&
+		membership.role === expected.role
+	);
 }

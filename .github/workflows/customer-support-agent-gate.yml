@@ -61,6 +61,11 @@ jobs:
         env:
           POSTGRES_TEST_URL: postgresql://customer_support_agent_ci:customer_support_agent_ci_password@localhost:5432/customer_support_agent_ci
 
+      - name: Run mandatory Phase 2C PostgreSQL application composition gate
+        run: npm run test:postgres-application
+        env:
+          POSTGRES_TEST_URL: postgresql://customer_support_agent_ci:customer_support_agent_ci_password@localhost:5432/customer_support_agent_ci
+
       - name: Build package
         run: npm run build
 

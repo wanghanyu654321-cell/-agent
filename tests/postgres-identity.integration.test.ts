@@ -39,7 +39,7 @@ describePostgres("PostgreSQL enterprise identity integration", () => {
 		const counts = await pool.query<{ users: string; tenants: string; stores: string; memberships: string }>(
 			"SELECT (SELECT count(*) FROM users) AS users, (SELECT count(*) FROM tenants) AS tenants, (SELECT count(*) FROM stores) AS stores, (SELECT count(*) FROM memberships) AS memberships",
 		);
-		expect(counts.rows[0]).toEqual({ users: "3", tenants: "2", stores: "2", memberships: "3" });
+		expect(counts.rows[0]).toEqual({ users: "4", tenants: "2", stores: "2", memberships: "4" });
 	});
 
 	it("persists only Alice's session-token hash and resolves only Tenant A / Store A1", async () => {

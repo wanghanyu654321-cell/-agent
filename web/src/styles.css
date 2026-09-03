@@ -1,0 +1,38 @@
+:root { color: #172033; background: #f5f7fb; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+button, input, textarea { font: inherit; }
+button { cursor: pointer; }
+.login-page, .shell { max-width: 960px; margin: 0 auto; padding: 48px 24px; }
+.login-page { min-height: 100vh; display: grid; place-items: center; }
+.login-card { width: min(100%, 460px); background: #fff; border: 1px solid #dfe5ef; box-shadow: 0 16px 48px rgba(28, 43, 70, .08); padding: 30px; }
+.login-card h1, .identity-header h1, .workspace-heading h2 { margin: 0 0 12px; letter-spacing: -.035em; }
+.login-card p { color: #59667c; line-height: 1.55; }
+.login-card label { display: grid; gap: 7px; margin-top: 16px; color: #37445b; font-size: .9rem; font-weight: 650; }
+.login-card input { border: 1px solid #bfc9d9; border-radius: 4px; padding: 10px 12px; }
+.login-card button, .logout { border: 0; border-radius: 4px; background: #223d74; color: #fff; font-weight: 700; padding: 11px 14px; margin-top: 22px; }
+.login-card button:disabled { opacity: .65; cursor: wait; }
+.shell { min-height: 100vh; }
+.identity-header { display: flex; align-items: start; justify-content: space-between; border-bottom: 2px solid #223d74; padding-bottom: 24px; }
+.logout { margin: 0; background: #33445f; }
+.eyebrow { color: #64728a; font-size: .76rem; font-weight: 800; letter-spacing: .12em; margin: 0 0 8px; text-transform: uppercase; }
+.context { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1px; margin: 28px 0; background: #dfe5ef; border: 1px solid #dfe5ef; }
+.context div { background: #fff; min-width: 0; padding: 16px; }
+.context dt { color: #64728a; font-size: .74rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.context dd { margin: 8px 0 0; overflow-wrap: anywhere; color: #172033; font-size: .9rem; }
+.notice { background: #fff4db; border-left: 3px solid #b56800; color: #684000; margin: 16px 0; padding: 12px; }
+.status { color: #44536c; }
+.support-workspace, .support-result { margin-top: 28px; background: #fff; border: 1px solid #dfe5ef; box-shadow: 0 16px 48px rgba(28, 43, 70, .06); padding: 28px; }
+.workspace-heading, .result-heading { display: flex; justify-content: space-between; gap: 24px; align-items: start; }
+.workspace-heading > p { max-width: 380px; color: #59667c; line-height: 1.5; margin: 0; }
+.support-form { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
+.support-form label { display: grid; gap: 7px; color: #37445b; font-size: .9rem; font-weight: 650; }
+.support-form input, .support-form textarea { width: 100%; border: 1px solid #bfc9d9; border-radius: 4px; padding: 10px 12px; }
+.support-form textarea { min-height: 112px; resize: vertical; }
+.support-form .request-text { grid-column: 1 / -1; }
+.support-form button { justify-self: start; border: 0; border-radius: 4px; background: #223d74; color: #fff; font-weight: 700; padding: 11px 14px; }
+.support-form button:disabled { opacity: .65; cursor: wait; }
+.outcome { border-radius: 999px; font-size: .8rem; font-weight: 800; padding: 7px 10px; text-transform: uppercase; }
+.outcome-answer { background: #dff5e7; color: #17633a; }.outcome-fallback { background: #fff4db; color: #684000; }.outcome-escalation { background: #fbe5e7; color: #8a2330; }
+.result-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 28px; margin-top: 20px; }.result-grid h3 { margin: 0 0 9px; font-size: .84rem; letter-spacing: .07em; text-transform: uppercase; }.result-grid p, .result-grid li { color: #44536c; line-height: 1.55; }.result-grid dl { margin: 0; }.result-grid dl div { margin-bottom: 8px; }.result-grid ul { margin: 0; padding-left: 20px; }.result-grid li { margin-bottom: 8px; }.result-grid li span, .result-grid li code { display: block; font-size: .85rem; overflow-wrap: anywhere; }.result-grid li code { color: #59667c; }.result-text { white-space: pre-wrap; }.explanation { color: #223d74 !important; font-weight: 750; }
+@media (max-width: 760px) { .context, .support-form, .result-grid { grid-template-columns: 1fr; } .identity-header, .workspace-heading, .result-heading { gap: 20px; } }

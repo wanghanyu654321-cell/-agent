@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import type { Pool } from "pg";
+import type { Pool, PoolClient } from "pg";
 import type {
 	ConversationRecord,
 	EnterpriseBusinessRepository,
@@ -110,19 +110,60 @@ export class PostgresIdentityRepository implements IdentityRepository {
 	}
 }
 
+type EnterpriseMigration = {
+	id: string;
+	path: URL;
+};
+
+const identityMigration: EnterpriseMigration = {
+	id: "001_enterprise_identity",
+	path: new URL("../../migrations/001_enterprise_identity.sql", import.meta.url),
+};
+
+const businessMigration: EnterpriseMigration = {
+	id: "002_support_business_persistence",
+	path: new URL("../../migrations/002_support_business_persistence.sql", import.meta.url),
+};
+
 export async function applyEnterpriseIdentityMigrations(pool: Pool): Promise<void> {
-	const migrationPath = fileURLToPath(new URL("../../migrations/001_enterprise_identity.sql", import.meta.url));
-	const sql = readFileSync(migrationPath, "utf8");
-	await pool.query(sql);
+	await applyEnterpriseMigrations(pool, [identityMigration]);
 }
 
 export async function applyEnterpriseBusinessMigrations(pool: Pool): Promise<void> {
-	await applyEnterpriseIdentityMigrations(pool);
-	const migrationPath = fileURLToPath(
-		new URL("../../migrations/002_support_business_persistence.sql", import.meta.url),
-	);
-	const sql = readFileSync(migrationPath, "utf8");
-	await pool.query(sql);
+	await applyEnterpriseMigrations(pool, [identityMigration, businessMigration]);
+}
+
+async function applyEnterpriseMigrations(pool: Pool, migrations: readonly EnterpriseMigration[]): Promise<void> {
+	const client = await pool.connect();
+	try {
+		for (const migration of migrations) await applyMigrationOnce(client, migration);
+	} finally {
+		client.release();
+	}
+}
+
+async function applyMigrationOnce(client: PoolClient, migration: EnterpriseMigration): Promise<void> {
+	await client.query("BEGIN");
+	try {
+		await client.query(
+			"CREATE TABLE IF NOT EXISTS enterprise_schema_migrations (id TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL)",
+		);
+		await client.query("LOCK TABLE enterprise_schema_migrations IN EXCLUSIVE MODE");
+		const existing = await client.query<{ id: string }>("SELECT id FROM enterprise_schema_migrations WHERE id = $1", [
+			migration.id,
+		]);
+		if ((existing.rowCount ?? 0) === 0) {
+			const sql = readFileSync(fileURLToPath(migration.path), "utf8");
+			await client.query(sql);
+			await client.query("INSERT INTO enterprise_schema_migrations (id, applied_at) VALUES ($1, NOW())", [
+				migration.id,
+			]);
+		}
+		await client.query("COMMIT");
+	} catch (error) {
+		await client.query("ROLLBACK").catch(() => undefined);
+		throw error;
+	}
 }
 
 export class PostgresEnterpriseBusinessRepository implements EnterpriseBusinessRepository {
