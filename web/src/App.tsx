@@ -14,7 +14,12 @@ import {
 	type PublicSupportResult,
 	type SupportRequestInput,
 } from "./support.ts";
-import { loadScopedBusinessProof, type ScopedHandoff, type ScopedTicket } from "./business.ts";
+import {
+	BusinessReadLifecycle,
+	loadScopedBusinessProof,
+	type ScopedHandoff,
+	type ScopedTicket,
+} from "./business.ts";
 import "./styles.css";
 
 const sessionApi = createSameOriginSessionApi();
@@ -81,26 +86,24 @@ export function AuthenticatedShell({
 	authorizationError?: boolean;
 	api?: SessionApi;
 }) {
-	const [tickets, setTickets] = useState<ScopedTicket[]>([]);
-	const [handoffs, setHandoffs] = useState<ScopedHandoff[]>([]);
-	const refreshRequest = useRef(0);
+	const [businessProof, setBusinessProof] = useState<BusinessProofState>({ status: "loading" });
+	const refreshRequest = useRef(new BusinessReadLifecycle());
 	const refreshBusinessProof = async () => {
-		const current = ++refreshRequest.current;
+		const current = refreshRequest.current.begin();
+		setBusinessProof({ status: "loading" });
 		const outcome = await loadScopedBusinessProof(api, context.scope);
-		if (current !== refreshRequest.current) return;
+		if (!refreshRequest.current.complete(current)) return;
 		if (outcome.kind === "success") {
-			setTickets(outcome.tickets);
-			setHandoffs(outcome.handoffs);
+			setBusinessProof({ status: "verified", tickets: outcome.tickets, handoffs: outcome.handoffs });
 			return;
 		}
-		setTickets([]);
-		setHandoffs([]);
+		setBusinessProof({ status: "unavailable" });
 		if (outcome.kind === "session-invalidated") return onSessionInvalidated?.();
 		if (outcome.kind === "forbidden") return onAuthorizationError?.();
 	};
 	useEffect(() => {
 		void refreshBusinessProof();
-		return () => { refreshRequest.current += 1; };
+		return () => refreshRequest.current.invalidate();
 	}, [context.scope.tenantId, context.scope.storeId]);
 	return <main className="shell">
 		<header className="identity-header">
@@ -120,12 +123,13 @@ export function AuthenticatedShell({
 		{authorizationError ? <p className="notice" role="status">This action is not authorized for your current server-derived role.</p> : null}
 		<SupportWorkspace
 			api={api}
-			tickets={tickets}
-			handoffs={handoffs}
+			tickets={businessProof.status === "verified" ? businessProof.tickets : []}
+			handoffs={businessProof.status === "verified" ? businessProof.handoffs : []}
 			onCompleted={() => void refreshBusinessProof()}
-			onAuthorizationError={onAuthorizationError ?? (() => undefined)}
+			 onAuthorizationError={onAuthorizationError ?? (() => undefined)}
 			onSessionInvalidated={onSessionInvalidated ?? (() => undefined)}
 		/>
+		<BusinessProofSurface state={businessProof} />
 	</main>;
 }
 
@@ -195,7 +199,6 @@ export function SupportWorkspace({
 		{error ? <p className="notice" role="alert">{error}</p> : null}
 		{pending ? <p className="status" role="status">Submitting the customer request…</p> : null}
 		{submitted && result ? <SupportResultPanel submitted={submitted} result={result} tickets={tickets} handoffs={handoffs} /> : null}
-		<BusinessProofSurface tickets={tickets} handoffs={handoffs} />
 	</section>;
 }
 
@@ -236,8 +239,15 @@ function DurableTurnProof({ conversationId, tickets, handoffs }: { conversationI
 	return <ul>{ticket ? <li>Durable Ticket confirmed by scoped read-back</li> : null}{handoff ? <li>{handoff.reason.startsWith("qualified_professional_required:") ? "Safety-mandated professional handoff" : "Ordinary human handoff"} confirmed by scoped read-back</li> : null}</ul>;
 }
 
-function BusinessProofSurface({ tickets, handoffs }: { tickets: ScopedTicket[]; handoffs: ScopedHandoff[] }) {
-	return <section className="business-proof" aria-label="Scoped durable business state"><h2>Durable business state</h2><p>{tickets.length} ticket(s) and {handoffs.length} handoff(s) confirmed by scoped read-back.</p></section>;
+export type BusinessProofState =
+	| { status: "loading" }
+	| { status: "unavailable" }
+	| { status: "verified"; tickets: ScopedTicket[]; handoffs: ScopedHandoff[] };
+
+export function BusinessProofSurface({ state }: { state: BusinessProofState }) {
+	if (state.status === "loading") return <section className="business-proof" aria-label="Scoped durable business state"><h2>Durable business state</h2><p>Loading durable business state…</p></section>;
+	if (state.status === "unavailable") return <section className="business-proof" aria-label="Scoped durable business state"><h2>Durable business state</h2><p>Durable business state could not be verified.</p></section>;
+	return <section className="business-proof" aria-label="Scoped durable business state"><h2>Durable business state</h2><p>{state.tickets.length} ticket(s) and {state.handoffs.length} handoff(s) confirmed by scoped read-back.</p><section><h3>Tickets</h3>{state.tickets.length === 0 ? <p>No durable Tickets confirmed.</p> : <ul>{state.tickets.map((ticket) => <li key={ticket.id}><strong>{ticket.id}</strong><span>{ticket.conversationId} · {ticket.summary}</span><code>{ticket.idempotencyKey}</code><time>{ticket.createdAt}</time></li>)}</ul>}</section><section><h3>Handoffs</h3>{state.handoffs.length === 0 ? <p>No durable Handoffs confirmed.</p> : <ul>{state.handoffs.map((handoff) => <li key={handoff.id}><strong>{handoff.id}</strong><span>{handoff.conversationId} · {handoff.reason.startsWith("qualified_professional_required:") ? "Safety-mandated professional handoff" : "Ordinary human handoff"}</span><time>{handoff.createdAt}</time></li>)}</ul>}</section></section>;
 }
 
 function LoginScreen({

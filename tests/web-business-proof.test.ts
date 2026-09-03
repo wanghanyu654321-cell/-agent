@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { loadScopedBusinessProof } from "../web/src/business.ts";
+import { BusinessReadLifecycle, loadScopedBusinessProof } from "../web/src/business.ts";
 import type { SessionApi } from "../web/src/session.ts";
 
 const scope = { tenantId: "demo-tenant-a", storeId: "demo-store-a1" };
@@ -72,6 +72,15 @@ describe("durable business proof boundary", () => {
 		expect(await loadScopedBusinessProof(apiWith([response(403, {}), response(200, [])]), scope)).toEqual({
 			kind: "forbidden",
 		});
+	});
+
+	it("does not allow a stale business read to commit after invalidation", () => {
+		const lifecycle = new BusinessReadLifecycle();
+		const earlier = lifecycle.begin();
+		lifecycle.invalidate();
+		expect(lifecycle.complete(earlier)).toBe(false);
+		const replacement = lifecycle.begin();
+		expect(lifecycle.complete(replacement)).toBe(true);
 	});
 });
 

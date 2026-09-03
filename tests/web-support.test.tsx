@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { SupportResultPanel } from "../web/src/App.tsx";
+import { BusinessProofSurface, SupportResultPanel } from "../web/src/App.tsx";
 import { applyAuthenticatedApiStatus, type SessionApi } from "../web/src/session.ts";
 import {
 	parsePublicSupportResult,
@@ -102,6 +102,17 @@ describe("Support Proof Workspace public boundary", () => {
 		);
 		expect(confirmed).toContain("Durable Ticket confirmed by scoped read-back");
 		expect(confirmed).toContain("Safety-mandated professional handoff confirmed by scoped read-back");
+	});
+
+	it("renders verified records separately from loading and unavailable durable state", () => {
+		const unavailable = renderToStaticMarkup(<BusinessProofSurface state={{ status: "unavailable" }} />);
+		expect(unavailable).toContain("Durable business state could not be verified.");
+		expect(unavailable).not.toContain("0 ticket(s)");
+		const records = renderToStaticMarkup(<BusinessProofSurface state={{ status: "verified", tickets: [{ id: "ticket-proof", tenantId: alice.scope.tenantId, storeId: alice.scope.storeId, conversationId: "conversation-a", summary: "Refund", idempotencyKey: "refund-a", createdAt: "2026-09-03T00:00:00.000Z" }], handoffs: [{ id: "handoff-ordinary", tenantId: alice.scope.tenantId, storeId: alice.scope.storeId, conversationId: "conversation-a", reason: "ordinary", createdAt: "2026-09-03T00:00:00.000Z" }] }} />);
+		expect(records).toContain("ticket-proof");
+		expect(records).toContain("refund-a");
+		expect(records).toContain("Ordinary human handoff");
+		expect(records).not.toContain("qualified_professional_required:");
 	});
 
 	it("renders fallback and escalation without inventing a hidden internal cause or exposing raw events", () => {

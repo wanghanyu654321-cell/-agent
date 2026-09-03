@@ -25,6 +25,23 @@ export type BusinessProofOutcome =
 	| { kind: "forbidden" }
 	| { kind: "error"; message: string };
 
+export class BusinessReadLifecycle {
+	private active = 0;
+
+	begin(): number {
+		this.active += 1;
+		return this.active;
+	}
+
+	complete(request: number): boolean {
+		return this.active === request;
+	}
+
+	invalidate(): void {
+		this.active += 1;
+	}
+}
+
 const unavailable = { kind: "error", message: "Durable business state could not be verified." } as const;
 
 export async function loadScopedBusinessProof(
