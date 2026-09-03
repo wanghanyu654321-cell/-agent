@@ -41,13 +41,17 @@ seed fail closed when any partial or inconsistent Alice/Susan/Bob identity graph
 completely absent graph or a complete, exact graph is accepted. This approval does not authorize
 Task 2 beyond its separately governed execution directive.
 
-`PHASE 2C-A TASK 2 REACT/AUTH SHELL = IMPLEMENTATION CANDIDATE — PENDING INDEPENDENT REVIEW`.
+`PHASE 2C-A TASK 2 REACT/AUTH SHELL = APPROVED WITH CONDITIONS`.
 
 The same Enterprise origin now delivers the built React shell and the existing `/api/v1/*` boundary.
 The shell restores identity only through `/api/v1/auth/me`, displays the server-derived actor and
 tenant/store scope read-only, and clears its presentation state on logout or authenticated `401`.
-It does not implement Support Workspace, Tickets, Handoffs, or Audit pages; no browser authority,
-semantic-selector hot-path, or Runtime semantics are introduced.
+Task 3 implements the required shared authenticated business-request path: an authenticated `401`
+invalidates identity and clears the Support Workspace before Login can render, while a `403` retains
+the server-derived identity/scope and presents a bounded authorization state. The Task 3 Support
+Proof Workspace is an `IMPLEMENTATION CANDIDATE — PENDING INDEPENDENT REVIEW`; Tickets, Handoffs,
+and Audit pages remain out of scope. No browser authority, semantic-selector hot-path, or Runtime
+semantics are introduced.
 
 ## Status
 
