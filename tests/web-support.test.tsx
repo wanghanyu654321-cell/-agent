@@ -91,6 +91,19 @@ describe("Support Proof Workspace public boundary", () => {
 		expect(markup).toContain("No authorized evidence returned in the final result.");
 	});
 
+	it("confirms durable effects only from matching scoped read-back records", () => {
+		const noReadBack = renderToStaticMarkup(<SupportResultPanel submitted={submitted()} result={{ ...answer, toolsCalled: ["create_ticket"], evidence: [] }} />);
+		expect(noReadBack).toContain("Tool invoked: create_ticket");
+		expect(noReadBack).toContain("No matching durable business record confirmed.");
+		expect(noReadBack).not.toContain("Durable Ticket confirmed");
+
+		const confirmed = renderToStaticMarkup(
+			<SupportResultPanel submitted={submitted()} result={answer} tickets={[{ id: "ticket-a", tenantId: alice.scope.tenantId, storeId: alice.scope.storeId, conversationId: "conversation-a", summary: "Refund", idempotencyKey: "refund-a", createdAt: "2026-09-03T00:00:00.000Z" }]} handoffs={[{ id: "handoff-a", tenantId: alice.scope.tenantId, storeId: alice.scope.storeId, conversationId: "conversation-a", reason: "qualified_professional_required: safety", createdAt: "2026-09-03T00:00:00.000Z" }]} />,
+		);
+		expect(confirmed).toContain("Durable Ticket confirmed by scoped read-back");
+		expect(confirmed).toContain("Safety-mandated professional handoff confirmed by scoped read-back");
+	});
+
 	it("renders fallback and escalation without inventing a hidden internal cause or exposing raw events", () => {
 		const fallback = parsePublicSupportResult({
 			type: "fallback",

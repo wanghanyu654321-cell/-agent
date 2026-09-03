@@ -130,6 +130,61 @@ describePostgres("enterprise application composition root", () => {
 		expect(await readJson(origin, "/api/v1/handoffs", bob)).toEqual([]);
 	});
 
+	it("proves default portfolio tool effects through scoped PostgreSQL read-back and restart", async () => {
+		await resetDatabase();
+		const first = await boot();
+		const origin = await start(first);
+		const alice = await login(origin, "alice.agent@demo.example", "AliceDemo!2026");
+		const susan = await login(origin, "susan.supervisor@demo.example", "SusanDemo!2026");
+		const bob = await login(origin, "bob.agent@demo.example", "BobDemo!2026");
+
+		expect((await support(origin, alice, "ticket-proof", "customer-a", "帮我记录一个退款售后工单")).type).toBe(
+			"answer",
+		);
+		await support(origin, alice, "ticket-proof", "customer-a", "帮我记录一个退款售后工单");
+		expect(await readJson(origin, "/api/v1/tickets", alice)).toEqual(
+			expect.arrayContaining([expect.objectContaining({ conversationId: "ticket-proof" })]),
+		);
+		expect(
+			(
+				await first.pool.query<{ count: string }>(
+					"SELECT count(*)::text AS count FROM tickets WHERE conversation_id = $1",
+					["ticket-proof"],
+				)
+			).rows[0]?.count,
+		).toBe("1");
+
+		expect((await support(origin, alice, "ordinary-denied", "customer-a", "这个投诉我需要转人工处理")).type).toBe(
+			"fallback",
+		);
+		expect(await readJson(origin, "/api/v1/handoffs", alice)).not.toEqual(
+			expect.arrayContaining([expect.objectContaining({ conversationId: "ordinary-denied" })]),
+		);
+		expect(
+			(await support(origin, alice, "safety-proof", "customer-a", "顾客操作中皮肤越来越痒，应该怎么继续？")).type,
+		).toBe("escalation");
+		expect(await readJson(origin, "/api/v1/handoffs", alice)).toEqual(
+			expect.arrayContaining([expect.objectContaining({ conversationId: "safety-proof" })]),
+		);
+		expect((await support(origin, susan, "ordinary-supervisor", "customer-s", "这个投诉我需要转人工处理")).type).toBe(
+			"escalation",
+		);
+		expect(await readJson(origin, "/api/v1/handoffs", susan)).toEqual(
+			expect.arrayContaining([expect.objectContaining({ conversationId: "ordinary-supervisor" })]),
+		);
+		expect(await readJson(origin, "/api/v1/tickets", bob)).toEqual([]);
+		expect(await readJson(origin, "/api/v1/handoffs", bob)).toEqual([]);
+
+		await first.close();
+		applications.splice(applications.indexOf(first), 1);
+		const restarted = await boot();
+		const restartedOrigin = await start(restarted);
+		const restartedAlice = await login(restartedOrigin, "alice.agent@demo.example", "AliceDemo!2026");
+		expect(await readJson(restartedOrigin, "/api/v1/tickets", restartedAlice)).toEqual(
+			expect.arrayContaining([expect.objectContaining({ conversationId: "ticket-proof" })]),
+		);
+	});
+
 	it("closes the HTTP server and PostgreSQL pool", async () => {
 		await resetDatabase();
 		const application = await boot();

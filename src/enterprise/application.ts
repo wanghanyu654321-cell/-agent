@@ -10,6 +10,8 @@ import {
 	InMemorySupportStore,
 	SupportAgentRuntime,
 	type SupportBusinessStore,
+	type SupportRequest,
+	type SupportResult,
 } from "../index.ts";
 import { EnterpriseAuthService } from "./auth.ts";
 import { type EnterpriseBusinessRepository, EnterpriseSupportService } from "./business.ts";
@@ -138,18 +140,88 @@ export async function startEnterpriseApplication(
 
 export function createDeterministicEnterpriseRuntime(businessStore: SupportBusinessStore): EnterpriseRuntimeResource {
 	const faux = registerFauxProvider();
-	faux.setResponses([fauxAssistantMessage("当前演示环境仅提供已验证信息；如需继续，请联系人工客服。")]);
+	const runtime = new SupportAgentRuntime({
+		model: faux.getModel(),
+		streamFn: streamSimple,
+		retrieval: new InMemoryRetrievalService(),
+		store: new InMemorySupportStore(),
+		businessStore,
+		faq: [],
+	});
+	const serializedRuntime = new SerializedEnterpriseDemoRuntime(runtime, faux);
 	return {
-		runtime: new SupportAgentRuntime({
-			model: faux.getModel(),
-			streamFn: streamSimple,
-			retrieval: new InMemoryRetrievalService(),
-			store: new InMemorySupportStore(),
-			businessStore,
-			faq: [],
-		}),
-		close: () => faux.unregister(),
+		runtime: serializedRuntime,
+		close: () => serializedRuntime.close(),
 	};
+}
+
+class SerializedEnterpriseDemoRuntime implements SupportRuntimePort {
+	private tail: Promise<void> = Promise.resolve();
+
+	constructor(
+		private readonly runtime: SupportAgentRuntime,
+		private readonly faux: ReturnType<typeof registerFauxProvider>,
+	) {}
+
+	run(request: SupportRequest): Promise<SupportResult> {
+		const result = this.tail.then(async () => {
+			configureEnterpriseDemoResponses(this.faux, request);
+			return this.runtime.run(request);
+		});
+		this.tail = result.then(
+			() => undefined,
+			() => undefined,
+		);
+		return result;
+	}
+
+	async close(): Promise<void> {
+		await this.tail;
+		this.faux.unregister();
+	}
+}
+
+function configureEnterpriseDemoResponses(
+	faux: ReturnType<typeof registerFauxProvider>,
+	request: SupportRequest,
+): void {
+	if (request.text.includes("帮我记录一个退款售后工单")) {
+		faux.setResponses([
+			fauxAssistantMessage(
+				[
+					{
+						type: "toolCall",
+						id: `ticket-${request.conversationId}`,
+						name: "create_ticket",
+						arguments: {
+							summary: "Demo refund after-sales request",
+							idempotencyKey: `enterprise-ticket-${request.conversationId}`,
+						},
+					},
+				],
+				{ stopReason: "toolUse" },
+			),
+			fauxAssistantMessage("已为您记录售后工单。"),
+		]);
+		return;
+	}
+	if (request.text.includes("这个投诉我需要转人工处理")) {
+		faux.setResponses([
+			fauxAssistantMessage(
+				[
+					{
+						type: "toolCall",
+						id: `handoff-${request.conversationId}`,
+						name: "handoff_to_human",
+						arguments: { reason: "Demo complaint requires human handling" },
+					},
+				],
+				{ stopReason: "toolUse" },
+			),
+		]);
+		return;
+	}
+	faux.setResponses([fauxAssistantMessage("当前演示环境仅提供已验证信息；如需继续，请联系人工客服。")]);
 }
 
 function requiredDatabaseUrl(value: string): string {

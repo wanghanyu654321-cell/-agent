@@ -14,6 +14,7 @@ import {
 	type PublicSupportResult,
 	type SupportRequestInput,
 } from "./support.ts";
+import { loadScopedBusinessProof, type ScopedHandoff, type ScopedTicket } from "./business.ts";
 import "./styles.css";
 
 const sessionApi = createSameOriginSessionApi();
@@ -80,6 +81,27 @@ export function AuthenticatedShell({
 	authorizationError?: boolean;
 	api?: SessionApi;
 }) {
+	const [tickets, setTickets] = useState<ScopedTicket[]>([]);
+	const [handoffs, setHandoffs] = useState<ScopedHandoff[]>([]);
+	const refreshRequest = useRef(0);
+	const refreshBusinessProof = async () => {
+		const current = ++refreshRequest.current;
+		const outcome = await loadScopedBusinessProof(api, context.scope);
+		if (current !== refreshRequest.current) return;
+		if (outcome.kind === "success") {
+			setTickets(outcome.tickets);
+			setHandoffs(outcome.handoffs);
+			return;
+		}
+		setTickets([]);
+		setHandoffs([]);
+		if (outcome.kind === "session-invalidated") return onSessionInvalidated?.();
+		if (outcome.kind === "forbidden") return onAuthorizationError?.();
+	};
+	useEffect(() => {
+		void refreshBusinessProof();
+		return () => { refreshRequest.current += 1; };
+	}, [context.scope.tenantId, context.scope.storeId]);
 	return <main className="shell">
 		<header className="identity-header">
 			<div>
@@ -98,6 +120,9 @@ export function AuthenticatedShell({
 		{authorizationError ? <p className="notice" role="status">This action is not authorized for your current server-derived role.</p> : null}
 		<SupportWorkspace
 			api={api}
+			tickets={tickets}
+			handoffs={handoffs}
+			onCompleted={() => void refreshBusinessProof()}
 			onAuthorizationError={onAuthorizationError ?? (() => undefined)}
 			onSessionInvalidated={onSessionInvalidated ?? (() => undefined)}
 		/>
@@ -106,10 +131,16 @@ export function AuthenticatedShell({
 
 export function SupportWorkspace({
 	api,
+	tickets,
+	handoffs,
+	onCompleted,
 	onSessionInvalidated,
 	onAuthorizationError,
 }: {
 	api: SessionApi;
+	tickets: ScopedTicket[];
+	handoffs: ScopedHandoff[];
+	onCompleted: () => void;
 	onSessionInvalidated: () => void;
 	onAuthorizationError: () => void;
 }) {
@@ -134,7 +165,11 @@ export function SupportWorkspace({
 		const outcome = await submitSupportRequest(api, snapshot);
 		if (!lifecycle.current.complete(request)) return;
 		setPending(false);
-		if (outcome.kind === "success") return setResult(outcome.result);
+		if (outcome.kind === "success") {
+			setResult(outcome.result);
+			onCompleted();
+			return;
+		}
 		if (outcome.kind === "session-invalidated") return onSessionInvalidated();
 		if (outcome.kind === "forbidden") {
 			setError("This support action is not authorized for your current server-derived role.");
@@ -159,16 +194,21 @@ export function SupportWorkspace({
 		</form>
 		{error ? <p className="notice" role="alert">{error}</p> : null}
 		{pending ? <p className="status" role="status">Submitting the customer request…</p> : null}
-		{submitted && result ? <SupportResultPanel submitted={submitted} result={result} /> : null}
+		{submitted && result ? <SupportResultPanel submitted={submitted} result={result} tickets={tickets} handoffs={handoffs} /> : null}
+		<BusinessProofSurface tickets={tickets} handoffs={handoffs} />
 	</section>;
 }
 
 export function SupportResultPanel({
 	submitted,
 	result,
+	tickets = [],
+	handoffs = [],
 }: {
 	submitted: SupportRequestInput;
 	result: PublicSupportResult;
+	tickets?: ScopedTicket[];
+	handoffs?: ScopedHandoff[];
 }) {
 	const explanation = result.type === "answer"
 		? result.evidence.length > 0
@@ -184,8 +224,20 @@ export function SupportResultPanel({
 			<section><h3>Outcome</h3><p className="explanation">{explanation}</p><p className="result-text">{result.text}</p></section>
 			<section><h3>Authorized evidence</h3>{result.evidence.length === 0 ? <p>No authorized evidence returned in the final result.</p> : <ul>{result.evidence.map((reference) => <li key={`${reference.id}:${reference.version}`}><strong>{reference.id}</strong><span>{reference.kind} · {reference.version}</span><code>{reference.sourceRef}</code></li>)}</ul>}</section>
 			<section><h3>Tools called</h3>{result.toolsCalled.length === 0 ? <p>No customer-facing tools were called.</p> : <ul>{result.toolsCalled.map((tool, index) => <li key={`${tool}-${index}`}>Tool invoked: {tool}</li>)}</ul>}</section>
+			<section><h3>Durable business proof</h3><DurableTurnProof conversationId={submitted.conversationId} tickets={tickets} handoffs={handoffs} /></section>
 		</div>
 	</section>;
+}
+
+function DurableTurnProof({ conversationId, tickets, handoffs }: { conversationId: string; tickets: ScopedTicket[]; handoffs: ScopedHandoff[] }) {
+	const ticket = tickets.find((item) => item.conversationId === conversationId);
+	const handoff = handoffs.find((item) => item.conversationId === conversationId);
+	if (!ticket && !handoff) return <p>No matching durable business record confirmed.</p>;
+	return <ul>{ticket ? <li>Durable Ticket confirmed by scoped read-back</li> : null}{handoff ? <li>{handoff.reason.startsWith("qualified_professional_required:") ? "Safety-mandated professional handoff" : "Ordinary human handoff"} confirmed by scoped read-back</li> : null}</ul>;
+}
+
+function BusinessProofSurface({ tickets, handoffs }: { tickets: ScopedTicket[]; handoffs: ScopedHandoff[] }) {
+	return <section className="business-proof" aria-label="Scoped durable business state"><h2>Durable business state</h2><p>{tickets.length} ticket(s) and {handoffs.length} handoff(s) confirmed by scoped read-back.</p></section>;
 }
 
 function LoginScreen({
