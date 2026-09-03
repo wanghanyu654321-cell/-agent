@@ -71,6 +71,26 @@ describe("Support Proof Workspace public boundary", () => {
 		expect(markup).not.toContain("Handoff persisted");
 	});
 
+	it("renders an answer without authorized evidence as an answer, not an escalation", () => {
+		const markup = renderToStaticMarkup(
+			<SupportResultPanel
+				submitted={submitted()}
+				result={{
+					type: "answer",
+					text: "感谢您的咨询。",
+					piSessionId: "pi-answer-without-evidence",
+					toolsCalled: [],
+					evidence: [],
+				}}
+			/>,
+		);
+
+		expect(markup).toContain("outcome-answer");
+		expect(markup).toContain('<p class="explanation">Answer</p>');
+		expect(markup).not.toContain("Escalation");
+		expect(markup).toContain("No authorized evidence returned in the final result.");
+	});
+
 	it("renders fallback and escalation without inventing a hidden internal cause or exposing raw events", () => {
 		const fallback = parsePublicSupportResult({
 			type: "fallback",

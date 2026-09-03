@@ -170,8 +170,10 @@ export function SupportResultPanel({
 	submitted: SupportRequestInput;
 	result: PublicSupportResult;
 }) {
-	const explanation = result.type === "answer" && result.evidence.length > 0
-		? "Governed answer"
+	const explanation = result.type === "answer"
+		? result.evidence.length > 0
+			? "Governed answer"
+			: "Answer"
 		: result.type === "fallback"
 			? "Controlled fallback"
 			: "Escalation";
