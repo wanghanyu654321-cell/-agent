@@ -7,11 +7,13 @@ import {
 	type EnterpriseApplication,
 	type EnterpriseRuntimeFactory,
 } from "../src/enterprise/application.ts";
+import { applyEnterpriseBusinessMigrations, PostgresIdentityRepository } from "../src/enterprise/postgres.ts";
 import { InMemoryRetrievalService, InMemorySupportStore, SupportAgentRuntime } from "../src/index.ts";
 
 const postgresTestUrl = process.env.POSTGRES_TEST_URL;
 const describePostgres = postgresTestUrl ? describe : describe.skip;
 const applications: EnterpriseApplication[] = [];
+const seedInconsistencyMessage = "Portfolio enterprise demo seed is partial or inconsistent.";
 
 afterEach(async () => {
 	while (applications.length > 0) await applications.pop()?.close();
@@ -51,6 +53,21 @@ describePostgres("enterprise application composition root", () => {
 		expect(
 			(await second.pool.query<{ count: string }>("SELECT count(*)::text AS count FROM memberships")).rows[0]?.count,
 		).toBe("3");
+	});
+
+	it("fails application bootstrap when the PostgreSQL demo graph is missing Bob's membership", async () => {
+		await resetDatabase();
+		const setupPool = new Pool({ connectionString: postgresTestUrl });
+		try {
+			await applyEnterpriseBusinessMigrations(setupPool);
+			await createPostgresDemoGraphWithoutBobMembership(new PostgresIdentityRepository(setupPool));
+		} finally {
+			await setupPool.end();
+		}
+
+		await expect(createEnterpriseApplication({ databaseUrl: postgresTestUrl!, port: 0 })).rejects.toThrow(
+			seedInconsistencyMessage,
+		);
 	});
 
 	it("derives Alice, Susan, and Bob scope from composed HTTP authentication", async () => {
@@ -149,6 +166,51 @@ async function resetDatabase(): Promise<void> {
 	} finally {
 		await pool.end();
 	}
+}
+
+async function createPostgresDemoGraphWithoutBobMembership(repository: PostgresIdentityRepository): Promise<void> {
+	const createdAt = new Date("2026-09-01T00:00:00.000Z");
+	await repository.createTenant({ id: "demo-tenant-a", name: "Demo Retail Group A", createdAt });
+	await repository.createTenant({ id: "demo-tenant-b", name: "Demo Retail Group B", createdAt });
+	await repository.createStore({ id: "demo-store-a1", tenantId: "demo-tenant-a", name: "Store A1", createdAt });
+	await repository.createStore({ id: "demo-store-b1", tenantId: "demo-tenant-b", name: "Store B1", createdAt });
+	await repository.createUser({
+		id: "demo-user-alice-agent",
+		email: "alice.agent@demo.example",
+		displayName: "Alice Agent",
+		passwordHash: "not-used-by-seed-validation",
+		createdAt,
+	});
+	await repository.createUser({
+		id: "demo-user-susan-supervisor",
+		email: "susan.supervisor@demo.example",
+		displayName: "Susan Supervisor",
+		passwordHash: "not-used-by-seed-validation",
+		createdAt,
+	});
+	await repository.createUser({
+		id: "demo-user-bob-agent",
+		email: "bob.agent@demo.example",
+		displayName: "Bob Agent",
+		passwordHash: "not-used-by-seed-validation",
+		createdAt,
+	});
+	await repository.createMembership({
+		id: "demo-membership-alice-a1",
+		userId: "demo-user-alice-agent",
+		tenantId: "demo-tenant-a",
+		storeId: "demo-store-a1",
+		role: "agent",
+		createdAt,
+	});
+	await repository.createMembership({
+		id: "demo-membership-susan-a1",
+		userId: "demo-user-susan-supervisor",
+		tenantId: "demo-tenant-a",
+		storeId: "demo-store-a1",
+		role: "supervisor",
+		createdAt,
+	});
 }
 
 async function login(origin: string, email: string, password: string): Promise<string> {

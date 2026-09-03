@@ -28,15 +28,17 @@ Phase 2B adds conversation ownership checks, scoped PostgreSQL ticket/handoff/au
 persistence, and a bounded optional Runtime business port. Its independent PostgreSQL
 clean-runner Gate passed; React frontend work has not started.
 
-`PHASE 2C-A TASK 1 APPLICATION COMPOSITION ROOT = LOCAL IMPLEMENTATION CHECKPOINT`.
+`PHASE 2C-A TASK 1 APPLICATION COMPOSITION ROOT = REPAIR CANDIDATE — PENDING INDEPENDENT REVIEW`.
 
 The enterprise application composition root now requires `DATABASE_URL`, verifies the
 PostgreSQL connection, applies the approved migrations, repeat-safely seeds the synthetic
 Alice/Susan/Bob portfolio identities, composes the existing repositories, auth service,
 business service, and `SupportAgentRuntime`, then serves the existing enterprise HTTP API.
 `npm run start:enterprise` is the product process entrypoint; shutdown closes the HTTP
-server and PostgreSQL pool. The new real-PostgreSQL composition integration test is pending
-the existing disposable PostgreSQL CI environment; no Phase 2C-A approval is claimed here.
+server and PostgreSQL pool. The real-PostgreSQL composition CI Gate exists and has run
+successfully for the prior composition checkpoint. This repair candidate makes the deterministic
+seed fail closed when any partial or inconsistent Alice/Susan/Bob identity graph is found; only a
+completely absent graph or a complete, exact graph is accepted. No Phase 2C-A approval is claimed here.
 
 ## Status
 
