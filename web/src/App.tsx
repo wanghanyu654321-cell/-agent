@@ -20,6 +20,13 @@ import {
 	type ScopedHandoff,
 	type ScopedTicket,
 } from "./business.ts";
+import {
+	AuditProofSurface,
+	AuditReadLifecycle,
+	loadScopedAuditProof,
+	shouldLoadAuditProof,
+	type AuditProofState,
+} from "./audit.tsx";
 import "./styles.css";
 
 const sessionApi = createSameOriginSessionApi();
@@ -88,6 +95,9 @@ export function AuthenticatedShell({
 }) {
 	const [businessProof, setBusinessProof] = useState<BusinessProofState>({ status: "loading" });
 	const refreshRequest = useRef(new BusinessReadLifecycle());
+	const [auditProof, setAuditProof] = useState<AuditProofState>({ status: "loading" });
+	const auditRequest = useRef(new AuditReadLifecycle());
+	const auditEnabled = shouldLoadAuditProof(context.actor.capabilities);
 	const refreshBusinessProof = async () => {
 		const current = refreshRequest.current.begin();
 		setBusinessProof({ status: "loading" });
@@ -105,6 +115,25 @@ export function AuthenticatedShell({
 		void refreshBusinessProof();
 		return () => refreshRequest.current.invalidate();
 	}, [context.scope.tenantId, context.scope.storeId]);
+	useEffect(() => {
+		if (!auditEnabled) {
+			auditRequest.current.invalidate();
+			return;
+		}
+		const current = auditRequest.current.begin();
+		setAuditProof({ status: "loading" });
+		void loadScopedAuditProof(api, context.scope).then((outcome) => {
+			if (!auditRequest.current.complete(current)) return;
+			if (outcome.kind === "success") {
+				setAuditProof({ status: "verified", events: outcome.events });
+				return;
+			}
+			setAuditProof({ status: "unavailable" });
+			if (outcome.kind === "session-invalidated") onSessionInvalidated?.();
+			if (outcome.kind === "forbidden") onAuthorizationError?.();
+		});
+		return () => auditRequest.current.invalidate();
+	}, [api, auditEnabled, context.actor.userId, context.scope.tenantId, context.scope.storeId]);
 	return <main className="shell">
 		<header className="identity-header">
 			<div>
@@ -130,6 +159,7 @@ export function AuthenticatedShell({
 			onSessionInvalidated={onSessionInvalidated ?? (() => undefined)}
 		/>
 		<BusinessProofSurface state={businessProof} />
+		{auditEnabled ? <AuditProofSurface state={auditProof} /> : null}
 	</main>;
 }
 

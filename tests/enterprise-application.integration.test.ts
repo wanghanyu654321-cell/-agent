@@ -28,11 +28,11 @@ describePostgres("enterprise application composition root", () => {
 		expect((await (await fetch(`${origin}/healthz`)).json()).status).toBe("ok");
 		expect(
 			(await application.pool.query<{ count: string }>("SELECT count(*)::text AS count FROM users")).rows[0]?.count,
-		).toBe("3");
+		).toBe("4");
 		expect(
 			(await application.pool.query<{ count: string }>("SELECT count(*)::text AS count FROM memberships")).rows[0]
 				?.count,
-		).toBe("3");
+		).toBe("4");
 		expect(
 			(await application.pool.query<{ id: string }>("SELECT id FROM enterprise_schema_migrations ORDER BY id")).rows,
 		).toEqual([{ id: "001_enterprise_identity" }, { id: "002_support_business_persistence" }]);
@@ -128,6 +128,60 @@ describePostgres("enterprise application composition root", () => {
 			expect.arrayContaining([expect.objectContaining({ conversationId: "ticket-alice" })]),
 		);
 		expect(await readJson(origin, "/api/v1/handoffs", bob)).toEqual([]);
+	});
+
+	it("projects durable Runtime audit events to Ava's safe scoped Audit DTO across restart", async () => {
+		await resetDatabase();
+		const first = await boot();
+		const origin = await start(first);
+		const alice = await login(origin, "alice.agent@demo.example", "AliceDemo!2026");
+		const bob = await login(origin, "bob.agent@demo.example", "BobDemo!2026");
+		const susan = await login(origin, "susan.supervisor@demo.example", "SusanDemo!2026");
+		const ava = await login(origin, "ava.admin@demo.example", "AvaDemo!2026");
+
+		await expect(me(origin, "ava.admin@demo.example", "AvaDemo!2026")).resolves.toMatchObject({
+			actor: { userId: "demo-user-ava-admin", role: "admin", capabilities: expect.arrayContaining(["audit:read"]) },
+			scope: { tenantId: "demo-tenant-a", storeId: "demo-store-a1" },
+		});
+		expect((await fetch(`${origin}/api/v1/audit-events`)).status).toBe(401);
+		expect((await fetch(`${origin}/api/v1/audit-events`, { headers: { cookie: alice } })).status).toBe(403);
+		expect((await fetch(`${origin}/api/v1/audit-events`, { headers: { cookie: susan } })).status).toBe(403);
+
+		await support(origin, alice, "audit-a", "customer-a", "帮我记录一个退款售后工单");
+		await support(origin, bob, "audit-b", "customer-b", "帮我记录一个退款售后工单");
+		const events = (await readJson(origin, "/api/v1/audit-events", ava)) as Array<Record<string, unknown>>;
+		expect(events).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					conversationId: "audit-a",
+					eventType: "support-agent.audit",
+					outcome: "answer",
+					toolsCalled: ["create_ticket"],
+				}),
+			]),
+		);
+		expect(events).not.toEqual(expect.arrayContaining([expect.objectContaining({ conversationId: "audit-b" })]));
+		expect(Object.keys(events.find((event) => event.conversationId === "audit-a") ?? {}).sort()).toEqual([
+			"conversationId",
+			"createdAt",
+			"eventType",
+			"id",
+			"outcome",
+			"storeId",
+			"tenantId",
+			"toolsCalled",
+		]);
+		expect(JSON.stringify(events)).not.toContain("payload");
+		expect(JSON.stringify(events)).not.toContain("knowledgeRouting");
+
+		await first.close();
+		applications.splice(applications.indexOf(first), 1);
+		const restarted = await boot();
+		const restartedOrigin = await start(restarted);
+		const restartedAva = await login(restartedOrigin, "ava.admin@demo.example", "AvaDemo!2026");
+		expect(await readJson(restartedOrigin, "/api/v1/audit-events", restartedAva)).toEqual(
+			expect.arrayContaining([expect.objectContaining({ conversationId: "audit-a" })]),
+		);
 	});
 
 	it("proves default portfolio tool effects through scoped PostgreSQL read-back and restart", async () => {

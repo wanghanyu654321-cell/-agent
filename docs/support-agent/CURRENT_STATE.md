@@ -48,10 +48,13 @@ The shell restores identity only through `/api/v1/auth/me`, displays the server-
 tenant/store scope read-only, and clears its presentation state on logout or authenticated `401`.
 Task 3 Support Proof Workspace is **APPROVED** at `80c7ce0e3fd212c6179e916dcd91946484902ce7`;
 its authenticated-business-request condition is closed. Task 4 Durable Ticket/Handoff Persistence
-Proof is an `IMPLEMENTATION CANDIDATE — PENDING INDEPENDENT REVIEW`: it adds scoped read-back proof
-for durable Ticket/Handoff state while preserving the existing Runtime, authority, business store,
-and Safety contracts. Audit remains not started. No browser authority, semantic-selector hot-path,
-or Runtime semantics are introduced.
+Proof is independently **APPROVED** at `248241627e88343f8485679883722215b9068975` (approval comment
+`5526113083`): it adds scoped read-back proof for durable Ticket/Handoff state while preserving the
+existing Runtime, authority, business store, and Safety contracts. Task 5 Bounded Admin Audit Proof is
+an `IMPLEMENTATION CANDIDATE — PENDING INDEPENDENT REVIEW`: it adds only the synthetic Ava Admin
+fixture and a public-safe, capability-gated Audit projection. Actor attribution is not claimed because
+the current durable audit schema does not persist it. Phase 2C-B / Docker remains not started. No browser
+authority, semantic-selector hot-path, or Runtime semantics are introduced.
 
 ## Status
 

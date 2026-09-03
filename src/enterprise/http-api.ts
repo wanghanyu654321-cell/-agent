@@ -9,6 +9,7 @@ import {
 	EnterpriseConversationConflictError,
 	EnterpriseConversationNotFoundError,
 	type EnterpriseSupportPort,
+	type PersistentAuditEventRecord,
 	runtimeRequest,
 } from "./business.ts";
 import type { SupportExecutionContext } from "./identity.ts";
@@ -85,13 +86,10 @@ async function handleRequest(
 				: methodNotAllowed(response, "GET");
 		if (path === "/api/v1/audit-events")
 			return request.method === "GET"
-				? readBusiness(
-						request,
-						response,
-						options,
-						url,
-						"audit:read",
-						(context) => options.supportService?.listAuditEvents(context) ?? Promise.resolve([]),
+				? readBusiness(request, response, options, url, "audit:read", async (context) =>
+						options.supportService
+							? (await options.supportService.listAuditEvents(context)).map(publicAuditEvent)
+							: [],
 					)
 				: methodNotAllowed(response, "GET");
 		if (path.startsWith("/api/")) return sendJson(response, 404, { error: "not_found" });
@@ -242,6 +240,43 @@ function publicSupportResult(result: SupportResult): Omit<SupportResult, "sessio
 		piSessionId: result.piSessionId,
 		toolsCalled: result.toolsCalled,
 		evidence: result.evidence,
+	};
+}
+
+type PublicAuditEvent = {
+	id: string;
+	tenantId: string;
+	storeId: string;
+	conversationId: string;
+	eventType: "support-agent.audit";
+	outcome?: "answer" | "fallback" | "escalation";
+	toolsCalled: Array<"search_faq" | "search_knowledge" | "create_ticket" | "handoff_to_human">;
+	createdAt: string;
+};
+
+const publicAuditTools = ["search_faq", "search_knowledge", "create_ticket", "handoff_to_human"] as const;
+const publicAuditOutcomes = ["answer", "fallback", "escalation"] as const;
+
+function publicAuditEvent(event: PersistentAuditEventRecord): PublicAuditEvent {
+	const payload = event.payload;
+	const outcome = publicAuditOutcomes.includes(payload.outcome as (typeof publicAuditOutcomes)[number])
+		? (payload.outcome as PublicAuditEvent["outcome"])
+		: undefined;
+	const toolsCalled = Array.isArray(payload.toolsCalled)
+		? payload.toolsCalled.filter(
+				(tool): tool is PublicAuditEvent["toolsCalled"][number] =>
+					typeof tool === "string" && publicAuditTools.includes(tool as PublicAuditEvent["toolsCalled"][number]),
+			)
+		: [];
+	return {
+		id: event.id,
+		tenantId: event.tenantId,
+		storeId: event.storeId,
+		conversationId: event.conversationId,
+		eventType: "support-agent.audit",
+		...(outcome ? { outcome } : {}),
+		toolsCalled,
+		createdAt: event.createdAt.toISOString(),
 	};
 }
 

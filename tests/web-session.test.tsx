@@ -19,6 +19,16 @@ const alice = {
 	request: { requestId: "request-1" },
 };
 
+const ava = {
+	actor: {
+		userId: "demo-user-ava-admin",
+		role: "admin" as const,
+		capabilities: ["agent:invoke", "conversation:read", "ticket:create", "handoff:create", "audit:read"],
+	},
+	scope: { tenantId: "demo-tenant-a", storeId: "demo-store-a1" },
+	request: { requestId: "request-ava" },
+};
+
 describe("React same-origin session model", () => {
 	it("returns Login state when bootstrap /auth/me is unauthenticated", async () => {
 		const state = await bootstrapSession(apiWith([response(401, { error: "unauthenticated" })]));
@@ -66,6 +76,15 @@ describe("React same-origin session model", () => {
 		expect(markup).not.toContain('name="tenantId"');
 		expect(markup).not.toContain('name="storeId"');
 		expect(markup).not.toContain('name="role"');
+	});
+
+	it("mounts the Audit proof surface only for the server-derived audit:read capability", () => {
+		const agentMarkup = renderToStaticMarkup(<AuthenticatedShell context={alice} onLogout={() => undefined} />);
+		const adminMarkup = renderToStaticMarkup(<AuthenticatedShell context={ava} onLogout={() => undefined} />);
+
+		expect(agentMarkup).not.toContain("Audit proof");
+		expect(adminMarkup).toContain("Audit proof");
+		expect(adminMarkup).toContain("Actor attribution is not recorded in the current audit schema.");
 	});
 });
 

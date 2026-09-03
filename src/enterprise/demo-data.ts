@@ -16,11 +16,12 @@ export class PortfolioEnterpriseDemoSeedInconsistencyError extends Error {
 export interface PortfolioEnterpriseDemoData {
 	tenants: { a: Tenant; b: Tenant };
 	stores: { a1: Store; b1: Store };
-	users: { alice: User; susan: User; bob: User };
+	users: { alice: User; susan: User; bob: User; ava: User };
 	credentials: {
 		alice: { email: string; password: string };
 		susan: { email: string; password: string };
 		bob: { email: string; password: string };
+		ava: { email: string; password: string };
 	};
 }
 
@@ -32,6 +33,7 @@ export async function seedPortfolioEnterpriseDemoData(
 		alice: { email: "alice.agent@demo.example", password: "AliceDemo!2026" },
 		susan: { email: "susan.supervisor@demo.example", password: "SusanDemo!2026" },
 		bob: { email: "bob.agent@demo.example", password: "BobDemo!2026" },
+		ava: { email: "ava.admin@demo.example", password: "AvaDemo!2026" },
 	};
 	const tenants = {
 		a: { id: "demo-tenant-a", name: "Demo Retail Group A", createdAt },
@@ -44,7 +46,9 @@ export async function seedPortfolioEnterpriseDemoData(
 	const existingAlice = await repository.findUserByEmail(credentials.alice.email);
 	const existingSusan = await repository.findUserByEmail(credentials.susan.email);
 	const existingBob = await repository.findUserByEmail(credentials.bob.email);
-	const existingUsers = [existingAlice, existingSusan, existingBob];
+	const existingAva = await repository.findUserByEmail(credentials.ava.email);
+	const existingLegacyUsers = [existingAlice, existingSusan, existingBob];
+	const existingUsers = [...existingLegacyUsers, existingAva];
 	if (existingUsers.every((user) => !user)) {
 		const users = {
 			alice: {
@@ -68,6 +72,13 @@ export async function seedPortfolioEnterpriseDemoData(
 				passwordHash: await hashPassword(credentials.bob.password),
 				createdAt,
 			},
+			ava: {
+				id: "demo-user-ava-admin",
+				email: credentials.ava.email,
+				displayName: "Ava Admin",
+				passwordHash: await hashPassword(credentials.ava.password),
+				createdAt,
+			},
 		};
 		await repository.createTenant(tenants.a);
 		await repository.createTenant(tenants.b);
@@ -76,6 +87,7 @@ export async function seedPortfolioEnterpriseDemoData(
 		await repository.createUser(users.alice);
 		await repository.createUser(users.susan);
 		await repository.createUser(users.bob);
+		await repository.createUser(users.ava);
 		await repository.createMembership({
 			id: "demo-membership-alice-a1",
 			userId: users.alice.id,
@@ -100,9 +112,17 @@ export async function seedPortfolioEnterpriseDemoData(
 			role: "agent",
 			createdAt,
 		});
+		await repository.createMembership({
+			id: "demo-membership-ava-a1",
+			userId: users.ava.id,
+			tenantId: tenants.a.id,
+			storeId: stores.a1.id,
+			role: "admin",
+			createdAt,
+		});
 		return { tenants, stores, users, credentials };
 	}
-	if (existingUsers.some((user) => !user)) throw new PortfolioEnterpriseDemoSeedInconsistencyError();
+	if (existingLegacyUsers.some((user) => !user)) throw new PortfolioEnterpriseDemoSeedInconsistencyError();
 	await assertExistingDemoIdentity(repository, existingAlice!, {
 		userId: "demo-user-alice-agent",
 		email: credentials.alice.email,
@@ -127,10 +147,42 @@ export async function seedPortfolioEnterpriseDemoData(
 		storeId: stores.b1.id,
 		role: "agent",
 	});
+	if (!existingAva) {
+		const ava = {
+			id: "demo-user-ava-admin",
+			email: credentials.ava.email,
+			displayName: "Ava Admin",
+			passwordHash: await hashPassword(credentials.ava.password),
+			createdAt,
+		};
+		await repository.createUser(ava);
+		await repository.createMembership({
+			id: "demo-membership-ava-a1",
+			userId: ava.id,
+			tenantId: tenants.a.id,
+			storeId: stores.a1.id,
+			role: "admin",
+			createdAt,
+		});
+		return {
+			tenants,
+			stores,
+			users: { alice: existingAlice!, susan: existingSusan!, bob: existingBob!, ava },
+			credentials,
+		};
+	}
+	await assertExistingDemoIdentity(repository, existingAva, {
+		userId: "demo-user-ava-admin",
+		email: credentials.ava.email,
+		membershipId: "demo-membership-ava-a1",
+		tenantId: tenants.a.id,
+		storeId: stores.a1.id,
+		role: "admin",
+	});
 	return {
 		tenants,
 		stores,
-		users: { alice: existingAlice!, susan: existingSusan!, bob: existingBob! },
+		users: { alice: existingAlice!, susan: existingSusan!, bob: existingBob!, ava: existingAva },
 		credentials,
 	};
 }
