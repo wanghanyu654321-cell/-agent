@@ -49,10 +49,10 @@ describePostgres("enterprise application composition root", () => {
 		await start(second);
 		expect(
 			(await second.pool.query<{ count: string }>("SELECT count(*)::text AS count FROM users")).rows[0]?.count,
-		).toBe("3");
+		).toBe("4");
 		expect(
 			(await second.pool.query<{ count: string }>("SELECT count(*)::text AS count FROM memberships")).rows[0]?.count,
-		).toBe("3");
+		).toBe("4");
 	});
 
 	it("fails application bootstrap when the PostgreSQL demo graph is missing Bob's membership", async () => {
