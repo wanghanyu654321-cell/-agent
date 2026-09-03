@@ -51,10 +51,14 @@ its authenticated-business-request condition is closed. Task 4 Durable Ticket/Ha
 Proof is independently **APPROVED** at `248241627e88343f8485679883722215b9068975` (approval comment
 `5526113083`): it adds scoped read-back proof for durable Ticket/Handoff state while preserving the
 existing Runtime, authority, business store, and Safety contracts. Task 5 Bounded Admin Audit Proof is
-an `IMPLEMENTATION CANDIDATE — PENDING INDEPENDENT REVIEW`: it adds only the synthetic Ava Admin
-fixture and a public-safe, capability-gated Audit projection. Actor attribution is not claimed because
-the current durable audit schema does not persist it. Phase 2C-B / Docker remains not started. No browser
-authority, semantic-selector hot-path, or Runtime semantics are introduced.
+independently **APPROVED** at `91b347b9214bc58738e330c8e44c02908e8d8e5c` (approval comment
+`5527191224`): it adds only the synthetic Ava Admin fixture and a public-safe, capability-gated Audit
+projection. Actor attribution is not claimed because the current durable audit schema does not persist it.
+The Phase 2C-A Final Product Gate at `91b347b9214bc58738e330c8e44c02908e8d8e5c` is **REJECTED
+PENDING BOUNDED JOURNEY A/B COMPOSITION CLOSURE**. This closure is an implementation candidate pending
+fresh independent re-review; Phase 2C-B / Docker remains not started and not authorized. No real customer
+deployment, production IAM, real model provider, browser authority, semantic-selector hot-path, or Runtime
+semantics are claimed.
 
 ## Status
 

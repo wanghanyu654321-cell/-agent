@@ -6,13 +6,14 @@ import { fauxAssistantMessage, registerFauxProvider, streamSimple } from "@earen
 import { Pool } from "pg";
 import type { SupportRuntimePort } from "../http-api.ts";
 import {
-	InMemoryRetrievalService,
 	InMemorySupportStore,
 	SupportAgentRuntime,
 	type SupportBusinessStore,
 	type SupportRequest,
 	type SupportResult,
 } from "../index.ts";
+import { GovernedKnowledgeRetrievalService } from "../knowledge.ts";
+import { portfolioDemoFaq, portfolioDemoKnowledge } from "../portfolio-demo-data.ts";
 import { EnterpriseAuthService } from "./auth.ts";
 import { type EnterpriseBusinessRepository, EnterpriseSupportService } from "./business.ts";
 import { type PortfolioEnterpriseDemoData, seedPortfolioEnterpriseDemoData } from "./demo-data.ts";
@@ -143,10 +144,13 @@ export function createDeterministicEnterpriseRuntime(businessStore: SupportBusin
 	const runtime = new SupportAgentRuntime({
 		model: faux.getModel(),
 		streamFn: streamSimple,
-		retrieval: new InMemoryRetrievalService(),
+		retrieval: new GovernedKnowledgeRetrievalService(portfolioDemoKnowledge, {
+			allowSyntheticTestFixtures: true,
+		}),
 		store: new InMemorySupportStore(),
 		businessStore,
-		faq: [],
+		faq: portfolioDemoFaq,
+		allowSyntheticTestKnowledge: true,
 	});
 	const serializedRuntime = new SerializedEnterpriseDemoRuntime(runtime, faux);
 	return {
@@ -185,6 +189,40 @@ function configureEnterpriseDemoResponses(
 	faux: ReturnType<typeof registerFauxProvider>,
 	request: SupportRequest,
 ): void {
+	if (request.text.includes("请问门店营业时间？")) {
+		faux.setResponses([
+			fauxAssistantMessage(
+				[
+					{
+						type: "toolCall",
+						id: `faq-${request.conversationId}`,
+						name: "search_faq",
+						arguments: { query: "营业时间" },
+					},
+				],
+				{ stopReason: "toolUse" },
+			),
+			fauxAssistantMessage("Deterministic Enterprise FAQ completion."),
+		]);
+		return;
+	}
+	if (request.text.includes("这个退款到底应该按哪个规则处理？")) {
+		faux.setResponses([
+			fauxAssistantMessage(
+				[
+					{
+						type: "toolCall",
+						id: `ambiguous-${request.conversationId}`,
+						name: "search_knowledge",
+						arguments: { query: "退款按哪个规则" },
+					},
+				],
+				{ stopReason: "toolUse" },
+			),
+			fauxAssistantMessage("Deterministic Enterprise ambiguity completion."),
+		]);
+		return;
+	}
 	if (request.text.includes("帮我记录一个退款售后工单")) {
 		faux.setResponses([
 			fauxAssistantMessage(

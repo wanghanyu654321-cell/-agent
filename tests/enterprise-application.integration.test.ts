@@ -130,6 +130,38 @@ describePostgres("enterprise application composition root", () => {
 		expect(await readJson(origin, "/api/v1/handoffs", bob)).toEqual([]);
 	});
 
+	it("runs governed-answer and ambiguous-evidence journeys through the default Enterprise composition", async () => {
+		await resetDatabase();
+		const origin = await start(await boot());
+		const alice = await login(origin, "alice.agent@demo.example", "AliceDemo!2026");
+
+		const governedAnswer = await support(origin, alice, "journey-governed", "customer-a", "请问门店营业时间？");
+		expect(governedAnswer).toMatchObject({
+			type: "answer",
+			toolsCalled: ["search_faq"],
+			evidence: [
+				{
+					id: "demo-faq-business-hours",
+					kind: "faq",
+					version: "demo-v1",
+					sourceRef: "demo://portfolio/faq/business-hours",
+				},
+			],
+		});
+		expect(governedAnswer.text).toContain("DEMO / SYNTHETIC PORTFOLIO DATA");
+
+		const ambiguous = await support(
+			origin,
+			alice,
+			"journey-ambiguous",
+			"customer-a",
+			"这个退款到底应该按哪个规则处理？",
+		);
+		expect(ambiguous).toMatchObject({ type: "fallback", toolsCalled: ["search_knowledge"], evidence: [] });
+		expect(ambiguous.text).not.toContain("规则 A");
+		expect(ambiguous.text).not.toContain("规则 B");
+	});
+
 	it("projects durable Runtime audit events to Ava's safe scoped Audit DTO across restart", async () => {
 		await resetDatabase();
 		const first = await boot();
@@ -342,15 +374,22 @@ async function support(
 	conversationId: string,
 	customerId: string,
 	text: string,
-): Promise<{ type: string }> {
+): Promise<PublicSupportResult> {
 	const response = await fetch(`${origin}/api/v1/support/respond`, {
 		method: "POST",
 		headers: { "content-type": "application/json", cookie },
 		body: JSON.stringify({ conversationId, customerId, text }),
 	});
 	expect(response.status).toBe(200);
-	return (await response.json()) as { type: string };
+	return (await response.json()) as PublicSupportResult;
 }
+
+type PublicSupportResult = {
+	type: "answer" | "fallback" | "escalation";
+	text: string;
+	toolsCalled: string[];
+	evidence: Array<{ id: string; kind: string; version: string; sourceRef: string }>;
+};
 
 async function readJson(origin: string, path: string, cookie: string): Promise<unknown> {
 	const response = await fetch(`${origin}${path}`, { headers: { cookie } });
