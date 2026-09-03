@@ -28,7 +28,7 @@ Phase 2B adds conversation ownership checks, scoped PostgreSQL ticket/handoff/au
 persistence, and a bounded optional Runtime business port. Its independent PostgreSQL
 clean-runner Gate passed; React frontend work has not started.
 
-`PHASE 2C-A TASK 1 APPLICATION COMPOSITION ROOT = REPAIR CANDIDATE — PENDING INDEPENDENT REVIEW`.
+`PHASE 2C-A TASK 1 APPLICATION COMPOSITION ROOT = APPROVED`.
 
 The enterprise application composition root now requires `DATABASE_URL`, verifies the
 PostgreSQL connection, applies the approved migrations, repeat-safely seeds the synthetic
@@ -38,7 +38,16 @@ business service, and `SupportAgentRuntime`, then serves the existing enterprise
 server and PostgreSQL pool. The real-PostgreSQL composition CI Gate exists and has run
 successfully for the prior composition checkpoint. This repair candidate makes the deterministic
 seed fail closed when any partial or inconsistent Alice/Susan/Bob identity graph is found; only a
-completely absent graph or a complete, exact graph is accepted. No Phase 2C-A approval is claimed here.
+completely absent graph or a complete, exact graph is accepted. This approval does not authorize
+Task 2 beyond its separately governed execution directive.
+
+`PHASE 2C-A TASK 2 REACT/AUTH SHELL = IMPLEMENTATION CANDIDATE — PENDING INDEPENDENT REVIEW`.
+
+The same Enterprise origin now delivers the built React shell and the existing `/api/v1/*` boundary.
+The shell restores identity only through `/api/v1/auth/me`, displays the server-derived actor and
+tenant/store scope read-only, and clears its presentation state on logout or authenticated `401`.
+It does not implement Support Workspace, Tickets, Handoffs, or Audit pages; no browser authority,
+semantic-selector hot-path, or Runtime semantics are introduced.
 
 ## Status
 

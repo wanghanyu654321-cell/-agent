@@ -1,5 +1,6 @@
 import { once } from "node:events";
 import type { Server } from "node:http";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { fauxAssistantMessage, registerFauxProvider, streamSimple } from "@earendil-works/pi-ai/compat";
 import { Pool } from "pg";
@@ -39,6 +40,7 @@ export interface EnterpriseApplicationOptions {
 	port?: number;
 	secureCookies?: boolean;
 	runtimeFactory?: EnterpriseRuntimeFactory;
+	staticRoot?: string;
 }
 
 export interface EnterpriseApplication {
@@ -86,6 +88,7 @@ export async function createEnterpriseApplication(
 			runtime: runtimeResource.runtime,
 			supportService,
 			secureCookies: options.secureCookies,
+			staticRoot: options.staticRoot ?? enterpriseStaticRoot(),
 		});
 		return {
 			pool,
@@ -119,6 +122,10 @@ export async function createEnterpriseApplication(
 		await pool.end();
 		throw error;
 	}
+}
+
+function enterpriseStaticRoot(): string {
+	return resolve(dirname(fileURLToPath(import.meta.url)), "../../web/dist");
 }
 
 export async function startEnterpriseApplication(

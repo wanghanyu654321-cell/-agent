@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
+import { readFile, stat } from "node:fs/promises";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
+import { extname, resolve, sep } from "node:path";
 import type { SupportRuntimePort } from "../http-api.ts";
 import type { SupportResult } from "../index.ts";
 import type { EnterpriseAuthService } from "./auth.ts";
@@ -19,6 +21,7 @@ export interface EnterpriseHttpServerOptions {
 	runtime?: SupportRuntimePort;
 	supportService?: EnterpriseSupportPort;
 	secureCookies?: boolean;
+	staticRoot?: string;
 }
 
 export function createEnterpriseHttpServer(options: EnterpriseHttpServerOptions): Server {
@@ -91,6 +94,8 @@ async function handleRequest(
 						(context) => options.supportService?.listAuditEvents(context) ?? Promise.resolve([]),
 					)
 				: methodNotAllowed(response, "GET");
+		if (path.startsWith("/api/")) return sendJson(response, 404, { error: "not_found" });
+		if (options.staticRoot && (await serveStaticFile(path, response, options.staticRoot))) return;
 		return sendJson(response, 404, { error: "not_found" });
 	} catch (error) {
 		if (error instanceof EnterpriseConversationNotFoundError) return sendJson(response, 404, { error: "not_found" });
@@ -242,6 +247,58 @@ function publicSupportResult(result: SupportResult): Omit<SupportResult, "sessio
 
 function methodNotAllowed(response: ServerResponse, method: "GET" | "POST"): void {
 	sendJson(response, 405, { error: "method_not_allowed" }, { Allow: method });
+}
+
+async function serveStaticFile(pathname: string, response: ServerResponse, staticRoot: string): Promise<boolean> {
+	const relativePath = staticRelativePath(pathname);
+	if (!relativePath) return false;
+	const root = resolve(staticRoot);
+	const filePath = resolve(root, relativePath);
+	if (!filePath.startsWith(`${root}${sep}`)) return false;
+	const file = await stat(filePath).catch(() => undefined);
+	if (!file?.isFile()) return false;
+	const body = await readFile(filePath);
+	response.writeHead(200, { "content-type": staticContentType(filePath), "content-length": String(body.byteLength) });
+	response.end(body);
+	return true;
+}
+
+function staticRelativePath(pathname: string): string | undefined {
+	try {
+		const decoded = decodeURIComponent(pathname);
+		if (decoded.includes("\0")) return undefined;
+		const stripped = decoded.replace(/^\/+/, "");
+		return stripped || "index.html";
+	} catch {
+		return undefined;
+	}
+}
+
+function staticContentType(filePath: string): string {
+	switch (extname(filePath).toLowerCase()) {
+		case ".html":
+			return "text/html; charset=utf-8";
+		case ".js":
+		case ".mjs":
+			return "text/javascript; charset=utf-8";
+		case ".css":
+			return "text/css; charset=utf-8";
+		case ".svg":
+			return "image/svg+xml";
+		case ".json":
+			return "application/json; charset=utf-8";
+		case ".png":
+			return "image/png";
+		case ".jpg":
+		case ".jpeg":
+			return "image/jpeg";
+		case ".ico":
+			return "image/x-icon";
+		case ".woff2":
+			return "font/woff2";
+		default:
+			return "application/octet-stream";
+	}
 }
 
 function sendJson(response: ServerResponse, status: number, body: unknown, headers: Record<string, string> = {}): void {
