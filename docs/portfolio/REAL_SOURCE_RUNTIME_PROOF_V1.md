@@ -33,9 +33,11 @@ The runner schedules exactly these three cases once, in order:
 | `B_ZERO_EVIDENCE` | `UNRELATED_NO_ANSWER_CASE` | `fallback` via `search_knowledge` | none |
 | `C_AMBIGUOUS_EVIDENCE` | `过期未消费团购券退款` | `fallback` via `search_knowledge` | none |
 
-The runner compares actual result type, exact tool route, and authorized evidence
-IDs. It never converts a result into a pass without these checks. There is no
-warm-up, fourth case, or retry loop.
+The runner compares actual result type, required governed-knowledge lookup, and
+authorized evidence IDs. It permits an additional read-only FAQ probe and, for
+the ambiguous case, an authority-guarded handoff attempt; it rejects a
+successful ticket or handoff outcome. There is no warm-up, fourth case, or
+retry loop.
 
 ## Operator procedure
 

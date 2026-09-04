@@ -63,6 +63,10 @@ function toolCall(id: string, name: "search_faq" | "search_knowledge", query: st
 	return fauxAssistantMessage([{ type: "toolCall", id, name, arguments: { query } }], { stopReason: "toolUse" });
 }
 
+function invalidToolCall(id: string, name: "search_faq" | "search_knowledge") {
+	return fauxAssistantMessage([{ type: "toolCall", id, name, arguments: {} }], { stopReason: "toolUse" });
+}
+
 describe("Job-ready real-source knowledge pack V1", () => {
 	it("materializes exactly the allowlisted official entries with preserved facts and one opaque Pilot scope", () => {
 		const directory = materializedDirectory();
@@ -146,6 +150,63 @@ describe("Job-ready real-source knowledge pack V1", () => {
 		]);
 		const outsideScope = await runtime.run(request("普通团购券未验证退款帮助", "other-tenant", "other-store"));
 		expect(outsideScope).toMatchObject({ type: "fallback", evidence: [] });
+	});
+
+	it("allows a single approved knowledge hit after a read-only FAQ miss", async () => {
+		const { faux, runtime } = runtimeFromMaterializedPack();
+		faux.setResponses([
+			toolCall("real-source-faq-miss", "search_faq", "商户无法履约"),
+			toolCall("real-source-policy-after-faq-miss", "search_knowledge", "商户无法履约"),
+			fauxAssistantMessage("MODEL_SHOULD_NOT_BE_USED"),
+		]);
+
+		const result = await runtime.run(request("商户无法履约"));
+
+		expect(result).toMatchObject({
+			type: "answer",
+			toolsCalled: ["search_faq", "search_knowledge"],
+			evidence: [{ id: "PB-MT-MERCHANT-CANNOT-FULFILL" }],
+		});
+	});
+
+	it("keeps a FAQ miss followed by zero governed knowledge evidence fail closed", async () => {
+		const { faux, runtime } = runtimeFromMaterializedPack();
+		faux.setResponses([
+			toolCall("real-source-faq-miss-zero", "search_faq", "UNRELATED_NO_ANSWER_CASE"),
+			toolCall("real-source-zero-after-faq-miss", "search_knowledge", "UNRELATED_NO_ANSWER_CASE"),
+			fauxAssistantMessage("MODEL_SHOULD_NOT_BE_USED"),
+		]);
+
+		const result = await runtime.run(request("UNRELATED_NO_ANSWER_CASE"));
+
+		expect(result).toMatchObject({ type: "fallback", evidence: [] });
+	});
+
+	it("keeps a FAQ probe followed by ambiguous governed knowledge fail closed", async () => {
+		const { faux, runtime } = runtimeFromMaterializedPack();
+		faux.setResponses([
+			toolCall("real-source-faq-miss-ambiguous", "search_faq", "过期未消费团购券退款"),
+			toolCall("real-source-ambiguous-after-faq-miss", "search_knowledge", "过期未消费团购券退款"),
+			fauxAssistantMessage("MODEL_SHOULD_NOT_BE_USED"),
+		]);
+
+		const result = await runtime.run(request("过期未消费团购券退款"));
+
+		expect(result).toMatchObject({ type: "fallback", evidence: [] });
+	});
+
+	it("keeps a tool failure fail closed even when later knowledge has one approved evidence item", async () => {
+		const { faux, runtime } = runtimeFromMaterializedPack();
+		faux.setResponses([
+			invalidToolCall("real-source-invalid-faq", "search_faq"),
+			toolCall("real-source-policy-after-tool-failure", "search_knowledge", "商户无法履约"),
+			fauxAssistantMessage("MODEL_SHOULD_NOT_BE_USED"),
+		]);
+
+		const result = await runtime.run(request("商户无法履约"));
+
+		expect(result).toMatchObject({ type: "fallback", evidence: [] });
+		expect(result.sessionEvents.some((event) => event.type === "tool_execution_end" && event.isError)).toBe(true);
 	});
 
 	it("keeps the committed case manifest as human-authored evaluation scenarios, not customer conversations", () => {

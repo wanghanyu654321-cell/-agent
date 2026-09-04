@@ -24,7 +24,7 @@ export const REAL_SOURCE_RUNTIME_PROOF_CASES = [
 		conversationId: "real-source-runtime-proof-a-single-evidence",
 		query: "商户无法履约",
 		expectedResultType: "answer",
-		expectedToolsCalled: ["search_knowledge"],
+		requiredToolsCalled: ["search_knowledge"],
 		expectedEvidenceIds: ["PB-MT-MERCHANT-CANNOT-FULFILL"],
 	},
 	{
@@ -33,7 +33,7 @@ export const REAL_SOURCE_RUNTIME_PROOF_CASES = [
 		conversationId: "real-source-runtime-proof-b-zero-evidence",
 		query: "UNRELATED_NO_ANSWER_CASE",
 		expectedResultType: "fallback",
-		expectedToolsCalled: ["search_knowledge"],
+		requiredToolsCalled: ["search_knowledge"],
 		expectedEvidenceIds: [],
 	},
 	{
@@ -42,7 +42,7 @@ export const REAL_SOURCE_RUNTIME_PROOF_CASES = [
 		conversationId: "real-source-runtime-proof-c-ambiguous-evidence",
 		query: "过期未消费团购券退款",
 		expectedResultType: "fallback",
-		expectedToolsCalled: ["search_knowledge"],
+		requiredToolsCalled: ["search_knowledge"],
 		expectedEvidenceIds: [],
 	},
 ] as const;
@@ -258,13 +258,27 @@ function projectSafeCaseEvidence(
 		elapsedMs,
 		expectedVsActualPass:
 			result.type === runtimeCase.expectedResultType &&
-			sameStrings(toolsCalled, runtimeCase.expectedToolsCalled) &&
-			sameStrings(authorizedEvidenceIds, runtimeCase.expectedEvidenceIds),
+			includesAll(toolsCalled, runtimeCase.requiredToolsCalled) &&
+			sameStrings(authorizedEvidenceIds, runtimeCase.expectedEvidenceIds) &&
+			!hasSuccessfulBusinessSideEffect(result),
 	};
 }
 
 function sameStrings(actual: readonly string[], expected: readonly string[]): boolean {
 	return actual.length === expected.length && actual.every((value, index) => value === expected[index]);
+}
+
+function includesAll(actual: readonly string[], required: readonly string[]): boolean {
+	return required.every((toolName) => actual.includes(toolName));
+}
+
+function hasSuccessfulBusinessSideEffect(result: SupportResult): boolean {
+	return result.sessionEvents.some(
+		(event) =>
+			event.type === "tool_execution_end" &&
+			!event.isError &&
+			(event.toolName === "create_ticket" || event.toolName === "handoff_to_human"),
+	);
 }
 
 function blockedCategory(error: unknown): RealSourceRuntimeProofBlockedCategory {
