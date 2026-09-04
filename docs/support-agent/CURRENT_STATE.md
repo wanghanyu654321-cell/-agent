@@ -83,6 +83,16 @@ knowledge path. No real merchant corpus is committed, and no real
 customer/store Pilot, private-corpus real-provider smoke, Shadow mode, or
 Assisted mode is authorized.
 
+`JOB-READY REAL-SOURCE KNOWLEDGE PACK V1 = IMPLEMENTATION CANDIDATE` is a
+separate successor from the approved private-composition source. It selects only
+eight allowlisted public official support records, preserves their content,
+version, and source reference in an operator-generated scoped copy, and assigns
+the opaque portfolio scope `pilot-support-tenant` / `pilot-support-store`. The
+generated corpus is intentionally uncommitted. Its thirteen human-authored
+evaluation scenarios are not real customer conversations. No real merchant
+policy, customer data, real-provider plus real-source smoke, Shadow mode,
+Assisted mode, or deployment claim is authorized.
+
 ## Status
 
 CUSTOMER SUPPORT AGENT RUNTIME V0
