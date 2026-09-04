@@ -698,7 +698,7 @@ export class SupportAgentRuntime {
 				),
 			);
 		}
-		if (toolFailed || noKnowledgeEvidence) {
+		if (toolFailed) {
 			return finish(
 				fallback(
 					"抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
@@ -717,6 +717,16 @@ export class SupportAgentRuntime {
 				sessionEvents,
 				evidence: groundingReferences(),
 			});
+		}
+		if (noKnowledgeEvidence) {
+			return finish(
+				fallback(
+					"抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
+					piSessionId,
+					toolsCalled,
+					sessionEvents,
+				),
+			);
 		}
 		if (lastAssistant?.stopReason === "error" || lastAssistant?.stopReason === "aborted") {
 			return finish(

@@ -25,7 +25,7 @@ function successResult(caseId: string): SupportResult {
 	return {
 		type: expected.expectedResultType,
 		text: "MODEL_OR_RUNTIME_TEXT_MUST_NEVER_BE_PROJECTED",
-		toolsCalled: expected.expectedToolsCalled,
+		toolsCalled: expected.requiredToolsCalled,
 		evidence: expected.expectedEvidenceIds.map((id) => ({ id })),
 		sessionEvents: [{ type: "raw-event", secret: "not-safe-to-project" }],
 	} as unknown as SupportResult;
@@ -127,7 +127,32 @@ describe("real-source runtime smoke", () => {
 		expect(close).toHaveBeenCalledOnce();
 	});
 
-	it("marks wrong result type, evidence, or tool route as failed instead of hard-coding a pass", async () => {
+	it("accepts allowed read-only probes and a guarded handoff attempt without requiring an exact tool order", async () => {
+		const cases = REAL_SOURCE_RUNTIME_PROOF_CASES.map((item) => successResult(item.caseId));
+		cases[0] = {
+			...successResult("A_SINGLE_EVIDENCE"),
+			toolsCalled: ["search_faq", "search_knowledge"],
+		} as SupportResult;
+		cases[1] = {
+			...successResult("B_ZERO_EVIDENCE"),
+			toolsCalled: ["search_faq", "search_knowledge"],
+		} as SupportResult;
+		cases[2] = {
+			...successResult("C_AMBIGUOUS_EVIDENCE"),
+			toolsCalled: ["search_faq", "search_knowledge", "handoff_to_human"],
+			sessionEvents: [
+				{ type: "tool_execution_end", toolName: "handoff_to_human", isError: true },
+			] as SupportResult["sessionEvents"],
+		} as SupportResult;
+		const { dependencies: injected } = dependencies(cases);
+
+		const summary = await runRealSourceRuntimeProof(environment(), injected);
+
+		expect(summary.allThreeCasesPassed).toBe(true);
+		expect(summary.cases.map((item) => item.expectedVsActualPass)).toEqual([true, true, true]);
+	});
+
+	it("marks wrong result type, evidence, or a missing governed knowledge lookup as failed instead of hard-coding a pass", async () => {
 		const cases = REAL_SOURCE_RUNTIME_PROOF_CASES.map((item) => successResult(item.caseId));
 		cases[0] = { ...successResult("A_SINGLE_EVIDENCE"), type: "fallback" } as SupportResult;
 		cases[1] = { ...successResult("B_ZERO_EVIDENCE"), evidence: [{ id: "unexpected-evidence" }] } as SupportResult;
@@ -138,6 +163,22 @@ describe("real-source runtime smoke", () => {
 
 		expect(summary.allThreeCasesPassed).toBe(false);
 		expect(summary.cases.map((item) => item.expectedVsActualPass)).toEqual([false, false, false]);
+	});
+
+	it("rejects a successful ticket or handoff outcome even when type, evidence, and required lookup match", async () => {
+		const cases = REAL_SOURCE_RUNTIME_PROOF_CASES.map((item) => successResult(item.caseId));
+		cases[0] = {
+			...successResult("A_SINGLE_EVIDENCE"),
+			sessionEvents: [
+				{ type: "tool_execution_end", toolName: "create_ticket", isError: false },
+			] as SupportResult["sessionEvents"],
+		} as SupportResult;
+		const { dependencies: injected } = dependencies(cases);
+
+		const summary = await runRealSourceRuntimeProof(environment(), injected);
+
+		expect(summary.cases[0]?.expectedVsActualPass).toBe(false);
+		expect(summary.allThreeCasesPassed).toBe(false);
 	});
 
 	it("redacts raw upstream error text from a bounded blocked projection", () => {
