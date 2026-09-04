@@ -1,5 +1,39 @@
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { enterpriseRuntimeModeFromEnv } from "../src/enterprise/application.ts";
 import { bootstrapPiEnterpriseRuntime, createPiEnterpriseRuntimeFactory } from "../src/enterprise/pi-runtime.ts";
+
+type PiRealProviderSmokeBlockedCategory =
+	| "CONFIGURATION_INVALID"
+	| "AUTH_UNAVAILABLE"
+	| "MODEL_UNAVAILABLE"
+	| "INITIALIZATION_UNAVAILABLE"
+	| "EXECUTION_UNAVAILABLE";
+
+export function formatPiRealProviderSmokeBlockedOutput(error: unknown): string {
+	const category = piRealProviderSmokeBlockedCategory(error);
+	return `REAL_PROVIDER_SMOKE_BLOCKED ${category}`;
+}
+
+function piRealProviderSmokeBlockedCategory(error: unknown): PiRealProviderSmokeBlockedCategory {
+	if (!(error instanceof Error)) return "EXECUTION_UNAVAILABLE";
+	if (
+		error.message === "ENTERPRISE_RUNTIME_MODE=pi-real is required for this smoke." ||
+		error.message === "ENTERPRISE_RUNTIME_MODE must be deterministic or pi-real." ||
+		error.message === "PI_PROVIDER and PI_MODEL are required for pi-real runtime mode."
+	) {
+		return "CONFIGURATION_INVALID";
+	}
+	if (
+		error.message === "Pi provider authentication is not configured." ||
+		error.message === "Pi provider authentication could not be verified."
+	) {
+		return "AUTH_UNAVAILABLE";
+	}
+	if (error.message === "Pi provider/model is unavailable.") return "MODEL_UNAVAILABLE";
+	if (error.message === "Pi provider initialization failed.") return "INITIALIZATION_UNAVAILABLE";
+	return "EXECUTION_UNAVAILABLE";
+}
 
 async function main(): Promise<void> {
 	const mode = enterpriseRuntimeModeFromEnv(process.env);
@@ -37,7 +71,9 @@ async function main(): Promise<void> {
 	}
 }
 
-void main().catch(() => {
-	console.error("Pi real-provider smoke failed.");
-	process.exitCode = 1;
-});
+if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url))) {
+	void main().catch((error: unknown) => {
+		console.error(formatPiRealProviderSmokeBlockedOutput(error));
+		process.exitCode = 1;
+	});
+}
