@@ -56,12 +56,22 @@ independently **APPROVED** at `91b347b9214bc58738e330c8e44c02908e8d8e5c` (approv
 projection. Actor attribution is not claimed because the current durable audit schema does not persist it.
 The Phase 2C-A Final Product Gate is **APPROVED** at
 `746b90e7a2548c764e344f87a48442af9c0bc6f5` (approval comment `5535110007`). Phase 2C-B
-Thin Docker Delivery is a successor implementation candidate at
-`5974bfd5a1cfc3e9345338750e63cae35b7027a4`, pending fresh clean-runner evidence and
-independent review. It adds only the two-service local delivery topology and HTTP-only
-persistence smoke; merge, tag, and release remain unauthorized. No real customer
-deployment, production IAM, real model provider, browser authority, semantic-selector
-hot-path, or Runtime semantics are claimed.
+Thin Docker Delivery is **APPROVED** at
+`91f66d4da7192d15baf7a0cc7e10640ae764ecfe` (approval comment `5535546295`). It adds
+only the two-service local delivery topology and HTTP-only persistence smoke; merge,
+tag, and release remain unauthorized. No real customer deployment, production IAM,
+real model provider, browser authority, semantic-selector hot-path, or Runtime
+semantics are claimed.
+
+`REAL PI PROVIDER ADAPTER = IMPLEMENTATION CANDIDATE` is a separate successor
+from the approved Phase 2C-B source. `deterministic` remains the default and the
+only CI/Docker mode. Explicit `pi-real` startup resolves provider auth, model,
+and `streamSimple()` only through Pi's public `ModelRuntime`; it does not read or
+persist credentials and does not change the Pi-owned Agent loop, product Safety,
+evidence, tools, HTTP/Auth, tenant/store, or PostgreSQL semantics. Its bounded
+manual smoke uses synthetic portfolio FAQ only and is provider-adapter proof, not
+a real-store knowledge or customer Pilot. Clean-runner and independently
+reviewable real-provider evidence are both required before any Gate approval.
 
 ## Status
 

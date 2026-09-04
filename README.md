@@ -6,8 +6,10 @@ identity, tenant/store authority, governed evidence, Safety, durable Tickets/Han
 and safe audit projection.
 
 This is a deterministic synthetic portfolio demonstration. It is not a production
-customer deployment, real model provider, production IAM system, or professional
-safety knowledge service.
+customer deployment, production IAM system, or professional safety knowledge
+service. An explicitly configured Pi provider adapter is available only for
+bounded integration proof; it is not the default Docker or CI mode and does not
+constitute a real-store Pilot.
 
 ## Run the same-origin enterprise application
 
@@ -48,6 +50,25 @@ accounts or production secrets.
 
 The browser stores no session token, role, capability, tenant, or store authority.
 The server derives all of them from its HttpOnly session.
+
+## Optional real Pi provider adapter
+
+The default is `ENTERPRISE_RUNTIME_MODE=deterministic`; Docker and CI retain that
+mode. A local integration proof can explicitly request Pi-managed authentication
+and a Pi-recognized model without placing credentials in this repository:
+
+```text
+ENTERPRISE_RUNTIME_MODE=pi-real
+PI_PROVIDER=<Pi provider id>
+PI_MODEL=<Pi model id>
+DATABASE_URL=<PostgreSQL URL>
+npm run start:enterprise
+```
+
+If Pi authentication or the configured model is unavailable, startup fails before
+the HTTP server listens. The process does not fall back to deterministic mode.
+See [the adapter directive](docs/portfolio/PILOT_REAL_PI_PROVIDER_DIRECTIVE.md)
+for the bounded smoke and credential-handling rules.
 
 ## Five-minute proof journeys
 

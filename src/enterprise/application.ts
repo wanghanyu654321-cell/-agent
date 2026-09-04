@@ -18,6 +18,7 @@ import { EnterpriseAuthService } from "./auth.ts";
 import { type EnterpriseBusinessRepository, EnterpriseSupportService } from "./business.ts";
 import { type PortfolioEnterpriseDemoData, seedPortfolioEnterpriseDemoData } from "./demo-data.ts";
 import { createEnterpriseHttpServer } from "./http-api.ts";
+import { bootstrapPiEnterpriseRuntimeFactory } from "./pi-runtime.ts";
 import {
 	applyEnterpriseBusinessMigrations,
 	PostgresEnterpriseBusinessRepository,
@@ -28,6 +29,14 @@ export interface EnterpriseApplicationConfig {
 	databaseUrl: string;
 	host: string;
 	port: number;
+}
+
+export type EnterpriseRuntimeMode = "deterministic" | "pi-real";
+
+export interface EnterpriseRuntimeModeConfig {
+	mode: EnterpriseRuntimeMode;
+	providerId?: string;
+	modelId?: string;
 }
 
 export interface EnterpriseRuntimeResource {
@@ -65,6 +74,34 @@ export function enterpriseApplicationConfigFromEnv(env: NodeJS.ProcessEnv = proc
 	const port = Number(configuredPort);
 	if (!Number.isInteger(port) || port < 1 || port > 65_535) throw new Error("PORT must be a valid TCP port.");
 	return { databaseUrl, host: env.HOST?.trim() || "127.0.0.1", port };
+}
+
+export function enterpriseRuntimeModeFromEnv(env: NodeJS.ProcessEnv = process.env): EnterpriseRuntimeModeConfig {
+	const mode = env.ENTERPRISE_RUNTIME_MODE?.trim() || "deterministic";
+	if (mode === "deterministic") return { mode };
+	if (mode !== "pi-real") {
+		throw new Error("ENTERPRISE_RUNTIME_MODE must be deterministic or pi-real.");
+	}
+	const providerId = env.PI_PROVIDER?.trim();
+	const modelId = env.PI_MODEL?.trim();
+	if (!providerId || !modelId) {
+		throw new Error("PI_PROVIDER and PI_MODEL are required for pi-real runtime mode.");
+	}
+	return { mode, providerId, modelId };
+}
+
+export type EnterprisePiRuntimeFactoryBootstrap = (
+	providerId: string,
+	modelId: string,
+) => Promise<EnterpriseRuntimeFactory>;
+
+export async function enterpriseRuntimeFactoryFromEnv(
+	env: NodeJS.ProcessEnv = process.env,
+	bootstrapPiRuntime: EnterprisePiRuntimeFactoryBootstrap = bootstrapPiEnterpriseRuntimeFactory,
+): Promise<EnterpriseRuntimeFactory | undefined> {
+	const runtimeMode = enterpriseRuntimeModeFromEnv(env);
+	if (runtimeMode.mode === "deterministic") return undefined;
+	return bootstrapPiRuntime(runtimeMode.providerId!, runtimeMode.modelId!);
 }
 
 export async function createEnterpriseApplication(
@@ -135,6 +172,16 @@ export async function startEnterpriseApplication(
 	config: EnterpriseApplicationConfig = enterpriseApplicationConfigFromEnv(),
 ): Promise<EnterpriseApplication> {
 	const application = await createEnterpriseApplication(config);
+	await application.start();
+	return application;
+}
+
+export async function startEnterpriseApplicationFromEnv(
+	env: NodeJS.ProcessEnv = process.env,
+): Promise<EnterpriseApplication> {
+	const config = enterpriseApplicationConfigFromEnv(env);
+	const runtimeFactory = await enterpriseRuntimeFactoryFromEnv(env);
+	const application = await createEnterpriseApplication({ ...config, runtimeFactory });
 	await application.start();
 	return application;
 }
@@ -273,7 +320,7 @@ async function closeServer(server: Server): Promise<void> {
 }
 
 async function main(): Promise<void> {
-	const application = await startEnterpriseApplication();
+	const application = await startEnterpriseApplicationFromEnv();
 	const shutdown = async () => {
 		await application.close();
 	};
