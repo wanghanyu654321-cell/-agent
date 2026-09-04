@@ -1,0 +1,35 @@
+name: customer-support-agent-demo
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: customer_support_agent_demo
+      POSTGRES_USER: customer_support_agent_demo
+      POSTGRES_PASSWORD: customer_support_agent_demo_password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U customer_support_agent_demo -d customer_support_agent_demo
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
+
+  app:
+    build:
+      context: .
+    environment:
+      HOST: 0.0.0.0
+      PORT: "3000"
+      DATABASE_URL: postgresql://customer_support_agent_demo:customer_support_agent_demo_password@postgres:5432/customer_support_agent_demo
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
