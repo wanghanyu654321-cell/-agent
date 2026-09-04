@@ -2,7 +2,7 @@ import type { StreamFn } from "@earendil-works/pi-agent-core";
 import type { Api, Model } from "@earendil-works/pi-ai";
 import { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import type { SupportRuntimePort } from "../http-api.ts";
-import { InMemorySupportStore, SupportAgentRuntime, type SupportBusinessStore } from "../index.ts";
+import { type FaqEntry, InMemorySupportStore, SupportAgentRuntime, type SupportBusinessStore } from "../index.ts";
 import { GovernedKnowledgeRetrievalService } from "../knowledge.ts";
 import { portfolioDemoFaq, portfolioDemoKnowledge } from "../portfolio-demo-data.ts";
 import type { EnterpriseRuntimeFactory, EnterpriseRuntimeResource } from "./application.ts";
@@ -22,6 +22,13 @@ export interface PiEnterpriseRuntimeBootstrapOptions {
 export interface ResolvedPiEnterpriseRuntime {
 	model: Model<Api>;
 	streamFn: StreamFn;
+}
+
+export interface PiEnterpriseKnowledgeComposition {
+	faq: FaqEntry[];
+	knowledge: typeof portfolioDemoKnowledge;
+	allowSyntheticTestFixtures: boolean;
+	allowSyntheticTestKnowledge: boolean;
 }
 
 export class PiEnterpriseRuntimeStartupError extends Error {
@@ -67,25 +74,41 @@ export async function bootstrapPiEnterpriseRuntime(
 export async function bootstrapPiEnterpriseRuntimeFactory(
 	providerId: string,
 	modelId: string,
+	knowledgeComposition: PiEnterpriseKnowledgeComposition = portfolioKnowledgeComposition(),
 ): Promise<EnterpriseRuntimeFactory> {
-	return createPiEnterpriseRuntimeFactory(await bootstrapPiEnterpriseRuntime({ providerId, modelId }));
+	return createPiEnterpriseRuntimeFactory(
+		await bootstrapPiEnterpriseRuntime({ providerId, modelId }),
+		knowledgeComposition,
+	);
 }
 
 /** Uses the existing runtime, tools, Safety, retrieval, and business-store boundaries unchanged. */
-export function createPiEnterpriseRuntimeFactory(resolved: ResolvedPiEnterpriseRuntime): EnterpriseRuntimeFactory {
+export function createPiEnterpriseRuntimeFactory(
+	resolved: ResolvedPiEnterpriseRuntime,
+	knowledgeComposition: PiEnterpriseKnowledgeComposition = portfolioKnowledgeComposition(),
+): EnterpriseRuntimeFactory {
 	return (businessStore: SupportBusinessStore): EnterpriseRuntimeResource => {
 		const runtime = new SupportAgentRuntime({
 			model: resolved.model,
 			streamFn: resolved.streamFn,
-			retrieval: new GovernedKnowledgeRetrievalService(portfolioDemoKnowledge, {
-				allowSyntheticTestFixtures: true,
+			retrieval: new GovernedKnowledgeRetrievalService(knowledgeComposition.knowledge, {
+				allowSyntheticTestFixtures: knowledgeComposition.allowSyntheticTestFixtures,
 			}),
 			store: new InMemorySupportStore(),
 			businessStore,
-			faq: portfolioDemoFaq,
-			allowSyntheticTestKnowledge: true,
+			faq: knowledgeComposition.faq,
+			allowSyntheticTestKnowledge: knowledgeComposition.allowSyntheticTestKnowledge,
 		});
 		return { runtime: runtime as SupportRuntimePort };
+	};
+}
+
+function portfolioKnowledgeComposition(): PiEnterpriseKnowledgeComposition {
+	return {
+		faq: portfolioDemoFaq,
+		knowledge: portfolioDemoKnowledge,
+		allowSyntheticTestFixtures: true,
+		allowSyntheticTestKnowledge: true,
 	};
 }
 
