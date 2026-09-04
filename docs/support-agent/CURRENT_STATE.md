@@ -63,15 +63,25 @@ tag, and release remain unauthorized. No real customer deployment, production IA
 real model provider, browser authority, semantic-selector hot-path, or Runtime
 semantics are claimed.
 
-`REAL PI PROVIDER ADAPTER = IMPLEMENTATION CANDIDATE` is a separate successor
-from the approved Phase 2C-B source. `deterministic` remains the default and the
-only CI/Docker mode. Explicit `pi-real` startup resolves provider auth, model,
-and `streamSimple()` only through Pi's public `ModelRuntime`; it does not read or
-persist credentials and does not change the Pi-owned Agent loop, product Safety,
-evidence, tools, HTTP/Auth, tenant/store, or PostgreSQL semantics. Its bounded
-manual smoke uses synthetic portfolio FAQ only and is provider-adapter proof, not
-a real-store knowledge or customer Pilot. Clean-runner and independently
-reviewable real-provider evidence are both required before any Gate approval.
+`REAL PI PROVIDER ADAPTER = APPROVED` at
+`c946038e8193bf4364281d2914f63861346d9101` (approval comment `5536212039`).
+`deterministic` remains the default and the only CI/Docker mode. Explicit
+`pi-real` startup resolves provider auth, model, and `streamSimple()` only
+through Pi's public `ModelRuntime`; it does not read or persist credentials and
+does not change the Pi-owned Agent loop, product Safety, evidence, tools,
+HTTP/Auth, tenant/store, or PostgreSQL semantics. Its bounded manual smoke uses
+synthetic portfolio FAQ only and is provider-adapter proof, not a real-store
+knowledge or customer Pilot.
+
+`PRIVATE STORE KNOWLEDGE COMPOSITION V1 = IMPLEMENTATION CANDIDATE` is a
+separate successor. `ENTERPRISE_KNOWLEDGE_MODE=private` is available only with
+explicit `pi-real` startup and an operator-supplied private corpus. It admits
+only one tenant/store-scoped corpus of approved entries, disables both synthetic
+admission controls, routes private FAQ entries only through `search_faq`, and
+routes private policy/SOP/reference entries only through the existing governed
+knowledge path. No real merchant corpus is committed, and no real
+customer/store Pilot, private-corpus real-provider smoke, Shadow mode, or
+Assisted mode is authorized.
 
 ## Status
 

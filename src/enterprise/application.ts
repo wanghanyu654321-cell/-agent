@@ -18,12 +18,13 @@ import { EnterpriseAuthService } from "./auth.ts";
 import { type EnterpriseBusinessRepository, EnterpriseSupportService } from "./business.ts";
 import { type PortfolioEnterpriseDemoData, seedPortfolioEnterpriseDemoData } from "./demo-data.ts";
 import { createEnterpriseHttpServer } from "./http-api.ts";
-import { bootstrapPiEnterpriseRuntimeFactory } from "./pi-runtime.ts";
+import { bootstrapPiEnterpriseRuntimeFactory, type PiEnterpriseKnowledgeComposition } from "./pi-runtime.ts";
 import {
 	applyEnterpriseBusinessMigrations,
 	PostgresEnterpriseBusinessRepository,
 	PostgresIdentityRepository,
 } from "./postgres.ts";
+import { loadPrivateStoreKnowledgeComposition } from "./private-knowledge.ts";
 
 export interface EnterpriseApplicationConfig {
 	databaseUrl: string;
@@ -32,6 +33,7 @@ export interface EnterpriseApplicationConfig {
 }
 
 export type EnterpriseRuntimeMode = "deterministic" | "pi-real";
+export type EnterpriseKnowledgeMode = "portfolio" | "private";
 
 export interface EnterpriseRuntimeModeConfig {
 	mode: EnterpriseRuntimeMode;
@@ -90,9 +92,20 @@ export function enterpriseRuntimeModeFromEnv(env: NodeJS.ProcessEnv = process.en
 	return { mode, providerId, modelId };
 }
 
+export function enterpriseKnowledgeModeFromEnv(env: NodeJS.ProcessEnv = process.env): {
+	mode: EnterpriseKnowledgeMode;
+} {
+	const mode = env.ENTERPRISE_KNOWLEDGE_MODE?.trim() || "portfolio";
+	if (mode !== "portfolio" && mode !== "private") {
+		throw new Error("ENTERPRISE_KNOWLEDGE_MODE must be portfolio or private.");
+	}
+	return { mode };
+}
+
 export type EnterprisePiRuntimeFactoryBootstrap = (
 	providerId: string,
 	modelId: string,
+	knowledgeComposition?: PiEnterpriseKnowledgeComposition,
 ) => Promise<EnterpriseRuntimeFactory>;
 
 export async function enterpriseRuntimeFactoryFromEnv(
@@ -100,7 +113,15 @@ export async function enterpriseRuntimeFactoryFromEnv(
 	bootstrapPiRuntime: EnterprisePiRuntimeFactoryBootstrap = bootstrapPiEnterpriseRuntimeFactory,
 ): Promise<EnterpriseRuntimeFactory | undefined> {
 	const runtimeMode = enterpriseRuntimeModeFromEnv(env);
+	const knowledgeMode = enterpriseKnowledgeModeFromEnv(env);
+	if (knowledgeMode.mode === "private" && runtimeMode.mode !== "pi-real") {
+		throw new Error("ENTERPRISE_KNOWLEDGE_MODE=private requires ENTERPRISE_RUNTIME_MODE=pi-real.");
+	}
 	if (runtimeMode.mode === "deterministic") return undefined;
+	if (knowledgeMode.mode === "private") {
+		const privateComposition = loadPrivateStoreKnowledgeComposition(env);
+		return bootstrapPiRuntime(runtimeMode.providerId!, runtimeMode.modelId!, privateComposition);
+	}
 	return bootstrapPiRuntime(runtimeMode.providerId!, runtimeMode.modelId!);
 }
 
