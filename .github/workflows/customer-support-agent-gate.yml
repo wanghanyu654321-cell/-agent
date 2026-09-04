@@ -98,6 +98,12 @@ jobs:
           docker compose up -d
           node scripts/docker-delivery-smoke.mjs read-after-recreate
 
+      - name: Diagnose Docker delivery smoke failure
+        if: failure()
+        run: |
+          docker compose ps -a
+          docker compose logs --no-color app postgres
+
       - name: Clean up Docker delivery smoke
         if: always()
         run: docker compose down -v --remove-orphans

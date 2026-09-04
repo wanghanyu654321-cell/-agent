@@ -79,8 +79,9 @@ The server derives all of them from its HttpOnly session.
 - Pi remains an upstream runtime dependency; Pi core is not vendored or modified.
 - The semantic selector is not a synchronous runtime dependency.
 - No real provider/model call is made by the Docker delivery smoke.
-- This stack has no Docker deployment claim, SaaS claim, external IM integration,
-  vector database, multi-agent workflow, or production operations claim.
+- This stack is a bounded local Docker delivery proof, not a production, hosted,
+  customer, SaaS, or production-operations deployment claim. It has no external
+  IM integration, vector database, or multi-agent workflow.
 
 See [Phase 2C-B's successor contract](docs/portfolio/PHASE_2C_B_FINAL_EXECUTION_DIRECTIVE.md)
 for the delivery boundary and the frozen architecture documents under `docs/` for

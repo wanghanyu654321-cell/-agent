@@ -12,6 +12,7 @@ FROM node:22.19.0-alpine AS runtime
 
 WORKDIR /app
 ENV NODE_ENV=production
+ENV NODE_OPTIONS=--experimental-transform-types
 
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts
