@@ -73,8 +73,9 @@ HTTP/Auth, tenant/store, or PostgreSQL semantics. Its bounded manual smoke uses
 synthetic portfolio FAQ only and is provider-adapter proof, not a real-store
 knowledge or customer Pilot.
 
-`PRIVATE STORE KNOWLEDGE COMPOSITION V1 = IMPLEMENTATION CANDIDATE` is a
-separate successor. `ENTERPRISE_KNOWLEDGE_MODE=private` is available only with
+`PRIVATE STORE KNOWLEDGE COMPOSITION V1 = APPROVED` at
+`3b10ed32fcd0a8b9e1a1809bc95e22cec8e7f4b5` (approval comment `5538326478`).
+`ENTERPRISE_KNOWLEDGE_MODE=private` is available only with
 explicit `pi-real` startup and an operator-supplied private corpus. It admits
 only one tenant/store-scoped corpus of approved entries, disables both synthetic
 admission controls, routes private FAQ entries only through `search_faq`, and
@@ -83,8 +84,9 @@ knowledge path. No real merchant corpus is committed, and no real
 customer/store Pilot, private-corpus real-provider smoke, Shadow mode, or
 Assisted mode is authorized.
 
-`JOB-READY REAL-SOURCE KNOWLEDGE PACK V1 = IMPLEMENTATION CANDIDATE` is a
-separate successor from the approved private-composition source. It selects only
+`JOB-READY REAL-SOURCE KNOWLEDGE PACK V1 = IMPLEMENTATION CANDIDATE / PENDING
+INDEPENDENT RE-REVIEW` is a separate successor from the approved
+private-composition source. It selects only
 eight allowlisted public official support records, preserves their content,
 version, and source reference in an operator-generated scoped copy, and assigns
 the opaque portfolio scope `pilot-support-tenant` / `pilot-support-store`. The
