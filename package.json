@@ -25,6 +25,7 @@
 		"eval:selection:semantic:latency-v2.3.1": "node evals/selection/semantic/run-latency-v2-3-1-characterization.ts",
 		"integrity": "node scripts/verify-integrity.mjs",
 		"materialize:pilot-real-source-pack": "node --experimental-transform-types scripts/materialize-real-source-pilot-pack.ts",
+		"smoke:real-source-runtime": "node --no-warnings --experimental-transform-types scripts/real-source-runtime-smoke.ts",
 		"test:postgres-identity": "node -e \"if (!process.env.POSTGRES_TEST_URL) { throw new Error('POSTGRES_TEST_URL is required for the PostgreSQL identity gate.') }\" && vitest --run tests/postgres-identity.integration.test.ts",
 		"test:postgres-business": "node -e \"if (!process.env.POSTGRES_TEST_URL) { throw new Error('POSTGRES_TEST_URL is required for the PostgreSQL business gate.') }\" && vitest --run tests/postgres-business.integration.test.ts",
 		"test:postgres-application": "node -e \"if (!process.env.POSTGRES_TEST_URL) { throw new Error('POSTGRES_TEST_URL is required for the PostgreSQL application gate.') }\" && vitest --run tests/enterprise-application.integration.test.ts",
