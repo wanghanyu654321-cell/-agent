@@ -84,9 +84,9 @@ knowledge path. No real merchant corpus is committed, and no real
 customer/store Pilot, private-corpus real-provider smoke, Shadow mode, or
 Assisted mode is authorized.
 
-`JOB-READY REAL-SOURCE KNOWLEDGE PACK V1 = IMPLEMENTATION CANDIDATE / PENDING
-INDEPENDENT RE-REVIEW` is a separate successor from the approved
-private-composition source. It selects only
+`JOB-READY REAL-SOURCE KNOWLEDGE PACK V1 = APPROVED` at
+`35e7e16f84732768818b407657cf2dd9643ed236` (approval comment `5540302001`).
+It selects only
 eight allowlisted public official support records, preserves their content,
 version, and source reference in an operator-generated scoped copy, and assigns
 the opaque portfolio scope `pilot-support-tenant` / `pilot-support-store`. The
@@ -94,6 +94,15 @@ generated corpus is intentionally uncommitted. Its thirteen human-authored
 evaluation scenarios are not real customer conversations. No real merchant
 policy, customer data, real-provider plus real-source smoke, Shadow mode,
 Assisted mode, or deployment claim is authorized.
+
+`REAL-SOURCE RUNTIME PROOF V1 = IMPLEMENTATION CANDIDATE / PENDING INDEPENDENT
+REVIEW` is a separate successor from the approved real-source pack. It only
+orchestrates the existing `pi-real` runtime, private composition, and approved
+opaque scope across three bounded portfolio evaluation cases. It does not change
+Runtime, Safety, knowledge admission or routing, tools, provider-adapter
+semantics, or deployment status. A real-provider attempt remains prohibited
+until a fresh clean-runner passes, remains capped at one execution each for the
+three defined cases with no retry, and may record only safe metadata.
 
 ## Status
 
