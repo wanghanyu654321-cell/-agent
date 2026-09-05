@@ -107,6 +107,24 @@ Safety, knowledge admission/routing, authority, tools, provider-adapter
 semantics, and deployment boundaries while re-evaluation remains pending
 independent review.
 
+`REAL-SOURCE RUNTIME PROOF V1 = NOT APPROVED`.
+The subsequent after-fix operator re-evaluation at
+`56f3ed62b67097cb1b05ae5a9c679aa52df4ed2a` successfully materialized the approved
+real-source pack and invoked the harness once, but durable Case records and a
+safe terminal summary were unavailable. Actual `runtimeCaseAttempts` cannot be
+safely inferred. This is an operator evidence-durability gap, not an established
+Runtime/model failure; the Runtime proof remains unresolved and no additional
+provider rerun is authorized (reviewer comment `5549510437`).
+
+`REAL-SOURCE RUNTIME EVIDENCE DURABILITY V1 = IMPLEMENTATION CANDIDATE / PENDING INDEPENDENT REVIEW`.
+The proof-only successor requires an explicit fresh journal outside the repository.
+It synchronously writes and fsyncs safe start, attempt, completion, and bounded
+failure events before execution proceeds. Existing evidence is never overwritten
+or automatically resumed. Engineering uses GPT-6; the product Runtime comparison
+baseline remains `openai-codex / gpt-5.6-sol`. This checkpoint uses only deterministic
+tests and authorizes no real A/B/C execution. See
+[the journal contract](../portfolio/REAL_SOURCE_RUNTIME_EVIDENCE_DURABILITY_V1.md).
+
 ## Status
 
 CUSTOMER SUPPORT AGENT RUNTIME V0
