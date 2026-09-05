@@ -206,6 +206,8 @@ type IngestResponse = {
 
 No status/role/permission/content supplied by Python or public callers. Node first loads approved private entries through the existing loader, rejects mixed/unscoped/synthetic input, and registers canonical document/version/content in PostgreSQL. Ingestion reads that exact approved registry row/hash. Missing, inactive, retired, changed hash or wrong scope fails closed. Same document/version/profile/hash ingestion is idempotent. Changed bytes under an existing version are a conflict, never overwrite. HTTP 200 means all chunks atomically published for that version/profile, not merely a scheduled job. Failure leaves no partially searchable generation.
 
+Canonical `KnowledgeEntry.content` has a fixed maximum of **16,000 Unicode code points**. This is deliberately separate from the 2,000-code-point Candidate chunk limit: the former bounds the complete canonical entry that existing Runtime evidence governance may rehydrate, while the latter bounds an individual retrieval response. Node rejects oversized content at approved-registry registration before it can be ingested; FastAPI independently rejects any registry/document/content hash that exceeds the same bound. No layer truncates canonical content, stores a shortened substitute, indexes a partial document, or rehydrates an oversized full entry into `RetrievalEvidence`/Pi Runtime. This bound is compatible with the currently inspected approved public corpus (largest entry: 108 code points) and preserves the current Runtime's full-canonical-entry evidence shape without changing its governance semantics.
+
 ### 6.3 Search and Candidate Evidence
 
 ```ts
@@ -321,7 +323,17 @@ Record deadline occurrence separately from final outcome. `SupportResult.evidenc
 
 ### 8.2 Badcase B: required knowledge check is policy-owned
 
-For an ordinary support input with no admitted FAQ answer, Node must deterministically execute the governed ordinary knowledge check once for the original request text within existing budget, without waiting for the model to choose a tool. Safety handling runs first; successful admitted FAQ keeps its direct path. This rule applies to all remaining ordinary requests, including nonsense/no-match queries, not specific case IDs, phrases or corpus entries. Explicit StoreOps form commands are separate deterministic APIs, not model intent routing.
+For an ordinary support input after Safety has determined that its higher-priority path does not apply, Node uses this fixed route for the **original request text**:
+
+```text
+original request
+→ Node deterministic FAQ matcher + existing FAQ admission rules
+→ admitted FAQ?
+   ├─ yes: preserve existing FAQ direct path
+   └─ no: execute governed ordinary search_knowledge exactly once
+```
+
+The matcher and admission decision use the current FAQ matching/admission semantics; this contract does not create a second FAQ algorithm or alter status/version/sourceRef/scope governance. An admitted FAQ returns through its existing direct path and does not trigger unnecessary ordinary retrieval. On a miss, the governed ordinary check is mandatory once within the existing budget and cannot depend on whether the model elects to call `search_knowledge`. This applies to all remaining ordinary requests, including nonsense/no-match queries, not specific case IDs, phrases or corpus entries. Explicit StoreOps form commands are separate deterministic APIs, not model intent routing.
 
 Reuse one product-owned `search_knowledge` operation for this policy invocation and Pi tool dispatch: same schema, admission, timeout/AbortSignal, tool budget and output guard. Account the actual operation once; cache only that turn's completed same-query/same-scope result to avoid duplicate identical work. Policy-origin execution must be identified in audit (`knowledgeCheckOrigin: policy|pi_tool`); it is an actual tool operation, not a forged Pi Agent event. `toolsCalled` records actual calls; raw Pi events remain only Pi's events. Different later queries remain governed/budgeted and can invalidate earlier evidence.
 
@@ -389,13 +401,13 @@ The names below are reserved work branches from the independently accepted Task-
 
 | Track / reserved branch | Exclusive isolated work | Not owned |
 | --- | --- | --- |
-| Core A / `job-ready/core-a-runtime-storeops-v1` | `src/channels/wecom/**`, `src/storeops/**`, new `migrations/003_job_ready_storeops.sql` and `004_job_ready_rag.sql`, focused `tests/job-ready-core-a/**`, Runtime regression additions | Python/UI/deployment; GAP-blocked protocol or schema guesses |
-| Core B / `job-ready/core-b-fastapi-rag-v1` | `ai-service/**` (service, Pydantic, embedding adapter, pinned Python dependencies, tests and image), new `src/retrieval/fastapi.ts`, `tests/job-ready-rag/**` | Business SQL/authority, shared Runtime/provider composition, metadata approval |
+| Core A / `job-ready/core-a-runtime-storeops-v1` | `src/channels/wecom/**`, `src/storeops/**`, `migrations/003_job_ready_storeops.sql`, focused `tests/job-ready-core-a/**`, Runtime regression additions | Python/UI/deployment; RAG migration; GAP-blocked protocol or schema guesses |
+| Core B / `job-ready/core-b-fastapi-rag-v1` | `ai-service/**` (service, Pydantic, embedding adapter, pinned Python dependencies, tests and image), `migrations/004_job_ready_rag.sql`, new `src/retrieval/fastapi.ts`, `tests/job-ready-rag/**` | Business SQL/authority outside frozen RAG schema, shared Runtime/provider composition, metadata approval |
 | Qoder C / `job-ready/react-storeops-v1` | `web/src/storeops/**`, `tests/web-storeops/**`, fixtures matching section 7 exactly | Backend endpoints/schema, shared App/session authority implementation |
 | Qoder D / `job-ready/eval-delivery-v1` | `evals/job-ready-rag/**`, `deploy/job-ready/**` (Nginx/runbook examples), `scripts/job-ready-*.mjs` deterministic smoke helpers, `docs/job-ready/evidence/**` | Shared Compose/workflow/package files, algorithms/gold tuning/core fixes |
 | Final GPT-6 Integration / `job-ready/integration-v1` | Shared wiring below after track evidence/review; no concurrent track edits | New product capabilities or unresolved gap decisions |
 
-Core A owns SQL for both StoreOps and the frozen RAG schema, including extension/profile dimension once GAP-03 resolves; Core B supplies query/DTO tests, not a competing migration. DB roles/grants isolate Python index writes from Node authority tables. Existing migration001/002 remain frozen. No peripheral branch edits existing historic evals/reports, Pi pins or governance state. New track evidence goes into owned isolated paths.
+Core A owns StoreOps SQL only. Core B owns the frozen RAG schema SQL, including extension/profile dimension once GAP-03 resolves. Final Integration alone registers both migrations in the existing ledger. DB roles/grants isolate Python index writes from Node authority tables. Existing migration001/002 remain frozen. No peripheral branch edits existing historic evals/reports, Pi pins or governance state. New track evidence goes into owned isolated paths.
 
 | Shared file | Sole change owner / stage | Exact reason / bound |
 | --- | --- | --- |
