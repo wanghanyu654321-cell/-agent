@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
-import { resolve } from "node:path";
+import { closeSync, fsyncSync, openSync, realpathSync, writeFileSync } from "node:fs";
+import { basename, dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
 	enterpriseKnowledgeModeFromEnv,
@@ -55,6 +56,7 @@ export type RealSourceRuntimeProofBlockedCategory =
 	| "MODEL_UNAVAILABLE"
 	| "MATERIALIZATION_UNAVAILABLE"
 	| "PRIVATE_KNOWLEDGE_UNAVAILABLE"
+	| "JOURNAL_UNAVAILABLE"
 	| "EXECUTION_UNAVAILABLE";
 
 export interface SafeRuntimeCaseEvidence {
@@ -127,8 +129,8 @@ export async function runRealSourceRuntimeProof(
 ): Promise<SafeRuntimeProofSummary> {
 	const dependencies = { ...defaults, ...overrides };
 	const runtimeMode = requiredPiRuntimeMode(environment, dependencies);
-	const composition = requiredPrivateComposition(environment, dependencies);
 	const sourceHead = requiredSourceHead(dependencies);
+	const journal = createSafeJournal(environment.REAL_SOURCE_RUNTIME_PROOF_JOURNAL);
 	const partial = {
 		sourceHead,
 		provider: runtimeMode.providerId,
@@ -138,45 +140,124 @@ export async function runRealSourceRuntimeProof(
 		retries: 0 as const,
 	};
 
-	let resolved: ResolvedPiEnterpriseRuntime;
 	try {
-		resolved = await dependencies.bootstrap({ providerId: runtimeMode.providerId, modelId: runtimeMode.modelId });
-	} catch (error) {
-		throw new RuntimeProofBlockedError(blockedCategory(error), partial);
-	}
-
-	let resource: ReturnType<EnterpriseRuntimeFactory> | undefined;
-	let caught: unknown;
-	try {
-		resource = dependencies.createRuntimeFactory(resolved, composition)(undefined as never);
-		for (const runtimeCase of REAL_SOURCE_RUNTIME_PROOF_CASES) {
-			partial.runtimeCaseAttempts += 1;
-			const startedAt = dependencies.now();
-			let result: SupportResult;
-			try {
-				result = await resource.runtime.run(requestFor(runtimeCase));
-			} catch (error) {
-				throw new RuntimeProofBlockedError(blockedCategory(error), partial);
-			}
-			partial.cases.push(projectSafeCaseEvidence(runtimeCase, result, partial, dependencies.now() - startedAt));
-		}
-	} catch (error) {
-		caught = error;
-		throw error;
-	} finally {
+		journal.append({
+			eventType: "run_started",
+			sourceHead,
+			provider: partial.provider,
+			model: partial.model,
+			runtimeCaseAttempts: 0,
+			retries: 0,
+		});
+		const composition = requiredPrivateComposition(environment, dependencies);
+		const resolved = await dependencies.bootstrap({ providerId: runtimeMode.providerId, modelId: runtimeMode.modelId });
+		let resource: ReturnType<EnterpriseRuntimeFactory> | undefined;
+		let caught: unknown;
 		try {
-			await resource?.close?.();
+			resource = dependencies.createRuntimeFactory(resolved, composition)(undefined as never);
+			for (const runtimeCase of REAL_SOURCE_RUNTIME_PROOF_CASES) {
+				const attemptOrdinal = partial.runtimeCaseAttempts + 1;
+				journal.append({
+					eventType: "case_attempt_started",
+					caseId: runtimeCase.caseId,
+					category: runtimeCase.category,
+					attemptOrdinal,
+				});
+				partial.runtimeCaseAttempts = attemptOrdinal;
+				const startedAt = dependencies.now();
+				const result = await resource.runtime.run(requestFor(runtimeCase));
+				const safe = projectSafeCaseEvidence(runtimeCase, result, partial, dependencies.now() - startedAt);
+				journal.append({
+					eventType: "case_completed",
+					caseId: safe.caseId,
+					category: safe.category,
+					resultType: safe.resultType,
+					toolsCalled: safe.toolsCalled,
+					authorizedEvidenceIds: safe.authorizedEvidenceIds,
+					elapsedMs: safe.elapsedMs,
+					expectedVsActualPass: safe.expectedVsActualPass,
+				});
+				partial.cases.push(safe);
+			}
 		} catch (error) {
-			if (!caught) throw new RuntimeProofBlockedError("EXECUTION_UNAVAILABLE", partial);
+			caught = error;
+			throw error;
+		} finally {
+			try {
+				await resource?.close?.();
+			} catch (error) {
+				if (!caught) throw error;
+			}
 		}
+		const summary = {
+			...partial,
+			allThreeCasesPassed:
+				partial.runtimeCaseAttempts === REAL_SOURCE_RUNTIME_PROOF_CASES.length &&
+				partial.cases.length === REAL_SOURCE_RUNTIME_PROOF_CASES.length &&
+				partial.cases.every((item) => item.expectedVsActualPass),
+		};
+		journal.append({
+			eventType: "run_completed",
+			runtimeCaseAttempts: summary.runtimeCaseAttempts,
+			retries: 0,
+			allThreeCasesPassed: summary.allThreeCasesPassed,
+		});
+		return summary;
+	} catch (error) {
+		const category = error instanceof RuntimeProofBlockedError ? error.category : blockedCategory(error);
+		try {
+			journal.append({ eventType: "run_blocked", category, runtimeCaseAttempts: partial.runtimeCaseAttempts, retries: 0 });
+		} catch {
+			throw new RuntimeProofBlockedError("JOURNAL_UNAVAILABLE", partial);
+		}
+		throw new RuntimeProofBlockedError(category, partial);
+	} finally {
+		journal.close();
 	}
+}
 
+type SafeJournalEvent =
+	| { eventType: "run_started"; sourceHead: string; provider: string; model: string; runtimeCaseAttempts: 0; retries: 0 }
+	| { eventType: "case_attempt_started"; caseId: string; category: string; attemptOrdinal: number }
+	| ({ eventType: "case_completed" } & Omit<SafeRuntimeCaseEvidence, "sourceHead" | "provider" | "model">)
+	| { eventType: "run_blocked"; category: RealSourceRuntimeProofBlockedCategory; runtimeCaseAttempts: number; retries: 0 }
+	| { eventType: "run_completed"; runtimeCaseAttempts: number; retries: 0; allThreeCasesPassed: boolean };
+
+function createSafeJournal(path: string | undefined): { append(event: SafeJournalEvent): void; close(): void } {
+	let fd: number;
+	try {
+		if (!path || !isAbsolute(path)) throw new Error("JOURNAL_PATH_REQUIRED");
+		const repositoryRoot = realpathSync(fileURLToPath(new URL("..", import.meta.url)));
+		// Resolve parent links before checking scope; wx also rejects existing files/links.
+		const canonicalPath = resolve(realpathSync(dirname(path)), basename(path));
+		const fromRepository = relative(repositoryRoot, canonicalPath);
+		if (!(isAbsolute(fromRepository) || fromRepository === ".." || fromRepository.startsWith(`..${sep}`))) {
+			throw new Error("JOURNAL_MUST_BE_OUTSIDE_REPOSITORY");
+		}
+		fd = openSync(canonicalPath, "wx", 0o600);
+	} catch {
+		throw new RuntimeProofBlockedError("JOURNAL_UNAVAILABLE");
+	}
+	let writable = true;
 	return {
-		...partial,
-		allThreeCasesPassed:
-			partial.runtimeCaseAttempts === REAL_SOURCE_RUNTIME_PROOF_CASES.length &&
-			partial.cases.length === REAL_SOURCE_RUNTIME_PROOF_CASES.length &&
-			partial.cases.every((item) => item.expectedVsActualPass),
+		append(event) {
+			if (!writable) throw new RuntimeProofBlockedError("JOURNAL_UNAVAILABLE");
+			try {
+				writeFileSync(fd, `${JSON.stringify(event)}\n`, "utf8");
+				fsyncSync(fd);
+			} catch {
+				// Never append behind a possibly partial write or retry a failed persistence operation.
+				writable = false;
+				throw new RuntimeProofBlockedError("JOURNAL_UNAVAILABLE");
+			}
+		},
+		close() {
+			try {
+				closeSync(fd);
+			} catch {
+				throw new RuntimeProofBlockedError("JOURNAL_UNAVAILABLE");
+			}
+		},
 	};
 }
 

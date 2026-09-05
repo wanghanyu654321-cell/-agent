@@ -1,6 +1,9 @@
 import { execFile } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { promisify } from "node:util";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	formatRealSourceRuntimeProofBlockedOutput,
 	REAL_SOURCE_RUNTIME_PROOF_CASES,
@@ -12,6 +15,11 @@ import { PILOT_REAL_SOURCE_SCOPE } from "../src/enterprise/real-source-knowledge
 import type { SupportRequest, SupportResult } from "../src/index.ts";
 
 const execFileAsync = promisify(execFile);
+let proofDirectory: string;
+beforeEach(() => {
+	proofDirectory = mkdtempSync(join(tmpdir(), "runtime-proof-test-"));
+});
+afterEach(() => rmSync(proofDirectory, { recursive: true, force: true }));
 
 const composition: PiEnterpriseKnowledgeComposition = {
 	faq: [],
@@ -71,6 +79,7 @@ function environment(): NodeJS.ProcessEnv {
 		PI_PROVIDER: "faux-provider",
 		PI_MODEL: "faux-model",
 		SUPPORT_AGENT_PRIVATE_KNOWLEDGE_DIR: "operator-private-directory",
+		REAL_SOURCE_RUNTIME_PROOF_JOURNAL: join(proofDirectory, "proof.jsonl"),
 	};
 }
 
