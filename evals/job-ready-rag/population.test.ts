@@ -11,6 +11,9 @@ import { assertValidPopulation, canonicalJson, freezePopulation, hashPopulation 
 
 const byId = new Map(jobReadyRetrievalCases.map((item) => [item.caseId, item]));
 
+/** Ordinary-RAG/vector admissible kinds (contract): faq is served by the separate FAQ adapter. */
+const RAG_ADMISSIBLE_KINDS = new Set(["policy", "sop", "reference"]);
+
 function countOf(answerability: "answerable" | "no_answer" | "ambiguous"): number {
 	return jobReadyRetrievalCases.filter((item) => item.expectedAnswerability === answerability).length;
 }
@@ -49,11 +52,13 @@ describe("frozen retrieval population", () => {
 		}
 	});
 
-	it("binds every gold id, version and source ref to the frozen corpus", () => {
+	it("binds every gold id, version and expected sourceRef to the frozen corpus (gold provenance only)", () => {
 		for (const item of jobReadyRetrievalCases) {
 			for (const id of item.expectedEvidenceIds) {
 				const entry = getCorpusEntry(id);
 				expect(item.expectedVersions[id]).toBe(entry.version);
+				// expectedSourceRefs is frozen gold/corpus provenance; this never asserts a
+				// returned sourceRef was measured (see the sourceRef contract gap).
 				expect(item.expectedSourceRefs[id]).toBe(entry.sourceRef);
 			}
 		}
@@ -74,8 +79,75 @@ describe("frozen retrieval population", () => {
 		}
 	});
 
+	it("covers each negative-control dimension exactly twice (8 controls total)", () => {
+		const counts: Record<string, number> = {};
+		for (const control of Object.values(NEGATIVE_CONTROLS)) {
+			counts[control.dimension] = (counts[control.dimension] ?? 0) + 1;
+		}
+		expect(Object.keys(NEGATIVE_CONTROLS)).toHaveLength(8);
+		expect(counts.tenant_isolation).toBe(2);
+		expect(counts.store_isolation).toBe(2);
+		expect(counts.unapproved_evidence).toBe(2);
+		expect(counts.stale_version).toBe(2);
+	});
+
 	it("carries a human goldReason on every case", () => {
 		expect(jobReadyRetrievalCases.every((item) => item.goldReason.trim().length > 0)).toBe(true);
+	});
+});
+
+describe("ordinary-RAG gold excludes faq (D1)", () => {
+	it("puts no faq gold on any answerable case", () => {
+		for (const item of jobReadyRetrievalCases) {
+			if (item.expectedAnswerability !== "answerable") continue;
+			for (const id of item.expectedEvidenceIds) expect(getCorpusEntry(id).kind).not.toBe("faq");
+		}
+	});
+
+	it("puts no faq gold on any ambiguous case", () => {
+		for (const item of jobReadyRetrievalCases) {
+			if (item.expectedAnswerability !== "ambiguous") continue;
+			for (const id of item.expectedEvidenceIds) expect(getCorpusEntry(id).kind).not.toBe("faq");
+		}
+	});
+
+	it("binds every positive gold entry to a policy/sop/reference kind", () => {
+		let positiveGoldCount = 0;
+		for (const item of jobReadyRetrievalCases) {
+			if (item.expectedAnswerability === "no_answer") continue;
+			expect(item.expectedEvidenceIds.length).toBeGreaterThan(0);
+			for (const id of item.expectedEvidenceIds) {
+				expect(RAG_ADMISSIBLE_KINDS.has(getCorpusEntry(id).kind)).toBe(true);
+				positiveGoldCount += 1;
+			}
+		}
+		expect(positiveGoldCount).toBeGreaterThan(0);
+	});
+
+	it("rebinds the three formerly faq-backed cases to approved policy gold", () => {
+		expect(byId.get("JR-RAG-ANS-21")?.expectedEvidenceIds).toEqual(["PB-MT-REFUND-ORIGINAL-PAYMENT"]);
+		expect(byId.get("JR-RAG-ANS-22")?.expectedEvidenceIds).toEqual(["PB-MT-UNCONSUMED-REFUND"]);
+		expect(byId.get("JR-RAG-AMB-08")?.expectedEvidenceIds).toEqual([
+			"PB-MT-CHANGE-REFUND",
+			"PB-MT-MERCHANT-CANNOT-FULFILL",
+		]);
+	});
+});
+
+describe("synthetic_test_only control is de-confounded (D2)", () => {
+	it("gives JR-FIX-SYNTHETIC-ONLY a RAG-admissible kind but synthetic_test_only status", () => {
+		const fixture = getCorpusEntry("JR-FIX-SYNTHETIC-ONLY");
+		expect(fixture.kind).toBe("reference");
+		expect(RAG_ADMISSIBLE_KINDS.has(fixture.kind)).toBe(true);
+		expect(fixture.status).toBe("synthetic_test_only");
+		expect(fixture.provenance).toBe("synthetic_isolation_fixture");
+	});
+
+	it("keeps the fixture's only admission-failure axis on status, not kind", () => {
+		const fixture = syntheticIsolationFixtures.find((item) => item.id === "JR-FIX-SYNTHETIC-ONLY");
+		expect(fixture?.kind).toBe("reference");
+		expect(fixture?.kind).not.toBe("faq");
+		expect(fixture?.status).toBe("synthetic_test_only");
 	});
 });
 

@@ -11,6 +11,15 @@ product evaluation. Copy to a dated file (for example
 > PASS.** Hard scope/status/version/authorization safety invariants remain
 > mandatory and are reported separately below.
 
+> **CONTRACT GAP — RETRIEVAL MEASUREMENT SOURCE_REF (blocked by frozen DTO).**
+> The frozen `RetrievalMeasurement` carries `returnedEvidenceIds` +
+> `returnedVersions` but **no** `returnedSourceRefs`. Expected `sourceRef` stays
+> frozen as gold/corpus provenance; measurement-level validation proves the
+> returned **ID + version** only. **Do not** record or claim returned-`sourceRef`
+> verification in this evidence — it is blocked by the frozen measurement DTO and
+> is a contract-shape gap separate from GAP-05, left to Contract amendment /
+> Final Integration review.
+
 ## 1. Run identity
 
 | Field | Value |

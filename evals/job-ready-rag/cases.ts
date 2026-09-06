@@ -10,13 +10,19 @@ import type { RetrievalEvalCase, Scope } from "./schema.ts";
  * - No real customer transcripts; every query is human-authored.
  * - No invented professional/beauty policy as factual gold; answerable and
  *   ambiguous gold bind only to approved public-benchmark propositions.
+ * - Ordinary-RAG/vector gold binds only policy/sop/reference entries; faq is
+ *   served by the separate FAQ adapter and is never ordinary-RAG gold.
  * - approved-source cases and synthetic isolation fixtures are distinguished by
  *   `provenance`.
  * - Answerable gold has exactly one sufficient entry; ambiguous gold has at
  *   least two distinct admissible plausible entries and expects no final
  *   authorized evidence; no-answer gold is empty.
- * - `expectedVersions`/`expectedSourceRefs` are derived from the frozen corpus
- *   so scoring checks version/source, not IDs alone.
+ * - `expectedVersions`/`expectedSourceRefs` are derived from the frozen corpus.
+ *   Scoring validates the returned ID + returned version against this gold;
+ *   `expectedSourceRefs` stays frozen gold/corpus provenance only. The frozen
+ *   `RetrievalMeasurement` carries `returnedEvidenceIds` + `returnedVersions`
+ *   but NOT `returnedSourceRefs`, so a run's returned sourceRef cannot be
+ *   verified here (CONTRACT GAP — RETRIEVAL MEASUREMENT SOURCE_REF).
  */
 
 const BENCHMARK_SCOPE: Scope = { tenantId: "public-benchmark", storeId: "public-benchmark-store" };
@@ -120,8 +126,6 @@ const REASON_FULFILLMENT_CLOSURE =
 	"查询直接问商户装修歇业无法营业时的告知与不可用时间设置义务；该条目是履约保障办法对该义务及未告知即属不接待的直接规定，单条即充分。";
 const REASON_FULFILLMENT_ALTERNATIVE =
 	"查询直接问商户无法提供团购部分组成时的替换价值要求与不认可处理；该条目是履约保障办法对替换价值不得低于原价值及线下沟通接待的直接规定，单条即充分。";
-const REASON_DP_HELP_UNVERIFIED =
-	"查询直接问大众点评普通团购券未验证/未消费时的退款帮助；该条目是大众点评官方帮助页对未消费可申请退款且已验证券不适用的直接说明，单条即充分。";
 const REASON_SCOPE_TENANT =
 	"查询使用租户专属基准令牌A且运行于该受治理条目声明的正确租户/门店范围，范围匹配故应准入；单条探针即充分，用于正向确认隔离不误伤合法范围。";
 const REASON_SCOPE_STORE =
@@ -143,8 +147,8 @@ const REASON_AMB_CONSUMED_BOUNDARY =
 	"查询同时命中消费后原则可拒绝并先联系商户 与 未消费随时退款两条独立已批准条目。是否已消费决定相反处置，查询未澄清，二者均可准入，无单一条目可直接充分授权唯一答复，期望路由2+。";
 const REASON_AMB_REFUND_PATH_TIME =
 	"查询同时命中按原支付路径原路退回 与 未消费退款1至7个工作日到账两条独立已批准条目。路径与时限是不同维度，二者均可准入，无单一条目可直接充分授权唯一答复，期望路由2+。";
-const REASON_AMB_UNVERIFIED_UNCONSUMED =
-	"查询同时命中大众点评未验证普通券退款帮助 与 美团未消费退款机制两条独立已批准条目。平台与券状态不同，二者均可准入，无单一条目可直接充分授权唯一答复，期望路由2+。";
+const REASON_AMB_CHANGE_VS_CANNOT_FULFILL =
+	"查询明确同时陈述商户变更团购内容与商户无法履约两个事实前提，分别命中变更可退款与无法履约经核实可退款两条独立已批准条目。二者均可准入且都指向退款，但适用要件与处置不同，查询未澄清以何者为准，无单一条目可直接充分授权唯一答复，期望路由2+。";
 
 // --- no-answer gold reasons (governance must exclude; gold empty) ---------
 
@@ -155,7 +159,7 @@ const REASON_NOANS_STORE =
 const REASON_NOANS_UNAPPROVED =
 	"查询使用合成未批准草稿令牌且范围匹配，但该夹具状态为unapproved。未批准条目永不准入，正确结果为空，用以确认状态治理独立于范围生效；检索不可用绝不计为正确no-answer。";
 const REASON_NOANS_SYNTHETIC_ONLY =
-	"查询使用合成测试专用令牌且范围匹配，但该夹具状态为synthetic_test_only。生产检索模式不准入测试专用夹具，正确结果为空，用以确认测试夹具不泄漏进生产答复；检索不可用绝不计为正确no-answer。";
+	"查询使用合成测试专用令牌且范围匹配；该夹具种类为普通RAG可准入的reference，唯一不准入原因是其状态synthetic_test_only。生产检索模式不准入测试专用夹具，正确结果为空，用以确认状态治理独立于种类生效、测试夹具不泄漏进生产答复；检索不可用绝不计为正确no-answer。";
 const REASON_NOANS_RETIRED =
 	"查询使用合成过期/废止版本令牌且范围匹配，但该夹具状态为retired。已退休版本永不准入，正确结果为空，用以确认版本时效治理生效；检索不可用绝不计为正确no-answer。";
 
@@ -279,15 +283,15 @@ const answerableCases: RetrievalEvalCase[] = [
 	),
 	answerable(
 		"JR-RAG-ANS-21",
-		"大众点评普通团购券未消费时怎么申请退款？",
-		"PB-DP-HELP-UNVERIFIED",
-		REASON_DP_HELP_UNVERIFIED,
+		"退款审核通过后资金会原路退回到我下单时使用的支付方式吗？",
+		"PB-MT-REFUND-ORIGINAL-PAYMENT",
+		REASON_REFUND_ORIGINAL_PAYMENT,
 	),
 	answerable(
 		"JR-RAG-ANS-22",
-		"已验证的美团券适用大众点评未消费退款帮助页吗？",
-		"PB-DP-HELP-UNVERIFIED",
-		REASON_DP_HELP_UNVERIFIED,
+		"未消费团购券退款审核通过后是退回原支付方吗一般多久到账？",
+		"PB-MT-UNCONSUMED-REFUND",
+		REASON_UNCONSUMED_REFUND,
 	),
 	answerable("JR-RAG-ANS-23", "租户专属基准令牌A", "PB-MT-SCOPE-TENANT", REASON_SCOPE_TENANT, BENCHMARK_PROBE_SCOPE),
 	answerable("JR-RAG-ANS-24", "门店专属基准令牌B", "PB-MT-SCOPE-STORE", REASON_SCOPE_STORE, BENCHMARK_PROBE_SCOPE),
@@ -359,9 +363,9 @@ const ambiguousCases: RetrievalEvalCase[] = [
 	),
 	ambiguous(
 		"JR-RAG-AMB-08",
-		"没验证没消费的团购券怎么退款？",
-		["PB-DP-HELP-UNVERIFIED", "PB-MT-UNCONSUMED-REFUND"],
-		REASON_AMB_UNVERIFIED_UNCONSUMED,
+		"商户既改变了原团购内容又可能无法正常履约这种情况退款该按哪一种规则判断？",
+		["PB-MT-CHANGE-REFUND", "PB-MT-MERCHANT-CANNOT-FULFILL"],
+		REASON_AMB_CHANGE_VS_CANNOT_FULFILL,
 	),
 ];
 

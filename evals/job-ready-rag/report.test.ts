@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { jobReadyRetrievalCases } from "./cases.ts";
 import { freezePopulation } from "./freeze.ts";
-import { buildReport, renderReportJson, renderReportMarkdown, verifyMeasurementBinding } from "./report.ts";
+import {
+	buildReport,
+	renderReportJson,
+	renderReportMarkdown,
+	SOURCE_REF_GAP_MARKER,
+	verifyMeasurementBinding,
+} from "./report.ts";
 import type { RetrievalEvalCase, RetrievalMeasurement } from "./schema.ts";
 
 const frozen = freezePopulation();
@@ -65,6 +71,13 @@ describe("report assembly", () => {
 		expect(report.frozenPopulation.casesSha256).toBe(frozen.casesSha256);
 	});
 
+	it("discloses the returned-sourceRef contract gap without claiming verification (D3)", () => {
+		const report = buildReport(correctRun);
+		expect(report.sourceRefGap.status).toBe("blocked_by_frozen_measurement_dto");
+		expect(report.sourceRefGap.marker).toBe(SOURCE_REF_GAP_MARKER);
+		expect(report.overallPassLabel).toBeNull();
+	});
+
 	it("surfaces violations and failed case ids when a run is unhealthy", () => {
 		const unhealthy = correctRun.map((item) => ({ ...item }));
 		const target = unhealthy.findIndex((item) => item.caseId === "JR-RAG-NOANS-05");
@@ -91,6 +104,19 @@ describe("private-data-free rendering", () => {
 		expect(markdown).toContain("Recall@3");
 		expect(markdown).toContain("Wrong Evidence Rate");
 		expect(markdown).toContain("No-answer Accuracy");
+	});
+
+	it("surfaces the sourceRef gap in markdown and JSON and never claims sourceRef verification (D3)", () => {
+		const report = buildReport(correctRun);
+		const markdown = renderReportMarkdown(report);
+		const json = renderReportJson(report);
+		expect(markdown).toContain(SOURCE_REF_GAP_MARKER);
+		expect(markdown).toContain("returned evidence ID + returned version");
+		expect(markdown).toContain("not performed");
+		expect(json).toContain("RETRIEVAL MEASUREMENT SOURCE_REF");
+		expect(json).toContain("blocked_by_frozen_measurement_dto");
+		expect(markdown.toLowerCase()).not.toContain("sourceref verified");
+		expect(markdown.toLowerCase()).not.toContain("verifies the returned sourceref");
 	});
 
 	it("renders violation state when invariants break", () => {

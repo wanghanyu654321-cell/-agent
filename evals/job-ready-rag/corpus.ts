@@ -181,9 +181,13 @@ export const syntheticIsolationFixtures: SyntheticIsolationFixture[] = [
 		"合成未批准草稿令牌丙",
 		"批准状态",
 	),
+	// De-confounded status control: the kind is an ordinary-RAG-admissible
+	// `reference` (NOT `faq`), so the ONLY intended admission-failure axis for this
+	// fixture is its `synthetic_test_only` status. Were it `faq`, ordinary RAG would
+	// exclude it by kind independently and the control could not isolate status.
 	syntheticFixture(
 		"JR-FIX-SYNTHETIC-ONLY",
-		"faq",
+		"reference",
 		"synthetic_test_only",
 		"合成测试专用夹具丁",
 		"合成测试专用令牌丁",
