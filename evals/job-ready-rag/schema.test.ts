@@ -90,6 +90,17 @@ describe("schema parsers fail closed", () => {
 		expect(() => parseRetrievalMeasurement({ ...validMeasurement(), actualAnswerability: "answerable!" })).toThrow();
 	});
 
+	it("rejects a returnedSourceRefs key the frozen measurement DTO does not carry (D3)", () => {
+		// The frozen RetrievalMeasurement carries returnedEvidenceIds + returnedVersions
+		// but NO returnedSourceRefs, so a run's returned sourceRef cannot be measured.
+		expect(() =>
+			parseRetrievalMeasurement({
+				...validMeasurement(),
+				returnedSourceRefs: { "PB-MT-VOUCHER-USE": "https://example.test#section" },
+			}),
+		).toThrow(/Unexpected key/);
+	});
+
 	it("parses a corpus entry and enforces storeScope requires tenantScope", () => {
 		const entry = parseCorpusEntry({
 			id: "X",

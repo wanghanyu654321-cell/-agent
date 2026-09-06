@@ -13,6 +13,16 @@ import type { RetrievalMeasurement } from "./schema.ts";
  * customer transcripts, or hidden reasoning.
  */
 
+/**
+ * Returned-sourceRef verification is blocked by the frozen measurement DTO.
+ * This is a contract-shape gap distinct from GAP-05 (which governs quality
+ * thresholds). It is disclosed here so no report can imply the evaluator
+ * verified the sourceRef a run actually returned.
+ */
+export const SOURCE_REF_GAP_MARKER = "CONTRACT GAP — RETRIEVAL MEASUREMENT SOURCE_REF";
+export const SOURCE_REF_GAP_NOTE =
+	"expectedSourceRefs remains frozen as gold/corpus provenance, and measurement-level validation proves the returned evidence ID + returned version. The frozen RetrievalMeasurement DTO carries returnedEvidenceIds and returnedVersions but NOT returnedSourceRefs, so this evaluator cannot verify the sourceRef actually returned by a run. This is a contract-shape gap separate from GAP-05; resolution is left to Contract amendment / Final Integration review.";
+
 export interface BindingResult {
 	ok: boolean;
 	mismatchedCaseIds: string[];
@@ -46,6 +56,8 @@ export interface RetrievalEvalReport {
 	gap05: { status: "unresolved"; note: string };
 	/** Always null: GAP-05 forbids an overall Job-Ready PASS label here. */
 	overallPassLabel: null;
+	/** Returned-sourceRef verification is blocked by the frozen measurement DTO. */
+	sourceRefGap: { marker: string; status: "blocked_by_frozen_measurement_dto"; note: string };
 }
 
 export function buildReport(
@@ -63,6 +75,11 @@ export function buildReport(
 		safetyInvariantsHold: metrics.safetyInvariants.allHold,
 		gap05: { status: "unresolved", note: metrics.gap05.note },
 		overallPassLabel: null,
+		sourceRefGap: {
+			marker: SOURCE_REF_GAP_MARKER,
+			status: "blocked_by_frozen_measurement_dto",
+			note: SOURCE_REF_GAP_NOTE,
+		},
 	};
 }
 
@@ -117,6 +134,14 @@ export function renderReportMarkdown(report: RetrievalEvalReport): string {
 	if (!binding.ok) {
 		lines.push(`- Mismatched case IDs: ${binding.mismatchedCaseIds.join(", ") || "(none)"}`);
 	}
+	lines.push("");
+	lines.push(`## ${report.sourceRefGap.marker} (blocked by frozen DTO)`);
+	lines.push("");
+	lines.push(`> ${report.sourceRefGap.note}`);
+	lines.push("");
+	lines.push("- Expected sourceRef: frozen as gold/corpus provenance (gold-to-corpus validation only).");
+	lines.push("- Measurement-level validation proves: returned evidence ID + returned version.");
+	lines.push("- Returned-sourceRef verification: **not performed** (frozen DTO has no `returnedSourceRefs`).");
 	lines.push("");
 	lines.push("## Hard safety invariants (mandatory, not tunable thresholds)");
 	lines.push("");

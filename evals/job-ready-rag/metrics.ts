@@ -97,7 +97,10 @@ function isValidGold(
 	const entry = corpusById.get(id);
 	if (!entry) return false;
 	if (!scopeAllowsEntry(entry, evalCase.scope)) return false;
-	// Version must be recorded and match: IDs alone are never sufficient.
+	// Version must be recorded and match: IDs alone are never sufficient. The
+	// frozen RetrievalMeasurement carries returnedVersions but no returnedSourceRefs,
+	// so the returned sourceRef is NOT verified here (CONTRACT GAP — RETRIEVAL
+	// MEASUREMENT SOURCE_REF); expectedSourceRefs is gold/corpus provenance only.
 	return measurement.returnedVersions[id] === evalCase.expectedVersions[id];
 }
 
