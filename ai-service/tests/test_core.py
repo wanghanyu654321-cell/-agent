@@ -101,6 +101,11 @@ class RetrievalBehavior(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(RuntimeError):
             await self.engine.ingest(ingest_request())
         self.assertEqual(self.repo.index, [])
+    async def test_approved_faq_never_embeds_or_publishes_vector_chunks(self):
+        self.repo.documents = [document(kind="faq")]
+        with self.assertRaises(RetrievalError):
+            await self.engine.ingest(ingest_request())
+        self.assertEqual(self.repo.index, [])
     async def test_registry_scope_status_active_hash_and_content_mismatch_fail_closed(self):
         for changes in ({"tenant_id": "other"}, {"store_id": "other"}, {"status": "retired"},
                         {"active": False}, {"status": "unapproved"}, {"status": "synthetic_test_only"},

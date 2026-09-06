@@ -171,6 +171,8 @@ class RetrievalService:
                     or (doc.tenant_id, doc.store_id, doc.document_id, doc.version) !=
                     (request.scope.tenantId, request.scope.storeId, request.documentId, request.version)):
                 raise RetrievalError("not_found", 404)
+            if doc.kind not in ("policy", "sop", "reference"):
+                raise RetrievalError()
             if doc.content_sha256 != request.contentSha256:
                 raise RetrievalError("knowledge_version_conflict", 409)
             chunks = chunks_for(doc, self.profile.profile_id)

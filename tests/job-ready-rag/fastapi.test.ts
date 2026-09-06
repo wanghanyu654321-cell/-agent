@@ -69,6 +69,29 @@ function setup(candidates: unknown[] = [candidate], docs = [document]) {
 	return { adapter, registry, fetcher };
 }
 describe("Core B Node admission boundary", () => {
+	it("rejects an approved FAQ before it can start vector ingestion", async () => {
+		const { adapter, fetcher } = setup();
+		await expect(adapter.ingest({ ...entry, kind: "faq" }, scope, new AbortController().signal)).rejects.toThrow(
+			"retrieval_unavailable",
+		);
+		expect(fetcher).not.toHaveBeenCalled();
+	});
+	it.each(["missing", "extra"] as const)(
+		"rejects a %s stored chunk from an otherwise valid generation",
+		async (defect) => {
+			const content = "x".repeat(defect === "missing" ? 4001 : 2001);
+			const multiEntry = { ...entry, content };
+			const chunks = canonicalChunks(multiEntry, profile);
+			const { ordinal: _ignored, ...first } = chunks[0];
+			const wireCandidate = { ...candidate, ...first, contentSha256: hash(content) };
+			const stored =
+				defect === "missing" ? [chunks[0], chunks[2]] : [...chunks, { ...chunks[1], chunkId: "0".repeat(64) }];
+			const docs = [{ entry: multiEntry, active: true, contentSha256: hash(content), chunks: stored }];
+			await expect(
+				setup([wireCandidate], docs).adapter.search("x", new AbortController().signal, scope),
+			).rejects.toThrow("retrieval_unavailable");
+		},
+	);
 	it.each(["search", "ingest"] as const)("rejects %s cancellation at completed-body handoff", async (operation) => {
 		const { adapter, fetcher } = setup([]);
 		const controller = new AbortController();
