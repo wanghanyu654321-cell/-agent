@@ -121,7 +121,7 @@ describe("SupportAgentRuntime", () => {
 		const result = await runtime.run(request({ text: "退款多久到账？" }));
 
 		expect(result.type).toBe("fallback");
-		expect(result.toolsCalled).toEqual(["search_faq"]);
+		expect(result.toolsCalled).toEqual(["search_knowledge", "search_faq"]);
 		expect(result.sessionEvents.some((event) => event.type === "tool_execution_end" && !event.isError)).toBe(true);
 	});
 
@@ -131,7 +131,7 @@ describe("SupportAgentRuntime", () => {
 		const result = await runtime.run(request({ text: "退款多久到账？" }));
 
 		expect(result.type).toBe("fallback");
-		expect(result.toolsCalled).toEqual([]);
+		expect(result.toolsCalled).toEqual(["search_knowledge"]);
 		expect(result.sessionEvents.some((event) => event.type === "agent_end")).toBe(true);
 	});
 
@@ -147,7 +147,8 @@ describe("SupportAgentRuntime", () => {
 		const result = await runtime.run(request({ text: "退款多久到账？" }));
 
 		expect(result.type).toBe("fallback");
-		expect(result.toolsCalled).toEqual(["search_knowledge"]);
+		// Original request policy check and the distinct Pi query are separately governed.
+		expect(result.toolsCalled).toEqual(["search_knowledge", "search_knowledge"]);
 		expect(result.sessionEvents.filter((event) => event.type === "message_end").length).toBeGreaterThanOrEqual(3);
 	});
 
@@ -184,7 +185,7 @@ describe("SupportAgentRuntime", () => {
 		const result = await runtime.run(request({ text: "退款多久到账？" }));
 
 		expect(result.type).toBe("answer");
-		expect(result.toolsCalled).toEqual(["search_knowledge"]);
+		expect(result.toolsCalled).toEqual(["search_knowledge", "search_knowledge"]);
 		expect(result.sessionEvents.some((event) => event.type === "tool_execution_end" && !event.isError)).toBe(true);
 	});
 
@@ -386,7 +387,7 @@ describe("SupportAgentRuntime", () => {
 		const result = await runtime.run(request({ text: "我的退款处理好了吗？" }));
 
 		expect(result.type).toBe("fallback");
-		expect(result.toolsCalled).toEqual([]);
+		expect(result.toolsCalled).toEqual(["search_knowledge"]);
 		expect(result.sessionEvents.some((event) => event.type === "agent_end")).toBe(true);
 	});
 
@@ -571,7 +572,8 @@ describe("SupportAgentRuntime", () => {
 
 			const resumed = await resumedRuntime.run(request({ text: "第二轮咨询" }));
 
-			expect(resumed.type).toBe("answer");
+			expect(resumed.type).toBe("fallback");
+			expect(resumed.evidence).toEqual([]);
 			expect(resumedContext).toContain("第一轮咨询");
 			expect(resumedContext).toContain("首次答复。");
 		} finally {
@@ -607,8 +609,13 @@ describe("SupportAgentRuntime", () => {
 				);
 
 			expect(auditEntries).toHaveLength(1);
-			expect(auditEntries[0]?.data).toMatchObject({ outcome: "answer", toolsCalled: [] });
-			expect(result.type).toBe("answer");
+			expect(auditEntries[0]?.data).toMatchObject({
+				outcome: "fallback",
+				toolsCalled: ["search_knowledge"],
+				knowledgeChecks: [{ knowledgeCheckOrigin: "policy", status: "completed" }],
+			});
+			expect(result.type).toBe("fallback");
+			expect(result.evidence).toEqual([]);
 		} finally {
 			rmSync(directory, { recursive: true, force: true });
 		}
@@ -690,7 +697,8 @@ describe("SupportAgentRuntime", () => {
 		);
 
 		const startedAt = Date.now();
-		const result = await runtime.run(request({ text: "退款多久到账？" }));
+		// An admitted FAQ avoids the policy precheck; this regression still exercises Pi tool timeout.
+		const result = await runtime.run(request());
 
 		expect(Date.now() - startedAt).toBeLessThan(80);
 		expect(result.type).toBe("fallback");
@@ -717,7 +725,7 @@ describe("SupportAgentRuntime", () => {
 			{ retrieval, limits: { perToolTimeoutMs: 10 } },
 		);
 
-		const result = await runtime.run(request({ text: "退款多久到账？" }));
+		const result = await runtime.run(request());
 
 		expect(result.type).toBe("fallback");
 		expect(retrievalSignal?.aborted).toBe(true);
@@ -821,7 +829,7 @@ describe("SupportAgentRuntime", () => {
 		const result = await runtime.run(request());
 
 		expect(result.type).toBe("fallback");
-		expect(result.toolsCalled).toEqual([]);
+		expect(result.toolsCalled).toEqual(["search_knowledge"]);
 		expect(result.sessionEvents.some((event) => event.type === "agent_start")).toBe(true);
 	});
 
@@ -950,8 +958,16 @@ describe("SupportAgentRuntime", () => {
 
 		const result = await runtime.run(request());
 
-		expect(result.type).toBe("answer");
-		expect(result.text).toBe("备用模型答复。");
+		expect(result.type).toBe("fallback");
+		expect(result.evidence).toEqual([]);
+		expect(
+			result.sessionEvents.some(
+				(event) =>
+					event.type === "message_end" &&
+					event.message.role === "assistant" &&
+					JSON.stringify(event.message.content).includes("备用模型答复。"),
+			),
+		).toBe(true);
 		expect(result.sessionEvents.filter((event) => event.type === "agent_end")).toHaveLength(2);
 	});
 
@@ -989,7 +1005,8 @@ describe("SupportAgentRuntime", () => {
 			});
 			const result = await resumedRuntime.run(request({ text: "第二轮咨询" }));
 
-			expect(result.type).toBe("answer");
+			expect(result.type).toBe("fallback");
+			expect(result.evidence).toEqual([]);
 			expect(fallbackContext).toContain("第一轮咨询");
 			expect(fallbackContext).toContain("首次答复。");
 			expect(fallbackContext.match(/第二轮咨询/g)).toHaveLength(1);
@@ -1033,8 +1050,9 @@ describe("SupportAgentRuntime", () => {
 
 			const result = await runtime.run(request({ text: "我要投诉服务态度" }));
 
-			expect(result.type).toBe("answer");
-			expect(result.toolsCalled).toEqual([]);
+			expect(result.type).toBe("fallback");
+			expect(result.evidence).toEqual([]);
+			expect(result.toolsCalled).toEqual(["search_knowledge"]);
 		} finally {
 			rmSync(directory, { recursive: true, force: true });
 		}
@@ -1065,6 +1083,7 @@ describe("SupportAgentRuntime", () => {
 
 		const result = await runtime.run(request({ text: "我要投诉服务态度" }));
 
-		expect(result.type).toBe("answer");
+		expect(result.type).toBe("fallback");
+		expect(result.evidence).toEqual([]);
 	});
 });

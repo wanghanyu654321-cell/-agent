@@ -7,13 +7,36 @@ export const capabilities = [
 	"ticket:create",
 	"handoff:create",
 	"audit:read",
+	"storeops:read",
+	"availability:write",
+	"booking-intent:create",
+	"booking-intent:manage",
 ] as const;
 export type Capability = (typeof capabilities)[number];
 
 const roleCapabilities: Record<Role, readonly Capability[]> = {
-	agent: ["agent:invoke", "conversation:read", "ticket:create"],
-	supervisor: ["agent:invoke", "conversation:read", "ticket:create", "handoff:create"],
-	admin: ["agent:invoke", "conversation:read", "ticket:create", "handoff:create", "audit:read"],
+	agent: ["agent:invoke", "conversation:read", "ticket:create", "storeops:read", "booking-intent:create"],
+	supervisor: [
+		"agent:invoke",
+		"conversation:read",
+		"ticket:create",
+		"handoff:create",
+		"storeops:read",
+		"availability:write",
+		"booking-intent:create",
+		"booking-intent:manage",
+	],
+	admin: [
+		"agent:invoke",
+		"conversation:read",
+		"ticket:create",
+		"handoff:create",
+		"audit:read",
+		"storeops:read",
+		"availability:write",
+		"booking-intent:create",
+		"booking-intent:manage",
+	],
 };
 
 export interface User {

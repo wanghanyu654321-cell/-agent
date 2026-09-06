@@ -313,7 +313,10 @@ function hasSupportFactualClaim(text: string): boolean {
 	return /营业|退款|预约|订单|价格|费用|工作日|小时|政策|规则/.test(text);
 }
 
-function createTimedOutAssistantMessage(model: Model<string>): AssistantMessage {
+function createTimedOutAssistantMessage(
+	model: Model<string>,
+	reason = "Customer-support overall timeout reached.",
+): AssistantMessage {
 	return {
 		role: "assistant",
 		content: [],
@@ -329,7 +332,7 @@ function createTimedOutAssistantMessage(model: Model<string>): AssistantMessage 
 			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
 		},
 		stopReason: "aborted",
-		errorMessage: "Customer-support overall timeout reached.",
+		errorMessage: reason,
 		timestamp: Date.now(),
 	};
 }
@@ -363,10 +366,25 @@ export class SupportAgentRuntime {
 		let escalationRequested = false;
 		let toolFailed = false;
 		let noKnowledgeEvidence = false;
+		let piFaqMiss = false;
 		let verifiedKnowledgeEvidence = false;
 		let groundingQuery: string | undefined;
 		let groundingEvidence: RetrievalEvidence[] = [];
+		let groundingSources: RetrievalEvidence[] = [];
+		const snapshotStillCurrent = () =>
+			groundingEvidence.length === 1 && JSON.stringify(groundingSources) === JSON.stringify(groundingEvidence);
 		let knowledgeRouting: KnowledgeRoutingAudit | undefined;
+		let activeTools = 0;
+		const overallExpiresAt = Date.now() + this.limits.overallTurnTimeoutMs;
+		let evidenceSettledAt = Number.POSITIVE_INFINITY;
+		let deadlineEvidenceEligible = false;
+		let sealed = false;
+		let promptStarted = false;
+		const knowledgeChecks: Array<{
+			knowledgeCheckOrigin: "policy" | "pi_tool";
+			query: string;
+			status: "pending" | "completed" | "failed";
+		}> = [];
 		const safetyRisk = detectSafetyRisk(request.text);
 		let safetyEvidence: SafetyEvidence[] = [];
 		let safetyRetrievalQuery: string | undefined;
@@ -380,36 +398,58 @@ export class SupportAgentRuntime {
 		const overallDeadline = new Promise<void>((resolve) => {
 			resolveOverallDeadline = resolve;
 		});
-		const timeout = setTimeout(() => {
+		const expireTurn = () => {
+			if (timedOut || sealed) return;
+			deadlineEvidenceEligible =
+				!safetyRisk &&
+				verifiedKnowledgeEvidence &&
+				evidenceSettledAt < overallExpiresAt &&
+				snapshotStillCurrent() &&
+				knowledgeRouting?.decision === "SINGLE_CANDIDATE" &&
+				activeTools === 0 &&
+				!toolFailed &&
+				!limitReached &&
+				!escalationRequested &&
+				!request.requiresEscalation &&
+				reservedTicketKeys.size === 0 &&
+				!reservedHandoff;
 			timedOut = true;
 			abortController.abort();
 			agent?.abort();
 			resolveOverallDeadline();
-		}, this.limits.overallTurnTimeoutMs);
+		};
+		const timeout = setTimeout(expireTurn, this.limits.overallTurnTimeoutMs);
 
 		const tools = this.createTools(
 			request,
 			() => {
+				if (abortController.signal.aborted || sealed) return;
 				escalationRequested = true;
 			},
 			() => {
 				noKnowledgeEvidence = true;
+				piFaqMiss = true;
 			},
 			(query, evidence) => {
+				knowledgeRouting = undefined;
+				evidenceSettledAt = Number.POSITIVE_INFINITY;
 				groundingQuery = query;
-				groundingEvidence = evidence.filter((item) =>
+				groundingSources = evidence.filter((item) =>
 					isAdmissibleKnowledgeEvidence(
 						item.knowledge,
 						{ tenantId: request.tenantId, storeId: request.storeId },
 						this.options.allowSyntheticTestKnowledge ?? false,
 					),
 				);
+				groundingEvidence = structuredClone(groundingSources);
 				verifiedKnowledgeEvidence = groundingEvidence.length > 0;
 				if (!verifiedKnowledgeEvidence) noKnowledgeEvidence = true;
 			},
 			(query, evidence, routing) => {
+				evidenceSettledAt = Date.now();
 				groundingQuery = query;
-				groundingEvidence = evidence;
+				groundingSources = evidence;
+				groundingEvidence = structuredClone(evidence);
 				verifiedKnowledgeEvidence = evidence.length === 1;
 				knowledgeRouting = routing;
 				if (!verifiedKnowledgeEvidence) noKnowledgeEvidence = true;
@@ -420,6 +460,74 @@ export class SupportAgentRuntime {
 			},
 			abortController.signal,
 		);
+		const knowledgeTool = tools.find((tool) => tool.name === "search_knowledge")!;
+		const rawKnowledgeExecute = knowledgeTool.execute;
+		const completedChecks = new Map<
+			string,
+			{
+				result: Awaited<ReturnType<typeof rawKnowledgeExecute>>;
+				sources: RetrievalEvidence[];
+				evidence: RetrievalEvidence[];
+				routing: KnowledgeRoutingAudit;
+			}
+		>();
+		const executeKnowledge = async (id: string, params: Static<typeof querySchema>, origin: "policy" | "pi_tool") => {
+			if (Date.now() >= overallExpiresAt) expireTurn();
+			if (abortController.signal.aborted || sealed) throw new Error("Knowledge check aborted.");
+			const cached = completedChecks.get(params.query);
+			if (cached) {
+				if (JSON.stringify(cached.sources) !== JSON.stringify(cached.evidence))
+					throw new Error("Knowledge snapshot changed.");
+				groundingQuery = params.query;
+				groundingSources = cached.sources;
+				groundingEvidence = structuredClone(cached.evidence);
+				knowledgeRouting = structuredClone(cached.routing);
+				verifiedKnowledgeEvidence = groundingEvidence.length === 1;
+				noKnowledgeEvidence = !verifiedKnowledgeEvidence;
+				return structuredClone(cached.result);
+			}
+			const check = {
+				knowledgeCheckOrigin: origin,
+				query: params.query,
+				status: "pending" as "pending" | "completed" | "failed",
+			};
+			knowledgeChecks.push(check);
+			try {
+				const result = await rawKnowledgeExecute(id, params);
+				if (Date.now() >= overallExpiresAt) expireTurn();
+				if (abortController.signal.aborted || sealed) throw new Error("Knowledge check aborted.");
+				check.status = "completed";
+				if (!safetyRisk)
+					completedChecks.set(params.query, {
+						result: structuredClone(result),
+						sources: groundingSources,
+						evidence: structuredClone(groundingEvidence),
+						routing: structuredClone(knowledgeRouting!),
+					});
+				return result;
+			} catch (error) {
+				if (!sealed) check.status = "failed";
+				throw error;
+			}
+		};
+		knowledgeTool.execute = (id, params) => executeKnowledge(id, params as Static<typeof querySchema>, "pi_tool");
+		// This operation is policy-owned; only Pi itself emits Agent events.
+		if (!safetyRisk && !this.findAdmittedFaq(request, request.text)) {
+			toolCalls += 1;
+			if (toolCalls > this.limits.maxToolCalls) limitReached = true;
+			else {
+				toolsCalled.push("search_knowledge");
+				activeTools += 1;
+				const precheck = executeKnowledge("policy-knowledge-check", { query: request.text }, "policy")
+					.catch(() => {
+						if (!sealed) toolFailed = true;
+					})
+					.finally(() => {
+						activeTools -= 1;
+					});
+				await Promise.race([precheck, overallDeadline]);
+			}
+		}
 		const systemPrompt = this.buildSystemPrompt(request.text);
 		const restoredMessages = sessionManager.buildSessionContext().messages;
 		agent = new Agent({
@@ -434,7 +542,16 @@ export class SupportAgentRuntime {
 			streamFn: this.options.streamFn,
 			toolExecution: "sequential",
 			beforeToolCall: async ({ toolCall, args }) => {
-				toolCalls += 1;
+				if (Date.now() >= overallExpiresAt) expireTurn();
+				if (abortController.signal.aborted || sealed)
+					return { block: true, terminate: true, reason: "Support turn closed." };
+				if (
+					!(
+						toolCall.name === "search_knowledge" &&
+						completedChecks.has((args as Static<typeof querySchema>).query)
+					)
+				)
+					toolCalls += 1;
 				if (toolCalls > this.limits.maxToolCalls) {
 					limitReached = true;
 					return { block: true, terminate: true, reason: "Customer-support tool-call limit reached." };
@@ -485,9 +602,20 @@ export class SupportAgentRuntime {
 		});
 
 		const persistEvent = async (event: AgentEvent) => {
+			if (sealed || abortController.signal.aborted) return;
 			sessionEvents.push(event);
 			if (event.type === "turn_start") turns += 1;
-			if (event.type === "tool_execution_start") toolsCalled.push(event.toolName);
+			if (event.type === "tool_execution_start") {
+				activeTools += 1;
+				if (
+					!(
+						event.toolName === "search_knowledge" &&
+						completedChecks.has((event.args as Static<typeof querySchema>)?.query)
+					)
+				)
+					toolsCalled.push(event.toolName);
+			}
+			if (event.type === "tool_execution_end") activeTools -= 1;
 			if (event.type === "tool_execution_end" && event.isError) toolFailed = true;
 			if (event.type === "message_end") {
 				const message = event.message;
@@ -499,11 +627,13 @@ export class SupportAgentRuntime {
 		unsubscribeEventListeners.add(agent.subscribe(persistEvent));
 
 		const promptWithinOverallDeadline = async (target: Agent): Promise<void> => {
+			promptStarted = true;
 			const prompt = target.prompt(request.text);
 			void prompt.catch(() => undefined);
 			await Promise.race([prompt, overallDeadline]);
+			if (Date.now() >= overallExpiresAt) expireTurn();
 		};
-		await promptWithinOverallDeadline(agent);
+		if (!timedOut && !limitReached && !toolFailed) await promptWithinOverallDeadline(agent);
 		let lastAssistant = [...agent.state.messages].reverse().find((message) => message.role === "assistant") as
 			| AssistantMessage
 			| undefined;
@@ -539,10 +669,20 @@ export class SupportAgentRuntime {
 				return reference ? [reference] : [];
 			});
 		const finish = async (result: SupportResult): Promise<SupportResult> => {
-			if (timedOut) {
-				for (const unsubscribe of unsubscribeEventListeners) unsubscribe();
-				unsubscribeEventListeners.clear();
+			sealed = true;
+			if (!promptStarted) {
+				// Persist the actual policy stop, without fabricating any Pi execution events.
+				sessionManager.appendMessage({ role: "user", content: request.text, timestamp: Date.now() });
+				sessionManager.appendMessage(
+					createTimedOutAssistantMessage(
+						this.options.model,
+						"Customer-support policy check did not complete successfully; Pi was not invoked.",
+					),
+				);
 			}
+			for (const check of knowledgeChecks) if (check.status === "pending") check.status = "failed";
+			for (const unsubscribe of unsubscribeEventListeners) unsubscribe();
+			unsubscribeEventListeners.clear();
 			if (
 				timedOut &&
 				!sessionManager.getEntries().some((entry) => entry.type === "message" && entry.message.role === "assistant")
@@ -568,6 +708,8 @@ export class SupportAgentRuntime {
 				limitReached,
 				escalationRequested,
 				toolFailed,
+				knowledgeChecks,
+				policyStoppedBeforePi: !promptStarted,
 				safety: safetyRisk
 					? {
 							riskCategory: safetyRisk,
@@ -582,8 +724,9 @@ export class SupportAgentRuntime {
 				grounding: groundingQuery
 					? {
 							retrievalQuery: groundingQuery,
-							admissible: verifiedKnowledgeEvidence,
-							evidence: groundingReferences(),
+							admissible: result.evidence.length > 0,
+							evidence: result.evidence,
+							intermediateEvidence: groundingReferences(),
 						}
 					: undefined,
 				knowledgeRouting: routingAudit
@@ -617,6 +760,16 @@ export class SupportAgentRuntime {
 			return result;
 		};
 		if (timedOut) {
+			if (deadlineEvidenceEligible) {
+				return finish({
+					type: "answer",
+					text: groundingEvidence.map((item) => item.text).join("\n\n"),
+					piSessionId,
+					toolsCalled,
+					sessionEvents,
+					evidence: groundingReferences(),
+				});
+			}
 			return finish(
 				fallback(
 					"抱歉，当前处理超时，已保留记录，请稍后重试或联系人工客服。",
@@ -708,6 +861,11 @@ export class SupportAgentRuntime {
 				),
 			);
 		}
+		if (verifiedKnowledgeEvidence && !snapshotStillCurrent()) {
+			return finish(
+				fallback("抱歉，当前证据信息无法确认，请联系人工客服。", piSessionId, toolsCalled, sessionEvents),
+			);
+		}
 		if (verifiedKnowledgeEvidence) {
 			return finish({
 				type: "answer",
@@ -718,7 +876,12 @@ export class SupportAgentRuntime {
 				evidence: groundingReferences(),
 			});
 		}
-		if (noKnowledgeEvidence) {
+		// A completed authorized write is a business outcome, not an ordinary factual answer.
+		const completedTicketAfterPolicyMiss =
+			!piFaqMiss &&
+			knowledgeChecks.every((check) => check.knowledgeCheckOrigin === "policy") &&
+			[...reservedTicketKeys].some((key) => this.options.store.findTicket(request.tenantId, key));
+		if (noKnowledgeEvidence && !completedTicketAfterPolicyMiss) {
 			return finish(
 				fallback(
 					"抱歉，当前没有足够的已验证信息可以安全答复，已保留记录，请联系人工客服。",
@@ -793,6 +956,30 @@ export class SupportAgentRuntime {
 		return sessionManager;
 	}
 
+	private findAdmittedFaq(request: SupportRequest, query: string): RetrievalEvidence | undefined {
+		return this.options.faq
+			.filter((item) => item.question.includes(query) || query.includes(item.question))
+			.map<RetrievalEvidence>((item) => ({
+				id: item.id,
+				text: item.answer,
+				knowledge: {
+					kind: "faq",
+					status: item.status,
+					version: item.version,
+					sourceRef: item.sourceRef,
+					...(item.tenantScope ? { tenantScope: item.tenantScope } : {}),
+					...(item.storeScope ? { storeScope: item.storeScope } : {}),
+				},
+			}))
+			.find((item) =>
+				isAdmissibleKnowledgeEvidence(
+					item.knowledge,
+					{ tenantId: request.tenantId, storeId: request.storeId },
+					this.options.allowSyntheticTestKnowledge ?? false,
+				),
+			);
+	}
+
 	private createTools(
 		request: SupportRequest,
 		onEscalate: () => void,
@@ -833,27 +1020,7 @@ export class SupportAgentRuntime {
 			execute: async (_id, params: Static<typeof querySchema>) =>
 				withToolTimeout(async (signal) => {
 					if (signal.aborted) throw new Error("FAQ search aborted.");
-					const match = this.options.faq
-						.filter((item) => item.question.includes(params.query) || params.query.includes(item.question))
-						.map<RetrievalEvidence>((item) => ({
-							id: item.id,
-							text: item.answer,
-							knowledge: {
-								kind: "faq",
-								status: item.status,
-								version: item.version,
-								sourceRef: item.sourceRef,
-								...(item.tenantScope ? { tenantScope: item.tenantScope } : {}),
-								...(item.storeScope ? { storeScope: item.storeScope } : {}),
-							},
-						}))
-						.find((item) =>
-							isAdmissibleKnowledgeEvidence(
-								item.knowledge,
-								{ tenantId: request.tenantId, storeId: request.storeId },
-								this.options.allowSyntheticTestKnowledge ?? false,
-							),
-						);
+					const match = this.findAdmittedFaq(request, params.query);
 					if (match) onKnowledgeEvidence(params.query, [match]);
 					else onNoKnowledgeEvidence();
 					return {

@@ -65,7 +65,7 @@ describe("SupportAgentRuntime persistent business port", () => {
 			storeId: "store-a",
 			conversationId: "conversation-a",
 			eventType: "support-agent.audit",
-			payload: expect.objectContaining({ outcome: "answer", toolsCalled: ["create_ticket"] }),
+			payload: expect.objectContaining({ outcome: "answer", toolsCalled: ["search_knowledge", "create_ticket"] }),
 		});
 	});
 
