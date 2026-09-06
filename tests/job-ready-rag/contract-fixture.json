@@ -1,0 +1,31 @@
+{
+ "provenance": "synthetic_contract_fixture_only_not_production_knowledge",
+ "entry": {
+  "id": "doc-😀", "kind": "policy", "status": "approved", "title": "跨语言夹具",
+  "content": "评估夹具😀é / A 或 B", "version": "v1", "updatedAt": "2026-09-06",
+  "sourceRef": "fixture:unicode", "tags": [], "tenantScope": "租户-甲", "storeScope": "门店-一"
+ },
+ "searchRequest": {
+  "schemaVersion": "job-ready-v1", "requestId": "fixture-request", "scope": {"tenantId":"租户-甲","storeId":"门店-一"},
+  "query": "评估夹具", "topK": 3, "embeddingProfileId": "test-profile"
+ },
+ "searchResponse": {
+  "schemaVersion": "job-ready-v1", "requestId": "fixture-request",
+  "candidates": [{
+   "chunkId":"cf732ae8ba044c8b9f1500d1d1faab14dd800dd8749c0ea3cc906f5747e54ea8",
+   "documentId":"doc-😀","version":"v1","sourceRef":"fixture:unicode","kind":"policy",
+   "scope":{"tenantId":"租户-甲","storeId":"门店-一"},"status":"approved",
+   "contentSha256":"75b7c714e5cc17615b721f62eab8e8a88e3a53ea0f2fbb9422b89592fb86c25b",
+   "chunkSha256":"75b7c714e5cc17615b721f62eab8e8a88e3a53ea0f2fbb9422b89592fb86c25b",
+   "text":"评估夹具😀é / A 或 B","score":0.8,"rank":1,"embeddingProfileId":"test-profile"
+  }]
+ },
+ "ingestRequest": {
+  "schemaVersion":"job-ready-v1","requestId":"fixture-request","scope":{"tenantId":"租户-甲","storeId":"门店-一"},
+  "documentId":"doc-😀","version":"v1","contentSha256":"75b7c714e5cc17615b721f62eab8e8a88e3a53ea0f2fbb9422b89592fb86c25b","embeddingProfileId":"test-profile"
+ },
+ "ingestResponse": {
+  "schemaVersion":"job-ready-v1","requestId":"fixture-request","documentId":"doc-😀","version":"v1",
+  "contentSha256":"75b7c714e5cc17615b721f62eab8e8a88e3a53ea0f2fbb9422b89592fb86c25b","embeddingProfileId":"test-profile","chunkCount":1,"outcome":"indexed"
+ }
+}
