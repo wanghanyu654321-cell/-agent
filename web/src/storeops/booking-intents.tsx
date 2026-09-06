@@ -17,7 +17,7 @@ import {
 	type StoreOpsWriteOutcome,
 	transitionBookingIntent,
 } from "./api.ts";
-import type { BookingIntentAction, BookingIntentDTO, BookingIntentStatus } from "./dto.ts";
+import { type BookingIntentAction, type BookingIntentDTO, type BookingIntentStatus, isInstant } from "./dto.ts";
 import { StoreOpsReadLifecycle, StoreOpsSubmitLifecycle } from "./lifecycle.ts";
 
 /**
@@ -56,10 +56,57 @@ const actionLabels: Record<BookingIntentAction, string> = {
 	cancel: "Cancel intent",
 };
 
-function toInstant(value: string): string | undefined {
-	if (value.length === 0) return undefined;
-	const date = new Date(value);
+/**
+ * BookingIntent business time is an absolute instant. A `datetime-local` value carries no offset, so
+ * `new Date(value)` would interpret it in the browser/device timezone and silently shift the store's
+ * business time when the manager is physically elsewhere (for example 15:00 meant as Asia/Shanghai but
+ * read as Asia/Tokyo). The frozen BookingIntent API exposes no store-timezone field to this surface, so
+ * none is invented: the manager must supply an explicit RFC3339 instant with a `Z` or `±HH:MM` offset.
+ * An offset-less or otherwise invalid value fails client validation and is never reinterpreted.
+ */
+export const RFC3339_OFFSET_REQUIRED =
+	"Enter an RFC3339 instant that includes a timezone offset, for example 2026-09-06T15:00:00+08:00 or 2026-09-06T07:00:00Z.";
+
+/**
+ * Normalizes a strict RFC3339 instant to UTC. Reuses the frozen DTO `isInstant` guard, which already
+ * requires an explicit `Z`/`±HH:MM` offset, so an offset-less value is rejected before `new Date` and the
+ * browser timezone is never consulted. Blank input yields undefined (an unset optional field).
+ */
+export function parseRfc3339Instant(value: string): string | undefined {
+	const trimmed = value.trim();
+	if (trimmed.length === 0) return undefined;
+	if (!isInstant(trimmed)) return undefined;
+	const date = new Date(trimmed);
 	return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+}
+
+export type IntervalParse =
+	| { ok: true; start: string | undefined; end: string | undefined }
+	| { ok: false; message: string };
+
+/**
+ * Optional create-form pair: blank is allowed, but any non-blank value must be a valid RFC3339 instant,
+ * and a present start/end must come together with the end after the start.
+ */
+export function parseOptionalInterval(rawStart: string, rawEnd: string): IntervalParse {
+	const start = parseRfc3339Instant(rawStart);
+	const end = parseRfc3339Instant(rawEnd);
+	if ((rawStart.trim().length > 0 && start === undefined) || (rawEnd.trim().length > 0 && end === undefined)) {
+		return { ok: false, message: RFC3339_OFFSET_REQUIRED };
+	}
+	if ((start === undefined) !== (end === undefined) || (start !== undefined && end !== undefined && end <= start)) {
+		return { ok: false, message: "Requested times must be a start and end instant with end after start." };
+	}
+	return { ok: true, start, end };
+}
+
+/** Required transition interval: both ends must be valid RFC3339 instants with the end after the start. */
+export function parseRequiredInterval(rawStart: string, rawEnd: string): IntervalParse {
+	const start = parseRfc3339Instant(rawStart);
+	const end = parseRfc3339Instant(rawEnd);
+	if (start === undefined || end === undefined) return { ok: false, message: RFC3339_OFFSET_REQUIRED };
+	if (end <= start) return { ok: false, message: "Enter a start and end instant where the end is after the start." };
+	return { ok: true, start, end };
 }
 
 export function BookingFeedbackNotice({ feedback }: { feedback: BookingFeedback }) {
@@ -138,16 +185,28 @@ export function BookingIntentActionControl({
 			className="storeops-intent-action storeops-intent-action-interval"
 			onSubmit={(event) => {
 				event.preventDefault();
-				onRun(action, toInstant(start), toInstant(end));
+				onRun(action, start, end);
 			}}
 		>
 			<label>
-				Start
-				<input type="datetime-local" value={start} disabled={busy} onChange={(event) => setStart(event.target.value)} />
+				Start (RFC3339, include timezone)
+				<input
+					type="text"
+					value={start}
+					placeholder="2026-09-06T15:00:00+08:00"
+					disabled={busy}
+					onChange={(event) => setStart(event.target.value)}
+				/>
 			</label>
 			<label>
-				End
-				<input type="datetime-local" value={end} disabled={busy} onChange={(event) => setEnd(event.target.value)} />
+				End (RFC3339, include timezone)
+				<input
+					type="text"
+					value={end}
+					placeholder="2026-09-06T17:00:00+08:00"
+					disabled={busy}
+					onChange={(event) => setEnd(event.target.value)}
+				/>
 			</label>
 			<button type="submit" disabled={busy}>
 				{actionLabels[action]}
@@ -171,13 +230,20 @@ export function BookingIntentRow({
 	useEffect(() => () => lifecycle.current.invalidate(), []);
 	const actions = permittedBookingActions(actor, intent);
 
-	async function runAction(action: BookingIntentAction, start?: string, end?: string) {
+	async function runAction(action: BookingIntentAction, rawStart?: string, rawEnd?: string) {
 		const token = lifecycle.current.begin();
 		if (token === undefined) return;
-		if (bookingActionNeedsInterval(action, intent.status) && (!start || !end || end <= start)) {
-			lifecycle.current.complete(token);
-			setFeedback({ kind: "invalid", message: "Enter a start and end instant where the end is after the start." });
-			return;
+		let start: string | undefined;
+		let end: string | undefined;
+		if (bookingActionNeedsInterval(action, intent.status)) {
+			const interval = parseRequiredInterval(rawStart ?? "", rawEnd ?? "");
+			if (!interval.ok) {
+				lifecycle.current.complete(token);
+				setFeedback({ kind: "invalid", message: interval.message });
+				return;
+			}
+			start = interval.start;
+			end = interval.end;
 		}
 		setBusy(true);
 		setFeedback({ kind: "saving" });
@@ -256,13 +322,14 @@ export function BookingIntentCreateForm({
 			setFeedback({ kind: "invalid", message: "Conversation id and a service (max 200 characters) are required." });
 			return;
 		}
-		const start = toInstant(requestedStart);
-		const end = toInstant(requestedEnd);
-		if ((start && !end) || (!start && end) || (start && end && end <= start)) {
+		const interval = parseOptionalInterval(requestedStart, requestedEnd);
+		if (!interval.ok) {
 			lifecycle.current.complete(token);
-			setFeedback({ kind: "invalid", message: "Requested times must be a start and end instant with end after start." });
+			setFeedback({ kind: "invalid", message: interval.message });
 			return;
 		}
+		const start = interval.start;
+		const end = interval.end;
 		const staff = preferredStaffMembershipId.trim();
 		const signature = JSON.stringify([conversation, service, start ?? null, end ?? null, staff]);
 		if (keyRef.current?.signature !== signature) keyRef.current = { signature, key: newIdempotencyKey() };
@@ -300,13 +367,28 @@ export function BookingIntentCreateForm({
 				<input value={requestedService} disabled={busy} maxLength={200} onChange={(event) => setRequestedService(event.target.value)} />
 			</label>
 			<label>
-				Requested start (optional)
-				<input type="datetime-local" value={requestedStart} disabled={busy} onChange={(event) => setRequestedStart(event.target.value)} />
+				Requested start (RFC3339, include timezone · optional)
+				<input
+					type="text"
+					value={requestedStart}
+					placeholder="2026-09-06T15:00:00+08:00"
+					disabled={busy}
+					onChange={(event) => setRequestedStart(event.target.value)}
+				/>
 			</label>
 			<label>
-				Requested end (optional)
-				<input type="datetime-local" value={requestedEnd} disabled={busy} onChange={(event) => setRequestedEnd(event.target.value)} />
+				Requested end (RFC3339, include timezone · optional)
+				<input
+					type="text"
+					value={requestedEnd}
+					placeholder="2026-09-06T17:00:00+08:00"
+					disabled={busy}
+					onChange={(event) => setRequestedEnd(event.target.value)}
+				/>
 			</label>
+			<p className="storeops-note">
+				Times are absolute instants. Include the store's timezone offset; the console never infers one from your device.
+			</p>
 			<label>
 				Preferred staff membership (optional)
 				<input value={preferredStaffMembershipId} disabled={busy} onChange={(event) => setPreferredStaffMembershipId(event.target.value)} />
