@@ -70,8 +70,9 @@ describe("BookingIntentRow renders only contract-permitted actions (section 4.4)
 		expect(markup).toContain("Confirm");
 		expect(markup).toContain("Propose alternative");
 		expect(markup).toContain("Cancel intent");
-		// confirm-from-pending and propose-alternative each capture a start/end instant
-		expect(markup).toContain('type="datetime-local"');
+		// confirm-from-pending and propose-alternative each capture a start/end RFC3339 instant (no browser-zone datetime-local)
+		expect(markup).toContain("RFC3339, include timezone");
+		expect(markup).not.toContain('type="datetime-local"');
 		expect(markup).not.toContain("Terminal");
 	});
 
@@ -87,6 +88,7 @@ describe("BookingIntentRow renders only contract-permitted actions (section 4.4)
 		expect(markup).toContain("Confirm proposed alternative");
 		expect(markup).toContain("Cancel intent");
 		expect(markup).not.toContain("Propose alternative");
+		expect(markup).not.toContain("RFC3339, include timezone");
 		expect(markup).not.toContain('type="datetime-local"');
 		expect(markup).toContain("Proposed alternative 2026-09-06T05:00:00.000Z");
 	});
