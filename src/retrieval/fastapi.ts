@@ -273,6 +273,27 @@ export function canonicalChunks(entry: KnowledgeEntry, embeddingProfileId: strin
 	}
 	return chunks;
 }
+
+function validateCompleteChunkGeneration(
+	entry: KnowledgeEntry,
+	storedChunks: RegisteredChunk[],
+	embeddingProfileId: string,
+): void {
+	const expectedChunks = canonicalChunks(entry, embeddingProfileId);
+	requireValue(Array.isArray(storedChunks) && storedChunks.length === expectedChunks.length);
+	for (const expected of expectedChunks) {
+		const matches = storedChunks.filter((stored) => stored?.ordinal === expected.ordinal);
+		requireValue(matches.length === 1);
+		const stored = matches[0];
+		requireValue(
+			stored.chunkId === expected.chunkId &&
+				stored.ordinal === expected.ordinal &&
+				stored.text === expected.text &&
+				stored.chunkSha256 === expected.chunkSha256 &&
+				stored.embeddingProfileId === expected.embeddingProfileId,
+		);
+	}
+}
 export function validateSearchResponse(value: unknown, request: SearchRequest): SearchResponse {
 	exactObject(value, ["schemaVersion", "requestId", "candidates"]);
 	requireValue(value.schemaVersion === "job-ready-v1" && value.requestId === request.requestId);
@@ -447,6 +468,7 @@ export class FastApiRetrievalService implements RetrievalService {
 					doc.active && entry.version === c.version && entry.sourceRef === c.sourceRef && entry.kind === c.kind,
 				);
 				requireValue(doc.contentSha256 === c.contentSha256 && sha256(entry.content) === c.contentSha256);
+				validateCompleteChunkGeneration(entry, doc.chunks, c.embeddingProfileId);
 				const chunks = doc.chunks.filter(
 					(chunk) => chunk.chunkId === c.chunkId && chunk.embeddingProfileId === c.embeddingProfileId,
 				);
@@ -482,6 +504,7 @@ export class FastApiRetrievalService implements RetrievalService {
 	async ingest(entry: KnowledgeEntry, scope: Scope, signal: AbortSignal): Promise<IngestResponse> {
 		try {
 			const approved = validatePrivateRegistration([entry], scope)[0];
+			requireValue(approved.kind === "policy" || approved.kind === "sop" || approved.kind === "reference");
 			const request: IngestRequest = {
 				schemaVersion: "job-ready-v1",
 				requestId: randomUUID(),
