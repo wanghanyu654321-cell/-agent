@@ -164,7 +164,7 @@ describe("Job-ready real-source knowledge pack V1", () => {
 
 		expect(result).toMatchObject({
 			type: "answer",
-			toolsCalled: ["search_faq", "search_knowledge"],
+			toolsCalled: ["search_knowledge", "search_faq"],
 			evidence: [{ id: "PB-MT-MERCHANT-CANNOT-FULFILL" }],
 		});
 	});

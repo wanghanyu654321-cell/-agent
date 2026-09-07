@@ -188,6 +188,38 @@ describe("Core A policy lookup and deadline evidence", () => {
 		expect(result.type).toBe("fallback");
 		expect(result.evidence).toEqual([]);
 	});
+	it("an in-flight different Pi lookup prevents deadline reuse of the policy snapshot", async () => {
+		let release: (value: RetrievalEvidence[]) => void = () => {};
+		const calls: string[] = [];
+		let laterSignal: AbortSignal | undefined;
+		const test = setup([], [tool("search_knowledge", { query: "different pending query" })], {
+			limits: { overallTurnTimeoutMs: 80 },
+			retrieval: {
+				search: async (query, signal) => {
+					calls.push(query);
+					if (query === "original ordinary request") return [entry("snapshot-a")];
+					laterSignal = signal;
+					return new Promise((resolve) => {
+						release = resolve;
+					});
+				},
+			},
+		});
+		const result = await test.run();
+		expect(calls).toEqual(["original ordinary request", "different pending query"]);
+		expect(result.sessionEvents.some((event) => event.type === "tool_execution_start")).toBe(true);
+		expect(laterSignal?.aborted).toBe(true);
+		expect(result.type).toBe("fallback");
+		expect(result.evidence).toEqual([]);
+		expect(test.audit()).toMatchObject({
+			timedOut: true,
+			knowledgeRouting: { authorizedEvidenceIds: [] },
+		});
+		const before = JSON.stringify({ result, audit: test.audit() });
+		release([entry("late-b")]);
+		await new Promise((resolve) => setTimeout(resolve, 5));
+		expect(JSON.stringify({ result, audit: test.audit() })).toBe(before);
+	});
 	it("authority-blocked tool beats the policy evidence", async () => {
 		const test = setup([entry()], [tool("create_ticket", { summary: "test", idempotencyKey: "key" })]);
 		const result = await test.run();

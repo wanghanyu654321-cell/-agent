@@ -484,7 +484,9 @@ export async function runPublicBenchmarkRuntimeEvaluation() {
 			});
 			results.push({
 				...measurement,
-				agentToolEvents: result.toolsCalled,
+				agentToolEvents: result.sessionEvents
+					.filter((event) => event.type === "tool_execution_start")
+					.map((event) => event.toolName),
 				auditRead: Boolean(audit),
 				pass:
 					!measurement.unsupportedBusinessFact &&

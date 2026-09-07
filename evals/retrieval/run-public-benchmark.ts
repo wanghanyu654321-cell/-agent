@@ -2,7 +2,9 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { runPublicBenchmarkEvaluation, runPublicBenchmarkRuntimeEvaluation } from "./public-benchmark.ts";
 
-const reportsDirectory = join(import.meta.dirname, "reports");
+const reportsDirectory = process.env.JOB_READY_EVAL_REPORT_ROOT
+	? join(process.env.JOB_READY_EVAL_REPORT_ROOT, "retrieval-public-real")
+	: join(import.meta.dirname, "reports");
 mkdirSync(reportsDirectory, { recursive: true });
 const retrieval = await runPublicBenchmarkEvaluation();
 const runtime = await runPublicBenchmarkRuntimeEvaluation();

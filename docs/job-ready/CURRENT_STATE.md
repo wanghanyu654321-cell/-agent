@@ -1,8 +1,65 @@
 # Job-Ready Current State
 
-Status: **GOVERNANCE BASELINE / PRE-IMPLEMENTATION**
+Status: **FINAL INTEGRATION CANDIDATE / VERIFICATION IN PROGRESS / NOT INDEPENDENTLY APPROVED**
 
-This file records the authoritative starting point for the final Job-Ready successor sprint. It is intentionally concise and should be updated only when a reviewed checkpoint materially changes the execution state.
+The historical governance and PR #9 evidence below remain unchanged in meaning.
+The current integration checkpoint is additive and does not turn historical failed
+real-provider evidence into PASS.
+
+## Integration checkpoint
+
+Branch: `job-ready/integration-v1`. Contract base:
+`7c9b694d586fe4c557a195b554a97cc89e5c8f24`.
+
+Exact reviewed source commits, cherry-picked in this order (original branches unchanged):
+
+| Track | Reviewed source commits | Integration copies |
+| --- | --- | --- |
+| Core A | `7a42aaf9d96ac455cd5a3e433382176f89789ecd` | `4f51511` |
+| Core B | `33b7a504a57a5af0bacc0d783617a55d4b477d4b`, `0f94a4b3a33164253ed56b47657bbbf768a3a55b` | `4c9394b`, `b8015ad` |
+| Track C | `ad56005e7ef6d99a673701b249fd0a6a4fa7866a`, `b3cc02f0cd908b9b6a1c454b314a6e78065d369a` | `08377c0`, `bdb7a9f` |
+| Track D | `5582c00155a0291ceadb79ebd16536b4ca743d12`, `a83e1dea8120831b44d42988e7dee60aa7776095` | `4fc86dc`, `d9827c0` |
+
+### IMPLEMENTED
+
+- Existing once-only transaction ledger registers 001 → 002 → 003 → 004; frozen SQL files unchanged.
+- Existing StoreOps repository/service and exact HTTP contracts composed through server-derived authority; Track C mounted in the existing authenticated React lifecycle.
+- Approved private entries register through Core B's bounded Node registry; Knowledge view is scoped active/approved metadata only. No synthetic portfolio admission into that registry.
+- Enterprise runtime factory accepts the reviewed retrieval adapter through the existing RetrievalService boundary. Lexical remains default; environment vector mode fails closed pending GAP-03/04. No new Agent loop or synchronous selector.
+- PostgreSQL remains major 16; private FastAPI/Python image and pgvector 0.8.0 image are digest-pinned. Minimal driver `psycopg[binary]==3.2.10` added for actual PostgreSQL verification.
+- Legacy evaluators distinguish policy operations/audit from genuine Pi events. Safety hard negatives retain the ordinary-path label `normal` while separately recording actual `runtimeResultType=fallback`; unsupported ordinary answers are not accepted.
+- Current eval outputs use an external `JOB_READY_EVAL_REPORT_ROOT` in CI; immutable historical reports, corpus, gold and failed attempts are not overwritten.
+
+### TESTED locally
+
+- `npm test`: 572 passed / 37 skipped / 0 failed (609 total); build, check, integrity PASS. Job-Ready focused suite: 226 passed / 16 skipped / 0 failed. Python: 30 passed / 1 skipped / 0 failed. Skips are database gates, not successful database evidence.
+- New regression: policy evidence A + different Pi lookup B still in flight at overall deadline → fallback, empty authorized evidence/audit; late B cannot resurrect A. Existing Core A Runtime passes without an integration edit to `src/index.ts`.
+- Node/TypeScript deterministic composition, StoreOps HTTP authority, Track C mount, adapter injection, and policy-vs-Pi event negative controls.
+- Safety 30/30, robustness 100/100, holdout 60/60, governed Knowledge 46/46; synthetic retrieval 4 cases and public retrieval/runtime 62 cases pass existing gates. Public Top-1 remains 96%, Recall@3 100%, routed outcome accuracy 100%.
+- Local PostgreSQL integration tests are SKIPPED because no disposable local database is configured. Local Docker is unavailable. Those are not PASS evidence.
+
+### NOT TESTED yet on this integration source
+
+Fresh GitHub clean-runner PostgreSQL 003/004 and composed HTTP evidence, Python live-driver verification, Docker persistence/private-service smoke. Workflow is wired to execute these on the integration branch; results must be read from the actual run before candidate completion is claimed.
+
+### BLOCKED BY CONTRACT GAP
+
+- GAP-01: live WeCom protocol/crypto.
+- GAP-02: external customer identity binding; no invented staff mapping.
+- GAP-03: embedding model/revision/dimension/location/egress; `gap03_profile_unresolved` guard retained.
+- GAP-04: vector relevance floor; no guessed floor or lexical fallback.
+- GAP-05: retrieval quality thresholds; no manufactured quality PASS.
+- Frozen `RetrievalMeasurement` has no returned sourceRefs. Core B Node sourceRef reconciliation remains tested; Track D's measurement gap is explicitly unresolved.
+
+FastAPI's default engine therefore remains authenticated-but-unavailable (503),
+not production vector-ready. PostgreSQL schema/privilege/guard proof is separate
+from real embedding or vector retrieval capability.
+
+### OUT OF SCOPE / NOT AUTHORIZED
+
+Real provider/embedding calls (both 0), live WeCom, hosted/customer/Pilot success,
+production readiness, new product features, merge/tag/release/Ready, PR creation,
+and PR #9 mutation. Await Independent Final Integration Gate after evidence closure.
 
 ## 1. Authoritative predecessor
 
@@ -147,9 +204,9 @@ The following are not blockers and remain out of scope unless explicitly reautho
 - GraphRAG or complex reranking;
 - large observability platform.
 
-## 7. Immediate next sequence
+## 7. Historical governance sequence
 
-The next authoritative sequence is:
+The original governance sequence was (current execution is at shared integration):
 
 ```text
 1. Governance baseline

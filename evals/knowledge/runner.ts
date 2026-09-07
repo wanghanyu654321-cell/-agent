@@ -24,6 +24,7 @@ type Observation = {
 	auditEvidence: GroundingReference[];
 	actualToolCalls: string[];
 	agentToolEvents?: string[];
+	policyKnowledgeChecks?: number;
 	actualHandoff?: boolean;
 };
 
@@ -63,15 +64,21 @@ export type KnowledgeGateMetrics = {
 };
 
 export function evaluateKnowledgeObservation(c: KnowledgeEvalCase, o: Observation) {
-	const expectedToolCalls = [c.kind === "faq" ? "search_faq" : "search_knowledge"];
+	const faqAdmitted = c.kind === "faq" && c.expectedType === "answer";
+	const expectedToolCalls =
+		c.kind === "faq" ? (faqAdmitted ? ["search_faq"] : ["search_knowledge", "search_faq"]) : ["search_knowledge"];
+	const expectedPiEvents = [c.kind === "faq" ? "search_faq" : "search_knowledge"];
 	const expectedEvidenceId = `eval-${c.caseId}`;
 	const failureReasons = [
 		...(o.actualType !== c.expectedType ? ["disposition_mismatch"] : []),
 		...(JSON.stringify(o.actualToolCalls) !== JSON.stringify(expectedToolCalls)
 			? ["runtime_tool_trace_mismatch"]
 			: []),
-		...(o.agentToolEvents && JSON.stringify(o.agentToolEvents) !== JSON.stringify(o.actualToolCalls)
+		...(o.agentToolEvents && JSON.stringify(o.agentToolEvents) !== JSON.stringify(expectedPiEvents)
 			? ["agent_event_trace_mismatch"]
+			: []),
+		...(o.policyKnowledgeChecks !== undefined && o.policyKnowledgeChecks !== (faqAdmitted ? 0 : 1)
+			? ["policy_trace_mismatch"]
 			: []),
 		...(c.expectedType === "answer" && (!o.actualEvidence.length || o.actualText.includes(MODEL_INVENTION))
 			? ["unsupported_business_fact"]
@@ -213,6 +220,14 @@ export async function evaluateKnowledgeCase(testCase: KnowledgeEvalCase): Promis
 			.filter((event) => event.type === "tool_execution_start")
 			.map((event) => event.toolName);
 		const auditEvidence = readGroundingAudit(runtime, conversationId, directory);
+		const audit = SessionManager.open(runtime.getSessionFile(conversationId)!, directory, process.cwd())
+			.getEntries()
+			.filter((entry): entry is CustomEntry => entry.type === "custom" && entry.customType === "support-agent.audit")
+			.at(-1)?.data as { knowledgeChecks?: { knowledgeCheckOrigin: string; status: string }[] };
+		const policyKnowledgeChecks =
+			audit.knowledgeChecks?.filter(
+				(check) => check.knowledgeCheckOrigin === "policy" && check.status === "completed",
+			).length ?? 0;
 		const actualHandoff = store.findHandoff(conversationId) !== undefined;
 		const sessionFile = runtime.getSessionFile(conversationId);
 		if (!sessionFile) throw new Error(`Missing persisted session for ${conversationId}.`);
@@ -235,6 +250,7 @@ export async function evaluateKnowledgeCase(testCase: KnowledgeEvalCase): Promis
 			auditEvidence,
 			actualToolCalls,
 			agentToolEvents,
+			policyKnowledgeChecks,
 			actualHandoff,
 		});
 		return {
@@ -243,7 +259,10 @@ export async function evaluateKnowledgeCase(testCase: KnowledgeEvalCase): Promis
 			mode: testCase.mode,
 			expectedType: testCase.expectedType,
 			actualType: result.type,
-			expectedToolCalls: [toolName],
+			expectedToolCalls:
+				testCase.kind === "faq" && testCase.expectedType !== "answer"
+					? ["search_knowledge", "search_faq"]
+					: [toolName],
 			actualToolCalls,
 			agentToolEvents,
 			expectedEvidence:
@@ -343,7 +362,9 @@ export async function runKnowledgeEval(): Promise<{ gatePassed: boolean; report:
 
 async function main(): Promise<void> {
 	const { gatePassed, report } = await runKnowledgeEval();
-	const reports = join(process.cwd(), "evals", "knowledge", "reports");
+	const reports = process.env.JOB_READY_EVAL_REPORT_ROOT
+		? join(process.env.JOB_READY_EVAL_REPORT_ROOT, "knowledge")
+		: join(process.cwd(), "evals", "knowledge", "reports");
 	mkdirSync(reports, { recursive: true });
 	writeFileSync(join(reports, "latest.json"), JSON.stringify({ gatePassed, ...report }, null, 2));
 	writeFileSync(

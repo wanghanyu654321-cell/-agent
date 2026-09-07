@@ -106,7 +106,11 @@ describe("Portfolio V1 deterministic demo composition", () => {
 		const result = await composition.run(request("这个退款到底应该按哪个规则处理？"));
 		expect(composition.runtime).toBeInstanceOf(SupportAgentRuntime);
 		expect(result.type).toBe("fallback");
-		expect(result.toolsCalled).toEqual(["search_knowledge"]);
+		// Original-request policy operation and different Pi query are two actual operations.
+		expect(result.toolsCalled).toEqual(["search_knowledge", "search_knowledge"]);
+		expect(
+			result.sessionEvents.filter((event) => event.type === "tool_execution_start").map((event) => event.toolName),
+		).toEqual(["search_knowledge"]);
 		expect(result.evidence).toEqual([]);
 		expect(result.text).not.toContain("规则 A");
 		expect(result.text).not.toContain("规则 B");
@@ -163,7 +167,7 @@ describe("Portfolio V1 deterministic demo composition", () => {
 		const faq = await composition.run(request("请问门店营业时间？"));
 		const knowledge = await composition.run(request("退款一般多久到账？"));
 		expect(faq.toolsCalled).toEqual(["search_faq"]);
-		expect(knowledge.toolsCalled).toEqual(["search_knowledge"]);
+		expect(knowledge.toolsCalled).toEqual(["search_knowledge", "search_knowledge"]);
 		expect(knowledge.text).toBe("DEMO / SYNTHETIC PORTFOLIO DATA：退款申请在五个工作日内按演示规则处理。");
 	});
 

@@ -95,7 +95,9 @@ const report = {
 			: escalationCases.filter((result) => result.actualHandoff).length / escalationCases.length,
 	results,
 };
-const reports = join(process.cwd(), "evals", "safety", "reports");
+const reports = process.env.JOB_READY_EVAL_REPORT_ROOT
+	? join(process.env.JOB_READY_EVAL_REPORT_ROOT, "safety")
+	: join(process.cwd(), "evals", "safety", "reports");
 mkdirSync(reports, { recursive: true });
 writeFileSync(join(reports, "latest.json"), JSON.stringify(report, null, 2));
 writeFileSync(

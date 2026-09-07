@@ -7,20 +7,25 @@ import { Pool } from "pg";
 import type { SupportRuntimePort } from "../http-api.ts";
 import {
 	InMemorySupportStore,
+	type RetrievalService,
 	SupportAgentRuntime,
 	type SupportBusinessStore,
 	type SupportRequest,
 	type SupportResult,
 } from "../index.ts";
-import { GovernedKnowledgeRetrievalService } from "../knowledge.ts";
+import { GovernedKnowledgeRetrievalService, type KnowledgeEntry } from "../knowledge.ts";
 import { portfolioDemoFaq, portfolioDemoKnowledge } from "../portfolio-demo-data.ts";
+import { loadPrivateKnowledgeCorpus } from "../private-corpus.ts";
+import { PostgresRagRegistry } from "../retrieval/fastapi.ts";
+import { StoreOpsError } from "../storeops/contracts.ts";
+import { PostgresStoreOpsRepository, StoreOpsService } from "../storeops/postgres.ts";
 import { EnterpriseAuthService } from "./auth.ts";
 import { type EnterpriseBusinessRepository, EnterpriseSupportService } from "./business.ts";
 import { type PortfolioEnterpriseDemoData, seedPortfolioEnterpriseDemoData } from "./demo-data.ts";
 import { createEnterpriseHttpServer } from "./http-api.ts";
 import { bootstrapPiEnterpriseRuntimeFactory, type PiEnterpriseKnowledgeComposition } from "./pi-runtime.ts";
 import {
-	applyEnterpriseBusinessMigrations,
+	applyJobReadyMigrations,
 	PostgresEnterpriseBusinessRepository,
 	PostgresIdentityRepository,
 } from "./postgres.ts";
@@ -46,7 +51,10 @@ export interface EnterpriseRuntimeResource {
 	close?(): Promise<void> | void;
 }
 
-export type EnterpriseRuntimeFactory = (businessStore: EnterpriseBusinessRepository) => EnterpriseRuntimeResource;
+export type EnterpriseRuntimeFactory = (
+	businessStore: EnterpriseBusinessRepository,
+	retrieval?: RetrievalService,
+) => EnterpriseRuntimeResource;
 
 export interface EnterpriseApplicationOptions {
 	databaseUrl: string;
@@ -55,6 +63,9 @@ export interface EnterpriseApplicationOptions {
 	secureCookies?: boolean;
 	runtimeFactory?: EnterpriseRuntimeFactory;
 	staticRoot?: string;
+	retrieval?: RetrievalService;
+	knowledgeEntries?: KnowledgeEntry[];
+	storeTimeZone?: (scope: { tenantId: string; storeId: string }) => string | undefined;
 }
 
 export interface EnterpriseApplication {
@@ -102,6 +113,13 @@ export function enterpriseKnowledgeModeFromEnv(env: NodeJS.ProcessEnv = process.
 	return { mode };
 }
 
+export function enterpriseRetrievalModeFromEnv(env: NodeJS.ProcessEnv = process.env): "lexical" {
+	const mode = env.ENTERPRISE_RETRIEVAL_MODE?.trim() || "lexical";
+	if (mode === "vector") throw new Error("Vector retrieval unavailable: CONTRACT GAP-03/GAP-04 unresolved.");
+	if (mode !== "lexical") throw new Error("ENTERPRISE_RETRIEVAL_MODE must be lexical or vector.");
+	return mode;
+}
+
 export type EnterprisePiRuntimeFactoryBootstrap = (
 	providerId: string,
 	modelId: string,
@@ -112,6 +130,7 @@ export async function enterpriseRuntimeFactoryFromEnv(
 	env: NodeJS.ProcessEnv = process.env,
 	bootstrapPiRuntime: EnterprisePiRuntimeFactoryBootstrap = bootstrapPiEnterpriseRuntimeFactory,
 ): Promise<EnterpriseRuntimeFactory | undefined> {
+	enterpriseRetrievalModeFromEnv(env);
 	const runtimeMode = enterpriseRuntimeModeFromEnv(env);
 	const knowledgeMode = enterpriseKnowledgeModeFromEnv(env);
 	if (knowledgeMode.mode === "private" && runtimeMode.mode !== "pi-real") {
@@ -134,11 +153,26 @@ export async function createEnterpriseApplication(
 	let closed = false;
 	try {
 		await pool.query("SELECT 1");
-		await applyEnterpriseBusinessMigrations(pool);
+		await applyJobReadyMigrations(pool);
 		const identityRepository = new PostgresIdentityRepository(pool);
 		const businessRepository = new PostgresEnterpriseBusinessRepository(pool);
 		const demo = await seedPortfolioEnterpriseDemoData(identityRepository);
-		runtimeResource = (options.runtimeFactory ?? createDeterministicEnterpriseRuntime)(businessRepository);
+		if (options.knowledgeEntries?.length) {
+			const entry = options.knowledgeEntries[0];
+			await new PostgresRagRegistry(pool).register(
+				options.knowledgeEntries,
+				{ tenantId: entry.tenantScope!, storeId: entry.storeScope! },
+				AbortSignal.timeout(2000),
+			);
+		}
+		runtimeResource = (options.runtimeFactory ?? createDeterministicEnterpriseRuntime)(
+			businessRepository,
+			options.retrieval,
+		);
+		const storeOpsService = new StoreOpsService(
+			new PostgresStoreOpsRepository(pool),
+			options.storeTimeZone ?? (() => undefined),
+		);
 		const auth = new EnterpriseAuthService(identityRepository);
 		const supportService = new EnterpriseSupportService({
 			repository: businessRepository,
@@ -148,6 +182,23 @@ export async function createEnterpriseApplication(
 			auth,
 			runtime: runtimeResource.runtime,
 			supportService,
+			storeOpsService,
+			storeOpsKnowledge: async (context) => {
+				if (!context.actor.capabilities.includes("storeops:read")) throw new StoreOpsError("forbidden");
+				const memberships = await identityRepository.listMembershipsForUser(context.actor.userId);
+				if (
+					memberships.length !== 1 ||
+					memberships[0].tenantId !== context.scope.tenantId ||
+					memberships[0].storeId !== context.scope.storeId ||
+					memberships[0].role !== context.actor.role
+				)
+					throw new StoreOpsError("forbidden");
+				const result = await pool.query(
+					`SELECT document_id AS id,kind,title,version,source_ref AS "sourceRef",to_char(updated_date,'YYYY-MM-DD') || 'T00:00:00.000Z' AS "updatedAt",status FROM rag_documents WHERE tenant_id=$1 AND store_id=$2 AND status='approved' AND active ORDER BY document_id`,
+					[context.scope.tenantId, context.scope.storeId],
+				);
+				return { items: result.rows };
+			},
 			secureCookies: options.secureCookies,
 			staticRoot: options.staticRoot ?? enterpriseStaticRoot(),
 		});
@@ -202,19 +253,31 @@ export async function startEnterpriseApplicationFromEnv(
 ): Promise<EnterpriseApplication> {
 	const config = enterpriseApplicationConfigFromEnv(env);
 	const runtimeFactory = await enterpriseRuntimeFactoryFromEnv(env);
-	const application = await createEnterpriseApplication({ ...config, runtimeFactory });
+	const knowledgeEntries =
+		enterpriseKnowledgeModeFromEnv(env).mode === "private" ? loadPrivateKnowledgeCorpus(env) : undefined;
+	const application = await createEnterpriseApplication({
+		...config,
+		runtimeFactory,
+		knowledgeEntries,
+		storeTimeZone: () => env.STOREOPS_TIME_ZONE?.trim() || undefined,
+	});
 	await application.start();
 	return application;
 }
 
-export function createDeterministicEnterpriseRuntime(businessStore: SupportBusinessStore): EnterpriseRuntimeResource {
+export function createDeterministicEnterpriseRuntime(
+	businessStore: SupportBusinessStore,
+	retrieval?: RetrievalService,
+): EnterpriseRuntimeResource {
 	const faux = registerFauxProvider();
 	const runtime = new SupportAgentRuntime({
 		model: faux.getModel(),
 		streamFn: streamSimple,
-		retrieval: new GovernedKnowledgeRetrievalService(portfolioDemoKnowledge, {
-			allowSyntheticTestFixtures: true,
-		}),
+		retrieval:
+			retrieval ??
+			new GovernedKnowledgeRetrievalService(portfolioDemoKnowledge, {
+				allowSyntheticTestFixtures: true,
+			}),
 		store: new InMemorySupportStore(),
 		businessStore,
 		faq: portfolioDemoFaq,

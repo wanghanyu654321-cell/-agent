@@ -77,7 +77,13 @@ describe("enterprise identity and tenancy foundation", () => {
 			actor: {
 				userId: demo.users.alice.id,
 				role: "agent",
-				capabilities: ["agent:invoke", "conversation:read", "ticket:create"],
+				capabilities: [
+					"agent:invoke",
+					"conversation:read",
+					"ticket:create",
+					"storeops:read",
+					"booking-intent:create",
+				],
 			},
 			scope: { tenantId: demo.tenants.a.id, storeId: demo.stores.a1.id },
 		});

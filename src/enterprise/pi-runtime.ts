@@ -2,7 +2,13 @@ import type { StreamFn } from "@earendil-works/pi-agent-core";
 import type { Api, Model } from "@earendil-works/pi-ai";
 import { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import type { SupportRuntimePort } from "../http-api.ts";
-import { type FaqEntry, InMemorySupportStore, SupportAgentRuntime, type SupportBusinessStore } from "../index.ts";
+import {
+	type FaqEntry,
+	InMemorySupportStore,
+	type RetrievalService,
+	SupportAgentRuntime,
+	type SupportBusinessStore,
+} from "../index.ts";
 import { GovernedKnowledgeRetrievalService } from "../knowledge.ts";
 import { portfolioDemoFaq, portfolioDemoKnowledge } from "../portfolio-demo-data.ts";
 import type { EnterpriseRuntimeFactory, EnterpriseRuntimeResource } from "./application.ts";
@@ -87,13 +93,15 @@ export function createPiEnterpriseRuntimeFactory(
 	resolved: ResolvedPiEnterpriseRuntime,
 	knowledgeComposition: PiEnterpriseKnowledgeComposition = portfolioKnowledgeComposition(),
 ): EnterpriseRuntimeFactory {
-	return (businessStore: SupportBusinessStore): EnterpriseRuntimeResource => {
+	return (businessStore: SupportBusinessStore, retrieval?: RetrievalService): EnterpriseRuntimeResource => {
 		const runtime = new SupportAgentRuntime({
 			model: resolved.model,
 			streamFn: resolved.streamFn,
-			retrieval: new GovernedKnowledgeRetrievalService(knowledgeComposition.knowledge, {
-				allowSyntheticTestFixtures: knowledgeComposition.allowSyntheticTestFixtures,
-			}),
+			retrieval:
+				retrieval ??
+				new GovernedKnowledgeRetrievalService(knowledgeComposition.knowledge, {
+					allowSyntheticTestFixtures: knowledgeComposition.allowSyntheticTestFixtures,
+				}),
 			store: new InMemorySupportStore(),
 			businessStore,
 			faq: knowledgeComposition.faq,

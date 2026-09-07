@@ -4,6 +4,15 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { extname, resolve, sep } from "node:path";
 import type { SupportRuntimePort } from "../http-api.ts";
 import type { SupportResult } from "../index.ts";
+import {
+	boundedId,
+	parseAvailabilityWrite,
+	parseBookingCreate,
+	parseBookingTransition,
+	StoreOpsError,
+	validateDate,
+} from "../storeops/contracts.ts";
+import type { StoreOpsService } from "../storeops/postgres.ts";
 import type { EnterpriseAuthService } from "./auth.ts";
 import {
 	EnterpriseConversationConflictError,
@@ -21,6 +30,26 @@ export interface EnterpriseHttpServerOptions {
 	auth: EnterpriseAuthService;
 	runtime?: SupportRuntimePort;
 	supportService?: EnterpriseSupportPort;
+	storeOpsService?: Pick<
+		StoreOpsService,
+		| "listAvailability"
+		| "putAvailability"
+		| "listBookingIntents"
+		| "createBookingIntent"
+		| "transitionBookingIntent"
+		| "listNeedsAttention"
+	>;
+	storeOpsKnowledge?: (context: SupportExecutionContext) => Promise<{
+		items: {
+			id: string;
+			kind: "faq" | "policy" | "sop" | "reference";
+			title: string;
+			version: string;
+			sourceRef: string;
+			updatedAt: string;
+			status: "approved";
+		}[];
+	}>;
 	secureCookies?: boolean;
 	staticRoot?: string;
 }
@@ -39,6 +68,8 @@ async function handleRequest(
 	const url = new URL(request.url ?? "/", "http://localhost");
 	const path = url.pathname;
 	try {
+		if (path === "/api/v1/storeops" || path.startsWith("/api/v1/storeops/"))
+			return await storeOps(request, response, options, url);
 		if (path === "/healthz")
 			return request.method === "GET"
 				? sendJson(response, 200, { status: "ok" })
@@ -96,11 +127,120 @@ async function handleRequest(
 		if (options.staticRoot && (await serveStaticFile(path, response, options.staticRoot))) return;
 		return sendJson(response, 404, { error: "not_found" });
 	} catch (error) {
+		if (error instanceof StoreOpsError) {
+			const status = {
+				invalid_request: 400,
+				forbidden: 403,
+				not_found: 404,
+				availability_conflict: 409,
+				booking_intent_conflict: 409,
+				dependency_unavailable: 503,
+			}[error.code];
+			return sendJson(response, status, { error: error.code });
+		}
 		if (error instanceof EnterpriseConversationNotFoundError) return sendJson(response, 404, { error: "not_found" });
 		if (error instanceof EnterpriseConversationConflictError)
 			return sendJson(response, 409, { error: "conversation_conflict" });
 		return sendJson(response, 500, { error: "internal_error" });
 	}
+}
+
+async function storeOps(
+	request: IncomingMessage,
+	response: ServerResponse,
+	options: EnterpriseHttpServerOptions,
+	url: URL,
+): Promise<void> {
+	const context = await authenticatedContext(request, options.auth);
+	if (!context) return sendJson(response, 401, { error: "unauthenticated" });
+	const path = url.pathname.slice("/api/v1/storeops".length);
+	const availability = /^\/availability\/([^/]+)\/([^/]+)$/.exec(path);
+	const transition = /^\/booking-intents\/([^/]+)\/transition$/.exec(path);
+	const methods =
+		path === "/booking-intents"
+			? ["GET", "POST"]
+			: availability
+				? ["PUT"]
+				: transition
+					? ["POST"]
+					: ["/availability", "/knowledge", "/needs-attention"].includes(path)
+						? ["GET"]
+						: [];
+	if (!methods.length) throw new StoreOpsError("not_found");
+	if (!methods.includes(request.method ?? ""))
+		return sendJson(response, 405, { error: "method_not_allowed" }, { Allow: methods.join(", ") });
+	if (
+		[...url.searchParams.keys()].some((key) => key !== "date" || path !== "/availability") ||
+		url.searchParams.getAll("date").length > 1
+	)
+		throw new StoreOpsError("invalid_request");
+	if (request.method !== "GET" && request.headers.origin !== undefined) {
+		let origin: URL;
+		try {
+			origin = new URL(request.headers.origin);
+		} catch {
+			throw new StoreOpsError("forbidden");
+		}
+		const protocol = options.secureCookies ? "https:" : "http:";
+		if (origin.origin !== `${protocol}//${request.headers.host}` || origin.href !== `${origin.origin}/`)
+			throw new StoreOpsError("forbidden");
+	}
+	const capability =
+		request.method === "GET" ? "storeops:read" : availability ? "availability:write" : "booking-intent:create";
+	if (!transition && !context.actor.capabilities.includes(capability)) throw new StoreOpsError("forbidden");
+	if (path === "/needs-attention" && context.actor.role === "agent") throw new StoreOpsError("forbidden");
+	if (path === "/knowledge") {
+		if (!options.storeOpsKnowledge) throw new StoreOpsError("dependency_unavailable");
+		return sendJson(response, 200, await options.storeOpsKnowledge(context));
+	}
+	const service = options.storeOpsService;
+	if (!service) throw new StoreOpsError("dependency_unavailable");
+	if (request.method === "GET") {
+		const result =
+			path === "/availability"
+				? await service.listAvailability(context, validateDate(url.searchParams.get("date")))
+				: path === "/booking-intents"
+					? await service.listBookingIntents(context)
+					: await service.listNeedsAttention(context);
+		return sendJson(response, 200, result);
+	}
+	let body: Record<string, unknown>;
+	try {
+		body = await readJsonBody(request);
+	} catch {
+		throw new StoreOpsError("invalid_request");
+	}
+	const decodeId = (value: string) => {
+		try {
+			return boundedId(decodeURIComponent(value));
+		} catch {
+			throw new StoreOpsError("invalid_request");
+		}
+	};
+	if (availability) {
+		const date = decodeId(availability[2]!);
+		return sendJson(
+			response,
+			200,
+			await service.putAvailability(context, decodeId(availability[1]!), date, parseAvailabilityWrite(date, body)),
+		);
+	}
+	if (transition) {
+		const input = parseBookingTransition(body);
+		if (
+			!context.actor.capabilities.includes(
+				input.action === "cancel" ? "booking-intent:create" : "booking-intent:manage",
+			)
+		)
+			throw new StoreOpsError("forbidden");
+		return sendJson(response, 200, await service.transitionBookingIntent(context, decodeId(transition[1]!), input));
+	}
+	const result = await service.createBookingIntent(
+		context,
+		boundedId(request.headers["idempotency-key"]),
+		parseBookingCreate(body),
+	);
+	return sendJson(response, result.duplicate ? 200 : 201, result.intent);
 }
 
 async function login(

@@ -32,9 +32,66 @@ Remove the disposable local PostgreSQL volume only when you want a new demo:
 docker compose down -v --remove-orphans
 ```
 
-The Compose stack has exactly two services: `app` and `postgres:16-alpine`. The
-application waits for PostgreSQL health, applies the approved migrations once, and
-repeat-safely seeds the synthetic demo identities.
+The integration Compose stack has three services: `app`, private `ai-service`, and
+PostgreSQL 16 with pgvector 0.8.0 (image pinned by digest in `compose.yaml`). Only
+the Node port is published. The application waits for PostgreSQL health, applies
+migrations 001–004 once through the existing transactional ledger, and repeat-safely
+seeds the synthetic demo identities. Existing pre-ledger databases are not a
+supported upgrade path; this proof uses disposable databases with the ledger.
+
+## Job-Ready integration candidate
+
+`job-ready/integration-v1` composes the reviewed Core A/B and Track C/D checkpoints
+from contract `7c9b694d586fe4c557a195b554a97cc89e5c8f24`. It is not independently
+approved and does not authorize a release or a real-provider rerun.
+
+- The authenticated shell mounts the existing StoreOps views. Node resolves scope
+  and capabilities for Availability, Booking Intents, Knowledge metadata, and
+  Needs Attention. Set the operator-owned `STOREOPS_TIME_ZONE` to the store's actual
+  IANA time zone to use Availability; no time zone is inferred from browser data.
+- Private corpus startup registers approved canonical entries in the Node-owned
+  registry. Knowledge views show approved active metadata, never the corpus body.
+  The synthetic portfolio corpus is not registered as approved knowledge; its
+  catalog is therefore empty in default demo mode.
+- `ENTERPRISE_RETRIEVAL_MODE=lexical` remains the default. The reviewed
+  `FastApiRetrievalService` can be injected through the enterprise runtime factory;
+  deterministic integration tests cover canonical reconciliation and failure.
+  `vector` mode explicitly fails startup: GAP-03 embedding profile and GAP-04
+  relevance floor are not approved. There is no vector-to-lexical fallback.
+- The private FastAPI image uses Python 3.11.15 and pinned `psycopg[binary]==3.2.10`.
+  Its existing unconfigured engine remains unavailable: `/health` requires a
+  service credential and returns 503 until dependencies/profile are approved.
+  The driver is verified against disposable PostgreSQL in CI, not used to invent
+  a production embedding configuration. No public FastAPI or PostgreSQL ports.
+- Policy-owned knowledge operations and real Pi tool events are reported
+  separately. Set `JOB_READY_EVAL_REPORT_ROOT` to an external fresh directory for
+  current offline regression reports without overwriting historical evidence.
+
+Verification commands (PostgreSQL commands require a disposable pgvector-enabled
+PostgreSQL 16 database; absence is a failure in dedicated gates, not a PASS):
+
+```text
+npm test
+npm run test:job-ready
+npm run test:postgres-identity
+npm run test:postgres-business
+npm run test:postgres-application
+npm run test:postgres-core-a
+npm run test:postgres-core-b
+npm run test:postgres-job-ready
+npm run build
+npm run check
+npm run integrity
+cd ai-service
+python -B -m unittest discover -s tests -v
+```
+
+Node PostgreSQL gates use `POSTGRES_TEST_URL`, except Core B uses
+`POSTGRES_RAG_TEST_URL`; the Python live-driver test uses the latter too. Do not use
+a production database. CI retains historical Safety/Knowledge/Retrieval and Docker
+restart-persistence gates, with no external provider or embedding calls. Exact
+tested/not-tested state and unresolved contracts are recorded in
+[Job-Ready Current State](docs/job-ready/CURRENT_STATE.md).
 
 ## Synthetic demo identities
 
@@ -102,7 +159,11 @@ for the bounded smoke and credential-handling rules.
 - No real provider/model call is made by the Docker delivery smoke.
 - This stack is a bounded local Docker delivery proof, not a production, hosted,
   customer, SaaS, or production-operations deployment claim. It has no external
-  IM integration, vector database, or multi-agent workflow.
+  live IM integration or multi-agent workflow. pgvector schema/guard evidence does
+  not establish production vector search. WeCom protocol/identity (GAP-01/02),
+  embedding profile/egress (GAP-03), relevance floor (GAP-04), retrieval quality
+  thresholds (GAP-05), and the frozen measurement DTO's missing returned sourceRefs
+  remain unresolved. No hosted HTTPS/customer deployment is claimed.
 
 See [Phase 2C-B's successor contract](docs/portfolio/PHASE_2C_B_FINAL_EXECUTION_DIRECTIVE.md)
 for the delivery boundary and the frozen architecture documents under `docs/` for

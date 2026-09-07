@@ -133,6 +133,15 @@ export async function applyEnterpriseBusinessMigrations(pool: Pool): Promise<voi
 	await applyEnterpriseMigrations(pool, [identityMigration, businessMigration]);
 }
 
+export async function applyJobReadyMigrations(pool: Pool): Promise<void> {
+	await applyEnterpriseMigrations(pool, [
+		identityMigration,
+		businessMigration,
+		{ id: "003_job_ready_storeops", path: new URL("../../migrations/003_job_ready_storeops.sql", import.meta.url) },
+		{ id: "004_job_ready_rag", path: new URL("../../migrations/004_job_ready_rag.sql", import.meta.url) },
+	]);
+}
+
 async function applyEnterpriseMigrations(pool: Pool, migrations: readonly EnterpriseMigration[]): Promise<void> {
 	const client = await pool.connect();
 	try {

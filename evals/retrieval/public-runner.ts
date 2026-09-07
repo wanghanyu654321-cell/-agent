@@ -106,7 +106,9 @@ export async function runPublicRetrievalRegression() {
 
 async function main(): Promise<void> {
 	const report = await runPublicRetrievalRegression();
-	const reports = join(process.cwd(), "evals", "retrieval", "reports");
+	const reports = process.env.JOB_READY_EVAL_REPORT_ROOT
+		? join(process.env.JOB_READY_EVAL_REPORT_ROOT, "retrieval-public")
+		: join(process.cwd(), "evals", "retrieval", "reports");
 	mkdirSync(reports, { recursive: true });
 	writeFileSync(join(reports, "public-latest.json"), JSON.stringify(report, null, 2));
 	writeFileSync(

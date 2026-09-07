@@ -2,7 +2,7 @@ name: customer-support-agent-demo
 
 services:
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:0.8.0-pg16-bookworm@sha256:a132765ec351c65111b5b675928a3a0515a466a40f97277329db8b8209ad8bc9
     environment:
       POSTGRES_DB: customer_support_agent_demo
       POSTGRES_USER: customer_support_agent_demo
@@ -25,11 +25,23 @@ services:
       HOST: 0.0.0.0
       PORT: "3000"
       DATABASE_URL: postgresql://customer_support_agent_demo:customer_support_agent_demo_password@postgres:5432/customer_support_agent_demo
+      ENTERPRISE_RETRIEVAL_MODE: lexical
     ports:
       - "3000:3000"
     depends_on:
       postgres:
         condition: service_healthy
+
+  ai-service:
+    build:
+      context: .
+      dockerfile: ai-service/Dockerfile
+    environment:
+      RAG_SERVICE_CREDENTIAL: ${RAG_SERVICE_CREDENTIAL:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # No host ports. GAP-03/04 intentionally leave authenticated readiness 503.
 
 volumes:
   postgres-data:

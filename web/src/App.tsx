@@ -28,6 +28,7 @@ import {
 	type AuditProofState,
 } from "./audit.tsx";
 import "./styles.css";
+import { StoreOpsConsole } from "./storeops/index.ts";
 
 const sessionApi = createSameOriginSessionApi();
 
@@ -160,6 +161,7 @@ export function AuthenticatedShell({
 		/>
 		<BusinessProofSurface state={businessProof} />
 		{auditEnabled ? <AuditProofSurface state={auditProof} /> : null}
+		<StoreOpsConsole context={context} api={api} onSessionInvalidated={onSessionInvalidated} onAuthorizationError={onAuthorizationError} />
 	</main>;
 }
 
