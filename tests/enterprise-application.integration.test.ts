@@ -162,7 +162,12 @@ describePostgres("enterprise application composition root", () => {
 			"customer-a",
 			"这个退款到底应该按哪个规则处理？",
 		);
-		expect(ambiguous).toMatchObject({ type: "fallback", toolsCalled: ["search_knowledge"], evidence: [] });
+		// Original-request policy lookup plus a different query genuinely invoked by Pi.
+		expect(ambiguous).toMatchObject({
+			type: "fallback",
+			toolsCalled: ["search_knowledge", "search_knowledge"],
+			evidence: [],
+		});
 		expect(ambiguous.text).not.toContain("规则 A");
 		expect(ambiguous.text).not.toContain("规则 B");
 	});
@@ -193,7 +198,7 @@ describePostgres("enterprise application composition root", () => {
 					conversationId: "audit-a",
 					eventType: "support-agent.audit",
 					outcome: "answer",
-					toolsCalled: ["create_ticket"],
+					toolsCalled: ["search_knowledge", "create_ticket"],
 				}),
 			]),
 		);

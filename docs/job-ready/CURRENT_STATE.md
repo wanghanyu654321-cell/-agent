@@ -40,7 +40,17 @@ Exact reviewed source commits, cherry-picked in this order (original branches un
 
 ### NOT TESTED yet on this integration source
 
-Fresh GitHub clean-runner PostgreSQL 003/004 and composed HTTP evidence, Python live-driver verification, Docker persistence/private-service smoke. Workflow is wired to execute these on the integration branch; results must be read from the actual run before candidate completion is claimed.
+First integration run `34080606896`, job `101615027391`, source
+`c69697078f8b1ff70ec920a0c3d10884d0c23e9f` failed in the old PostgreSQL application
+suite (8 passed / 2 failed / 0 skipped). Both failures were exact operation-list
+expectations omitting Core A's policy lookup, including the persisted audit list.
+Fresh/repeat migration, identity, authority, isolation and shutdown tests passed.
+Only those two operation expectations are corrected; fallback/evidence, durable
+business and audit privacy assertions remain intact. The failed CI is retained.
+
+Core A/B dedicated database gates, composed StoreOps HTTP, Python live-driver and
+Docker smoke were not reached in that run. A fresh run must establish their
+results before candidate completion is claimed.
 
 ### BLOCKED BY CONTRACT GAP
 
