@@ -1,6 +1,6 @@
 # Job-Ready Current State
 
-Status: **FINAL INTEGRATION CANDIDATE / VERIFICATION IN PROGRESS / NOT INDEPENDENTLY APPROVED**
+Status: **FINAL INTEGRATION CANDIDATE / CLEAN-RUNNER VERIFIED / PENDING INDEPENDENT FINAL GATE**
 
 The historical governance and PR #9 evidence below remain unchanged in meaning.
 The current integration checkpoint is additive and does not turn historical failed
@@ -38,7 +38,7 @@ Exact reviewed source commits, cherry-picked in this order (original branches un
 - Safety 30/30, robustness 100/100, holdout 60/60, governed Knowledge 46/46; synthetic retrieval 4 cases and public retrieval/runtime 62 cases pass existing gates. Public Top-1 remains 96%, Recall@3 100%, routed outcome accuracy 100%.
 - Local PostgreSQL integration tests are SKIPPED because no disposable local database is configured. Local Docker is unavailable. Those are not PASS evidence.
 
-### NOT TESTED yet on this integration source
+### CLEAN-RUNNER evidence
 
 First integration run `34080606896`, job `101615027391`, source
 `c69697078f8b1ff70ec920a0c3d10884d0c23e9f` failed in the old PostgreSQL application
@@ -49,8 +49,51 @@ Only those two operation expectations are corrected; fallback/evidence, durable
 business and audit privacy assertions remain intact. The failed CI is retained.
 
 Core A/B dedicated database gates, composed StoreOps HTTP, Python live-driver and
-Docker smoke were not reached in that run. A fresh run must establish their
-results before candidate completion is claimed.
+Docker smoke were not reached in that failed run.
+
+Fresh successful run: [34080970418](https://github.com/wanghanyu654321-cell/-agent/actions/runs/34080970418),
+job `101616028010`, push source and actual checkout
+`9371b9de3628ad1fcec0c11c96566f42227cfcc0`, tree
+`414d0bc54a17ed191837b819ed94131e5b59c39e`. No PR merge-ref is involved.
+
+| Gate | Passed | Skipped | Failed |
+| --- | ---: | ---: | ---: |
+| General Node suite | 572 | 37 | 0 |
+| Job-Ready focused Node/web/eval suite (overlapping subset) | 226 | 16 | 0 |
+| PostgreSQL Identity | 6 | 0 | 0 |
+| PostgreSQL Business | 5 | 0 | 0 |
+| PostgreSQL Application | 10 | 0 | 0 |
+| Core A PostgreSQL StoreOps/WeCom | 13 | 0 | 0 |
+| Core B PostgreSQL/pgvector registry | 1 | 0 | 0 |
+| Composed Job-Ready HTTP/PostgreSQL | 2 | 0 | 0 |
+| Python including actual PostgreSQL driver | 31 | 0 | 0 |
+
+The 37 general-suite database skips execute separately in the mandatory database
+steps above. Core A proves scope/FKs, CAS, intent idempotency, dedupe, concurrency,
+rollback and delivery uncertainty. Core B proves registry immutability/retirement,
+cross-store filtering, privileges and the still-active `gap03_profile_unresolved`
+constraint. Composed HTTP tests prove server authority and active/approved
+registry metadata without body exposure. No SQL mocks substitute for these gates.
+
+Lockfile install, build, check, integrity and all six legacy eval steps PASS.
+Docker image builds, application startup/auth/FAQ, scoped ticket read-back,
+Bob isolation, retained-volume recreation, ticket and safe Audit persistence PASS.
+Private FastAPI auth returns 401 without credential and bounded
+`retrieval_unavailable`/503 with the disposable CI credential: the unresolved
+profile is not mislabeled as vector readiness.
+
+This state update is documentation-only after that tested source. The final pushed
+documentation commit must also receive its own complete clean-runner; its exact
+run/source will be supplied to the independent reviewer, without another source
+change after verification.
+
+### NOT TESTED / NOT CLAIMED
+
+Real embedding/vector quality, live WeCom, external provider re-evaluation,
+hosted HTTPS and customer/Pilot deployment. Local PG/Docker remain unavailable;
+only the actual isolated clean-runner supplies that evidence. CI warns about the
+upstream actions' Node runtime deprecation; action modernization is not part of
+this bounded integration.
 
 ### BLOCKED BY CONTRACT GAP
 

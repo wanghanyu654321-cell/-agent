@@ -93,6 +93,12 @@ restart-persistence gates, with no external provider or embedding calls. Exact
 tested/not-tested state and unresolved contracts are recorded in
 [Job-Ready Current State](docs/job-ready/CURRENT_STATE.md).
 
+The code checkpoint `9371b9de3628ad1fcec0c11c96566f42227cfcc0` passed
+[clean-runner 34080970418](https://github.com/wanghanyu654321-cell/-agent/actions/runs/34080970418),
+including real PostgreSQL 003/004, Python driver, and Docker persistence/private
+service checks. This is integration evidence for independent review, not approval
+of the unresolved production vector or live-channel contracts.
+
 ## Synthetic demo identities
 
 These are public, deterministic demonstration credentials only. They are not real
