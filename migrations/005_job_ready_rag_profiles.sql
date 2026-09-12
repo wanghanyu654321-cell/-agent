@@ -8,3 +8,8 @@ ALTER TABLE rag_chunks ADD CONSTRAINT rag_chunks_s2_profile CHECK (
         'deterministic-test-1536-v1'
     )
 );
+
+-- Schema lookup is required in addition to 004's per-table privileges.
+GRANT USAGE ON SCHEMA public
+TO job_ready_rag_indexer,
+   job_ready_rag_registry_writer;

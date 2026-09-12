@@ -7,6 +7,7 @@ import asyncio
 import json
 import os
 import unittest
+from pathlib import Path
 from psycopg.errors import CheckViolation, DataException
 from contextlib import asynccontextmanager
 from uuid import uuid4
@@ -17,6 +18,16 @@ from rag_service.contracts import IngestRequest, SearchRequest
 from rag_service.core import Profile, RetrievalError, RetrievalService, sha256
 from rag_service.embedding import DeterministicEmbedding, DETERMINISTIC_PROFILE, HOSTED_PROFILE
 from rag_service.postgres import PostgresIngestion, PostgresRepository
+
+
+class S2MigrationContractTests(unittest.TestCase):
+    def test_profiles_successor_grants_lookup_without_schema_create(self):
+        migration = (Path(__file__).resolve().parents[2] / "migrations" / "005_job_ready_rag_profiles.sql").read_text()
+        self.assertIn("""GRANT USAGE ON SCHEMA public
+TO job_ready_rag_indexer,
+   job_ready_rag_registry_writer;""", migration)
+        self.assertNotIn("GRANT CREATE ON SCHEMA public", migration)
+        self.assertNotIn("GRANT ALL ON SCHEMA public", migration)
 
 
 @unittest.skipUnless(os.environ.get("POSTGRES_RAG_TEST_URL"), "disposable PostgreSQL unavailable")
@@ -69,6 +80,53 @@ class S2PostgresTests(unittest.IsolatedAsyncioTestCase):
     async def test_readiness_privileges_dimensions_and_both_profile_constraints(self):
         self.assertTrue(await self.repo.ready())
         self.assertFalse(await PostgresRepository(lambda: postgres_connection(self.url), self.profile).ready())
+        async with postgres_connection(self.url) as db:
+            cursor = await db.execute("""
+                SELECT
+                  has_schema_privilege('job_ready_rag_indexer', 'public', 'USAGE') AS indexer_usage,
+                  has_schema_privilege('job_ready_rag_indexer', 'public', 'CREATE') AS indexer_create,
+                  has_table_privilege('job_ready_rag_indexer', 'public.rag_documents', 'SELECT') AS indexer_documents_select,
+                  has_table_privilege('job_ready_rag_indexer', 'public.rag_documents', 'INSERT') AS indexer_documents_insert,
+                  has_table_privilege('job_ready_rag_indexer', 'public.rag_documents', 'DELETE') AS indexer_documents_delete,
+                  has_any_column_privilege('job_ready_rag_indexer', 'public.rag_documents', 'UPDATE') AS indexer_documents_update,
+                  has_table_privilege('job_ready_rag_indexer', 'public.rag_chunks', 'SELECT') AS indexer_chunks_select,
+                  has_table_privilege('job_ready_rag_indexer', 'public.rag_chunks', 'INSERT') AS indexer_chunks_insert,
+                  has_table_privilege('job_ready_rag_indexer', 'public.rag_chunks', 'DELETE') AS indexer_chunks_delete,
+                  has_any_column_privilege('job_ready_rag_indexer', 'public.rag_chunks', 'UPDATE') AS indexer_chunks_update,
+                  has_table_privilege('job_ready_rag_indexer', 'public.tickets', 'SELECT') AS indexer_tickets_select,
+                  has_table_privilege('job_ready_rag_indexer', 'public.memberships', 'SELECT') AS indexer_memberships_select,
+                  has_schema_privilege('job_ready_rag_registry_writer', 'public', 'USAGE') AS writer_usage,
+                  has_schema_privilege('job_ready_rag_registry_writer', 'public', 'CREATE') AS writer_create,
+                  has_table_privilege('job_ready_rag_registry_writer', 'public.rag_documents', 'SELECT') AS writer_documents_select,
+                  has_table_privilege('job_ready_rag_registry_writer', 'public.rag_documents', 'INSERT') AS writer_documents_insert,
+                  has_table_privilege('job_ready_rag_registry_writer', 'public.rag_documents', 'DELETE') AS writer_documents_delete,
+                  has_table_privilege('job_ready_rag_registry_writer', 'public.rag_documents', 'UPDATE') AS writer_documents_table_update,
+                  has_column_privilege('job_ready_rag_registry_writer', 'public.rag_documents', 'status', 'UPDATE') AS writer_status_update,
+                  has_column_privilege('job_ready_rag_registry_writer', 'public.rag_documents', 'active', 'UPDATE') AS writer_active_update,
+                  has_column_privilege('job_ready_rag_registry_writer', 'public.rag_documents', 'content', 'UPDATE') AS writer_content_update,
+                  has_table_privilege('job_ready_rag_registry_writer', 'public.rag_chunks', 'SELECT') AS writer_chunks_select,
+                  has_table_privilege('job_ready_rag_registry_writer', 'public.rag_chunks', 'INSERT') AS writer_chunks_insert,
+                  has_table_privilege('job_ready_rag_registry_writer', 'public.rag_chunks', 'DELETE') AS writer_chunks_delete,
+                  has_any_column_privilege('job_ready_rag_registry_writer', 'public.rag_chunks', 'UPDATE') AS writer_chunks_update,
+                  has_table_privilege('job_ready_rag_registry_writer', 'public.memberships', 'SELECT') AS writer_memberships_select,
+                  has_table_privilege('job_ready_rag_registry_writer', 'public.tickets', 'SELECT') AS writer_tickets_select
+            """)
+            self.assertEqual(await cursor.fetchone(), {
+                "indexer_usage": True, "indexer_create": False,
+                "indexer_documents_select": True, "indexer_documents_insert": False,
+                "indexer_documents_delete": False, "indexer_documents_update": False,
+                "indexer_chunks_select": True, "indexer_chunks_insert": True,
+                "indexer_chunks_delete": True, "indexer_chunks_update": False,
+                "indexer_tickets_select": False, "indexer_memberships_select": False,
+                "writer_usage": True, "writer_create": False,
+                "writer_documents_select": True, "writer_documents_insert": True,
+                "writer_documents_delete": False, "writer_documents_table_update": False,
+                "writer_status_update": True, "writer_active_update": True,
+                "writer_content_update": False, "writer_chunks_select": True,
+                "writer_chunks_insert": False, "writer_chunks_delete": False,
+                "writer_chunks_update": False, "writer_memberships_select": False,
+                "writer_tickets_select": False,
+            })
         request = await self.register()
         await self.engine.ingest(request)
         async with postgres_connection(self.url) as db:
