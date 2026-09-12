@@ -34,6 +34,7 @@ jobs:
       C2_SOURCE_TREE: 2b4ca9fabc8f6d5ad08c29ea12f2e706e20885aa
       C2_EVIDENCE_PATH: /tmp/s2-c2-hosted-evidence.json
       C2_TRACE_PATH: /tmp/s2-c2-openai-trace.jsonl
+      C2_DIAGNOSTIC_PATH: /tmp/s2-c2-provider-diagnostic.jsonl
 
     steps:
       - name: Checkout evidence branch
@@ -51,6 +52,8 @@ jobs:
           cat > /tmp/c2-expected.txt <<'EOF'
           .github/workflows/s2-c2-hosted-evidence-once.yml
           ai-service/tests/s2_c2_http_server.py
+          ai-service/tests/s2_c2_provider_diagnostics.py
+          ai-service/tests/test_s2_c2_provider_diagnostics.py
           tests/job-ready-integration/c2-hosted-evidence.manual.test.ts
           EOF
           sort -o /tmp/c2-expected.txt /tmp/c2-expected.txt
@@ -92,6 +95,21 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: npx vitest --run tests/job-ready-integration/c2-hosted-evidence.manual.test.ts
 
+      - name: Print sanitized C2 provider diagnostic
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f "${C2_DIAGNOSTIC_PATH}" ]; then
+            echo "C2_DIAGNOSTIC_NOT_AVAILABLE"
+            exit 0
+          fi
+          if grep -Eqi 'OPENAI_API_KEY|Authorization|Bearer|sk-' "${C2_DIAGNOSTIC_PATH}"; then
+            echo "::error::credential-like material detected in provider diagnostic"
+            exit 65
+          fi
+          cat "${C2_DIAGNOSTIC_PATH}"
+
       - name: Verify and print sanitized C2 evidence packet
         shell: bash
         run: |
@@ -113,3 +131,12 @@ jobs:
           path: |
             /tmp/s2-c2-hosted-evidence.json
             /tmp/s2-c2-openai-trace.jsonl
+
+      - name: Upload sanitized C2 provider diagnostic
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: s2-c2-provider-diagnostic
+          if-no-files-found: ignore
+          retention-days: 30
+          path: /tmp/s2-c2-provider-diagnostic.jsonl

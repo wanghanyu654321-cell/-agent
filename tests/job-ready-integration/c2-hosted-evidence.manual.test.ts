@@ -1,7 +1,7 @@
 import { type ChildProcess, spawn } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { once } from "node:events";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,6 +18,7 @@ const sourceCommit = process.env.C2_SOURCE_COMMIT;
 const sourceTree = process.env.C2_SOURCE_TREE;
 const evidencePath = process.env.C2_EVIDENCE_PATH ?? join(tmpdir(), "s2-c2-hosted-evidence.json");
 const tracePath = process.env.C2_TRACE_PATH ?? join(tmpdir(), "s2-c2-openai-trace.jsonl");
+const diagnosticPath = process.env.C2_DIAGNOSTIC_PATH ?? join(tmpdir(), "s2-c2-provider-diagnostic.jsonl");
 
 if (!dbUrl) throw new Error("POSTGRES_RAG_TEST_URL required for authorized C2 evidence run");
 if (!apiKey) throw new Error("OPENAI_API_KEY required for authorized C2 evidence run");
@@ -93,6 +94,7 @@ describe("S2 C2 one-time hosted embedding evidence", () => {
 					RAG_INGEST_TIMEOUT_SECONDS: "10",
 					OPENAI_API_KEY: apiKey,
 					C2_TRACE_PATH: tracePath,
+					C2_DIAGNOSTIC_PATH: diagnosticPath,
 				},
 				stdio: ["ignore", "pipe", "pipe"],
 				windowsHide: true,
