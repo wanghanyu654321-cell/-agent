@@ -10,15 +10,17 @@ Repository: `wanghanyu654321-cell/-agent`
 
 Branch: `job-search/sprint-v1`
 
-Task baseline before implementation:
+Frozen S2 code/decision baseline:
 
-- source commit: `02de0867169dd1ca36d31ed14d04efe4be7c4549`
-- source tree: `bd8d8db493d80885e11bae1be93565cd9e653343`
+- code/decision baseline commit: `02de0867169dd1ca36d31ed14d04efe4be7c4549`
+- code/decision baseline tree: `bd8d8db493d80885e11bae1be93565cd9e653343`
 - S2 decision: `docs/job-ready/S2_REAL_RAG_DECISION_V1.md`
 - S2 acceptance Gate: `docs/job-ready/evidence/REAL_RAG_S2_GATE_V1.md`
 - S1 implementation/review must remain intact.
 
-If local HEAD is not exactly this task baseline before coding, stop and reconcile before changing code.
+Pure governance/documentation commits may exist after the frozen code baseline. **Implementation must start from the current remote `job-search/sprint-v1` HEAD**, provided that HEAD is a descendant of the frozen baseline and the post-baseline changes before coding are governance/documentation only (including this task contract and the Qoder verification contract). Do not reset/revert those governance commits merely to match `02de...`.
+
+Before coding, record the actual starting HEAD/tree and verify the frozen baseline is an ancestor. If the current branch contains product-code changes after `02de...` that are not part of an already reviewed task, stop and reconcile before changing code.
 
 ## 2. Ownership rule
 
