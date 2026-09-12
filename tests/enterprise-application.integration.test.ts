@@ -40,6 +40,7 @@ describePostgres("enterprise application composition root", () => {
 			{ id: "002_support_business_persistence" },
 			{ id: "003_job_ready_storeops" },
 			{ id: "004_job_ready_rag" },
+			{ id: "005_job_ready_rag_profiles" },
 		]);
 	});
 

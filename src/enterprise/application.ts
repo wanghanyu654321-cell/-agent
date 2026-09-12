@@ -30,6 +30,7 @@ import {
 	PostgresIdentityRepository,
 } from "./postgres.ts";
 import { loadPrivateStoreKnowledgeComposition } from "./private-knowledge.ts";
+import { enterpriseVectorRetrievalFactoryFromEnv } from "./vector-retrieval.ts";
 
 export interface EnterpriseApplicationConfig {
 	databaseUrl: string;
@@ -64,6 +65,7 @@ export interface EnterpriseApplicationOptions {
 	runtimeFactory?: EnterpriseRuntimeFactory;
 	staticRoot?: string;
 	retrieval?: RetrievalService;
+	retrievalFactory?: (pool: Pool) => RetrievalService;
 	knowledgeEntries?: KnowledgeEntry[];
 	storeTimeZone?: (scope: { tenantId: string; storeId: string }) => string | undefined;
 }
@@ -113,10 +115,9 @@ export function enterpriseKnowledgeModeFromEnv(env: NodeJS.ProcessEnv = process.
 	return { mode };
 }
 
-export function enterpriseRetrievalModeFromEnv(env: NodeJS.ProcessEnv = process.env): "lexical" {
+export function enterpriseRetrievalModeFromEnv(env: NodeJS.ProcessEnv = process.env): "lexical" | "vector" {
 	const mode = env.ENTERPRISE_RETRIEVAL_MODE?.trim() || "lexical";
-	if (mode === "vector") throw new Error("Vector retrieval unavailable: CONTRACT GAP-03/GAP-04 unresolved.");
-	if (mode !== "lexical") throw new Error("ENTERPRISE_RETRIEVAL_MODE must be lexical or vector.");
+	if (mode !== "lexical" && mode !== "vector") throw new Error("ENTERPRISE_RETRIEVAL_MODE must be lexical or vector.");
 	return mode;
 }
 
@@ -148,6 +149,7 @@ export async function createEnterpriseApplication(
 	options: EnterpriseApplicationOptions,
 ): Promise<EnterpriseApplication> {
 	const databaseUrl = requiredDatabaseUrl(options.databaseUrl);
+	if (options.retrieval && options.retrievalFactory) throw new Error("Select one retrieval composition.");
 	const pool = new Pool({ connectionString: databaseUrl });
 	let runtimeResource: EnterpriseRuntimeResource | undefined;
 	let closed = false;
@@ -167,7 +169,7 @@ export async function createEnterpriseApplication(
 		}
 		runtimeResource = (options.runtimeFactory ?? createDeterministicEnterpriseRuntime)(
 			businessRepository,
-			options.retrieval,
+			options.retrieval ?? options.retrievalFactory?.(pool),
 		);
 		const storeOpsService = new StoreOpsService(
 			new PostgresStoreOpsRepository(pool),
@@ -252,11 +254,13 @@ export async function startEnterpriseApplicationFromEnv(
 	env: NodeJS.ProcessEnv = process.env,
 ): Promise<EnterpriseApplication> {
 	const config = enterpriseApplicationConfigFromEnv(env);
+	const retrievalFactory = enterpriseVectorRetrievalFactoryFromEnv(env);
 	const runtimeFactory = await enterpriseRuntimeFactoryFromEnv(env);
 	const knowledgeEntries =
 		enterpriseKnowledgeModeFromEnv(env).mode === "private" ? loadPrivateKnowledgeCorpus(env) : undefined;
 	const application = await createEnterpriseApplication({
 		...config,
+		retrievalFactory,
 		runtimeFactory,
 		knowledgeEntries,
 		storeTimeZone: () => env.STOREOPS_TIME_ZONE?.trim() || undefined,

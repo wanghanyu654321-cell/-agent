@@ -139,6 +139,10 @@ export async function applyJobReadyMigrations(pool: Pool): Promise<void> {
 		businessMigration,
 		{ id: "003_job_ready_storeops", path: new URL("../../migrations/003_job_ready_storeops.sql", import.meta.url) },
 		{ id: "004_job_ready_rag", path: new URL("../../migrations/004_job_ready_rag.sql", import.meta.url) },
+		{
+			id: "005_job_ready_rag_profiles",
+			path: new URL("../../migrations/005_job_ready_rag_profiles.sql", import.meta.url),
+		},
 	]);
 }
 
