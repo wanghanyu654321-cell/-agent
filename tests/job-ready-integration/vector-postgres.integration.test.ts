@@ -58,7 +58,9 @@ describe.skipIf(!url)("S2 fresh PostgreSQL + deterministic Python HTTP + Node re
 			};
 			const registry = new PostgresRagRegistry(pool);
 			await registry.register([entry], scope, AbortSignal.timeout(2000));
-			connection.searchParams.set("options", "-c role=job_ready_rag_indexer");
+			connection.search = `?options=${encodeURIComponent("-c role=job_ready_rag_indexer")}`;
+			expect(connection.toString()).toContain("options=-c%20role%3Djob_ready_rag_indexer");
+			expect(connection.toString()).not.toContain("options=-c+role");
 			child = spawn(process.env.S2_PYTHON || "python", ["-B", "tests/s2_http_server.py"], {
 				cwd: fileURLToPath(new URL("../../ai-service", import.meta.url)),
 				env: {
