@@ -1,5 +1,6 @@
 name: S2 C2 Hosted Embedding Evidence Once
-# Authorized one-time C2 trigger after OPENAI_API_KEY configuration on 2026-09-12.
+# One authorized hosted execution was attempted in run 34689139352.
+# Locked after that attempt to prevent any unapproved repeat external call.
 
 on:
   push:
@@ -11,7 +12,7 @@ permissions:
 
 jobs:
   c2-hosted-evidence:
-    if: ${{ github.run_attempt == 1 }}
+    if: ${{ false }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     services:
