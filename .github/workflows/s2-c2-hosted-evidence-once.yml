@@ -1,6 +1,6 @@
 name: S2 C2 Hosted Embedding Evidence Once
-# Second authorized hosted execution is scoped to exactly one commit message and run_attempt=1.
-# Any other push or rerun must remain skipped.
+# Two authorized hosted executions have now been attempted.
+# Locked after attempt 2 to prevent any unapproved repeat external call.
 
 on:
   push:
@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   c2-hosted-evidence:
-    if: ${{ github.run_attempt == 1 && github.event.head_commit.message == 'c2 authorized hosted evidence attempt 2' }}
+    if: ${{ false }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     services:
