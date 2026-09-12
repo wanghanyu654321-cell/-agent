@@ -1,0 +1,113 @@
+name: S2 C2 Hosted Embedding Evidence Once
+
+on:
+  push:
+    branches:
+      - evidence/s2-c2-hosted-once
+
+permissions:
+  contents: read
+
+jobs:
+  c2-hosted-evidence:
+    if: ${{ github.run_attempt == 1 && github.event.head_commit.message == 'chore(s2): run one-time C2 hosted evidence' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.0-pg16-bookworm@sha256:a132765ec351c65111b5b675928a3a0515a466a40f97277329db8b8209ad8bc9
+        env:
+          POSTGRES_DB: customer_support_agent_c2
+          POSTGRES_USER: customer_support_agent_c2
+          POSTGRES_PASSWORD: customer_support_agent_c2_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U customer_support_agent_c2 -d customer_support_agent_c2"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      C2_SOURCE_COMMIT: a11dfe48d114b7fc58eb53ff81748a2cba0ede19
+      C2_SOURCE_TREE: 2b4ca9fabc8f6d5ad08c29ea12f2e706e20885aa
+      C2_EVIDENCE_PATH: /tmp/s2-c2-hosted-evidence.json
+      C2_TRACE_PATH: /tmp/s2-c2-openai-trace.jsonl
+
+    steps:
+      - name: Checkout evidence branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify frozen product source boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "${C2_SOURCE_COMMIT}^{tree}")" = "${C2_SOURCE_TREE}"
+          git merge-base --is-ancestor "${C2_SOURCE_COMMIT}" HEAD
+          git diff --name-only "${C2_SOURCE_COMMIT}" HEAD | sort > /tmp/c2-changed.txt
+          cat > /tmp/c2-expected.txt <<'EOF'
+          .github/workflows/s2-c2-hosted-evidence-once.yml
+          ai-service/tests/s2_c2_http_server.py
+          tests/job-ready-integration/c2-hosted-evidence.manual.test.ts
+          EOF
+          sort -o /tmp/c2-expected.txt /tmp/c2-expected.txt
+          diff -u /tmp/c2-expected.txt /tmp/c2-changed.txt
+          echo "C2_PRODUCT_SOURCE_BOUNDARY=PASS"
+          git rev-parse HEAD
+          git rev-parse 'HEAD^{tree}'
+
+      - name: Use supported Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+
+      - name: Use pinned Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11.15'
+
+      - name: Install declared dependencies
+        run: |
+          npm ci --ignore-scripts
+          python -m pip install -r ai-service/requirements-test.txt
+
+      - name: Preflight authorized OpenAI credential without API call
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${OPENAI_API_KEY}" ]; then
+            echo "::error::OPENAI_API_KEY repository secret is not configured; no external API call was made."
+            exit 64
+          fi
+          echo "OPENAI_API_KEY_PRESENT=YES"
+
+      - name: Execute one-time hosted embedding evidence run
+        env:
+          POSTGRES_RAG_TEST_URL: postgresql://customer_support_agent_c2:customer_support_agent_c2_password@localhost:5432/customer_support_agent_c2
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: npx vitest --run tests/job-ready-integration/c2-hosted-evidence.manual.test.ts
+
+      - name: Verify and print sanitized C2 evidence packet
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s "${C2_EVIDENCE_PATH}"
+          test -s "${C2_TRACE_PATH}"
+          if grep -Eqi 'OPENAI_API_KEY|sk-[A-Za-z0-9_-]{8,}' "${C2_EVIDENCE_PATH}" "${C2_TRACE_PATH}"; then
+            echo "::error::credential-like material detected in evidence"
+            exit 65
+          fi
+          cat "${C2_EVIDENCE_PATH}"
+
+      - name: Upload sanitized C2 evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: s2-c2-hosted-evidence
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            /tmp/s2-c2-hosted-evidence.json
+            /tmp/s2-c2-openai-trace.jsonl
