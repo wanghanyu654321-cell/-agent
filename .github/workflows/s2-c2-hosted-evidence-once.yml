@@ -1,4 +1,5 @@
 name: S2 C2 Hosted Embedding Evidence Once
+# Authorized one-time C2 trigger after OPENAI_API_KEY configuration on 2026-09-12.
 
 on:
   push:
