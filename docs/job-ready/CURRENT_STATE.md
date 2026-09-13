@@ -1,12 +1,120 @@
 # Job-Ready Current State
 
-Status: **FINAL INTEGRATION CANDIDATE / CLEAN-RUNNER VERIFIED / PENDING INDEPENDENT FINAL GATE**
+Status: **JOB-SEARCH SPRINT V1 — S6 CLOSED / S7 PENDING CLOSURE REVIEW**
 
-The historical governance and PR #9 evidence below remain unchanged in meaning.
-The current integration checkpoint is additive and does not turn historical failed
+This update is a docs-only plan reconciliation for Job Search Sprint V1. It changes no
+product code, tests, migrations, dependencies, or workflow. The sprint closure ledger is
+`docs/job-ready/evidence/JOB_SEARCH_SPRINT_V1_CLOSURE.md`. The pre-sprint integration
+baseline material is preserved unchanged in meaning in the Historical record section
+below.
+
+## Current authoritative checkpoint
+
+- Branch: `job-search/sprint-v1`
+- Source commit for this docs-only reconciliation: `bb39db708613353bf418f4e38b28adbf6597e2bb`
+- Source tree: `c8051ea3c9448e05f9f435a04af5eb8dc214908e`
+- This checkpoint update changed only this file and the closure ledger above.
+
+Current sprint state in brief:
+
+- Migrations `001`–`005` are present and immutable. `005_job_ready_rag_profiles.sql`
+  binds `rag_chunks.embedding` to `vector(1536)`, replaces `gap03_profile_unresolved`
+  with `rag_chunks_s2_profile` (allowing only `openai-text-embedding-3-small-1536-v1`
+  and `deterministic-test-1536-v1`), and grants the required RAG schema usage.
+- S1 Thin Evaluation Harness: CLOSED / PASS (independent review `APPROVED WITH
+  CONDITIONS`; the clean-runner condition was subsequently covered by the S6 gate run).
+- Deterministic 1536-vector / pgvector integration: PASS (migration 005 →
+  `deterministic-test-1536-v1` → PostgreSQL → Python/FastAPI retrieval → Node
+  `FastApiRetrievalService` → `PostgresRagRegistry` canonical reconciliation).
+- Real PostgreSQL / cross-language integration: PASS (S6 clean-runner: PostgreSQL
+  identity/business/application, Core A, Core B, Job-Ready gates; Python RAG 43/43;
+  vector-postgres cross-language E2E 1/1).
+- S6 Full Regression: CLOSED / PASS (`docs/job-ready/evidence/S6_FINAL_REGRESSION_V1.md`).
+- Lexical retrieval remains the default; vector mode is explicit opt-in.
+- Real hosted OpenAI embedding: BLOCKED — VALID API CREDENTIAL UNAVAILABLE. No
+  hosted-provider PASS is claimed.
+- GAP-05 retrieval quality acceptance: NOT CLAIMED.
+- S3 (bounded real-provider Golden Path): DEFERRED — valid hosted-provider evidence
+  prerequisite unavailable; not PASS, not completed.
+- S4 (retrieval ablation / Hybrid / RRF): DEFERRED / NOT IMPLEMENTED / NOT CLAIMED
+  (owner-approved scope decision).
+- S5 reranker: NOT JUSTIFIED / NOT IMPLEMENTED.
+- S7 (job-search evidence package): NOT STARTED — pending independent review approval
+  of the sprint closure ledger.
+
+## Current verified engineering capabilities
+
+Truthfully supported by clean-runner evidence on the sprint source:
+
+- One Pi-owned Agent Runtime with unchanged bounded budgets (max 4 Agent turns,
+  max 6 tool calls, 10s total, 2s per tool, sequential tool execution).
+- Node-owned authority: server-derived identity/membership, tenant/store scope,
+  capabilities, Safety precedence, evidence authorization, and durable business writes.
+- Safety vertical slice with fail-closed precedence; safety/robustness/holdout
+  evaluation suites pass in CI.
+- Governed FAQ/knowledge evidence admission and grounding with ordinary
+  0 / 1 / 2+ answerability (0 admissible → fallback; exactly 1 canonical → answer
+  eligible; 2+ → ambiguous/fallback).
+- Durable PostgreSQL business boundary: Ticket/Handoff persistence, audit projection,
+  once-only migration ledger through 005.
+- Tenant/store isolation verified against PostgreSQL in CI.
+- Deterministic lexical retrieval (default) plus explicit vector composition through
+  the private FastAPI retrieval service and pgvector `vector(1536)` with Node canonical
+  registry reconciliation.
+- Same-origin React operations/demo application (StoreOps views mounted in the
+  existing authenticated lifecycle).
+- Local Docker delivery proof in CI: image build/start, application startup/auth/FAQ,
+  scoped ticket read-back, isolation, retained-volume recreation, persistence.
+- S1 thin evaluation harness (case/config → runner → existing service → evaluator →
+  report) preserved outside production.
+
+These capabilities are engineering/integration proofs. They are not production,
+hosted-provider, or retrieval-quality claims.
+
+## Current limitations / deferred scope
+
+- REAL HOSTED OPENAI EMBEDDING: BLOCKED — VALID API CREDENTIAL UNAVAILABLE.
+  Historical hosted failure/blocked evidence remains immutable; no hosted rerun is
+  authorized.
+- RETRIEVAL QUALITY ACCEPTANCE: NOT CLAIMED — GAP-05 unresolved. The public retrieval
+  regression is not semantic/vector retrieval quality acceptance.
+- S3 bounded real-provider Golden Path: DEFERRED (valid hosted-provider evidence
+  prerequisite unavailable).
+- S4 Hybrid/RRF and ablation benchmarks: NOT IMPLEMENTED / NOT CLAIMED.
+- S5 reranker: NOT JUSTIFIED.
+- Live WeCom wiring, public HTTPS/domain/Nginx hosting, MCP, full process-restart
+  session continuity: deferred.
+- Production readiness, customer deployment, Pilot success: NOT claimed.
+- The local Windows environment cannot execute PostgreSQL/Docker paths; those paths
+  are covered by the independent clean-runner evidence below.
+
+## Current clean-runner evidence
+
+- Workflow: Customer Support Agent Gate
+- Run: `34699201771`
+- Job: `103567849816`
+- Conclusion: success
+- The CI checkout tree exactly equals the S6 baseline tree
+  `061e69d17e2cc8600ca3912a2c48ebd6f98bd4a7` (see
+  `docs/job-ready/evidence/S6_FINAL_REGRESSION_V1.md` for the full verified coverage
+  list, including PostgreSQL, pgvector cross-language E2E, Python RAG, Docker
+  persistence, build/check, and all eval suites).
+
+Supplementary: the subsequent documentation-only push of the S6 evidence commit
+triggered gate run `34743823040`, which also succeeded. This is supplementary only;
+S6 historical evidence is not modified to chase CI.
+
+## Historical record
+
+Everything from here to the end of this file is the pre-sprint Job-Ready integration
+baseline record (branch `job-ready/integration-v1` era), preserved unchanged in
+meaning for traceability. Its status lines, integration checkpoints, GAP states, and
+claim boundaries describe that historical baseline, not the current sprint state
+above. The historical governance and PR #9 evidence remain unchanged in meaning. The
+historical integration checkpoint was additive and did not turn historical failed
 real-provider evidence into PASS.
 
-## Integration checkpoint
+### Integration checkpoint (historical — pre-sprint `job-ready/integration-v1`)
 
 Branch: `job-ready/integration-v1`. Contract base:
 `7c9b694d586fe4c557a195b554a97cc89e5c8f24`.
@@ -287,7 +395,7 @@ The original governance sequence was (current execution is at shared integration
 8. Independent Job-Ready Final Gate
 ```
 
-## 8. Current claim boundary
+## 8. Claim boundary at the pre-sprint integration baseline (historical)
 
 At this checkpoint the repository may truthfully claim the already-approved historical portfolio/enterprise/delivery/evaluation capabilities recorded in existing governed documents.
 
