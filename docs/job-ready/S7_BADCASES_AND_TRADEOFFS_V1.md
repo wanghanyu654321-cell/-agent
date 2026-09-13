@@ -20,12 +20,15 @@ result: FAIL.
 
 ### Diagnosis
 
-The single-evidence path worked: the governed tools were invoked and the
-evidence path was reached. What failed was completion timing — the provider's
-answer arrived around the overall timeout boundary, so already-verified
-admissible evidence was discarded and the turn closed as fallback. This is a
-narrow contract problem at the deadline boundary, not a retrieval, authority,
-or Safety defect.
+The single-evidence path was exercised: the governed tools were invoked and
+the evidence path was reached. The directly observed outcome is that the turn
+closed as `fallback` with no authorized evidence at approximately the
+10-second overall deadline. Observed evidence is consistent with a
+timeout-boundary completion problem, but the historical run does not by
+itself prove whether admissible evidence had already been fully verified
+before the deadline or whether a provider answer completed after it. The
+successor therefore treated this as a narrow timeout-boundary reliability
+hypothesis rather than a proven root cause.
 
 ### Decision
 
@@ -45,10 +48,11 @@ the REJECTED gate conclusion).
 
 ### Trade-off
 
-Keeping the hard 10s budget and fail-closed fallback means a late-but-correct
-provider answer is sometimes dropped. That is the deliberate cost of a bounded,
-auditable runtime: no unbounded waits, no partial-evidence answers, no silent
-authority expansion.
+The hard 10s fail-closed budget can discard work that completes too near or
+after the deadline. The historical run demonstrated a fallback at the timeout
+boundary; it did not prove that a correct final answer was available in time.
+That is the deliberate cost of a bounded, auditable runtime: no unbounded
+waits, no partial-evidence answers, no silent authority expansion.
 
 ### What I would do next
 
