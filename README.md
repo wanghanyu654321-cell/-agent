@@ -35,15 +35,49 @@ docker compose down -v --remove-orphans
 The integration Compose stack has three services: `app`, private `ai-service`, and
 PostgreSQL 16 with pgvector 0.8.0 (image pinned by digest in `compose.yaml`). Only
 the Node port is published. The application waits for PostgreSQL health, applies
-migrations 001–004 once through the existing transactional ledger, and repeat-safely
-seeds the synthetic demo identities. Existing pre-ledger databases are not a
+migrations 001–005 once through the existing transactional ledger, and repeat-safely
+seeds the synthetic demo identities. `005_job_ready_rag_profiles.sql` binds
+`rag_chunks.embedding` to `vector(1536)` and admits only the two approved S2
+profiles (`openai-text-embedding-3-small-1536-v1` and
+`deterministic-test-1536-v1`). Existing pre-ledger databases are not a
 supported upgrade path; this proof uses disposable databases with the ledger.
 
-## Job-Ready integration candidate
+Docker Compose is the documented, supported enterprise-demo path. The container
+image sets `NODE_OPTIONS=--experimental-transform-types` internally, so the
+Docker/CI execution path is unaffected. A bare direct Node execution
+(`npm run start:enterprise`, which resolves to `node src/enterprise/application.ts`)
+is not universally valid under local Node v24: the imported TypeScript modules use
+parameter-property syntax that requires Node's transform-types runtime option. For
+documented direct local Node execution, use the existing valid command form:
 
-`job-ready/integration-v1` composes the reviewed Core A/B and Track C/D checkpoints
-from contract `7c9b694d586fe4c557a195b554a97cc89e5c8f24`. It is not independently
-approved and does not authorize a release or a real-provider rerun.
+```text
+node --experimental-transform-types src/enterprise/application.ts
+```
+
+This is a local direct-execution documentation clarification, not a product defect,
+and the underlying limitation is not hidden: the package script itself is unchanged.
+
+## Job-Search Sprint V1 (current branch)
+
+The current branch is `job-search/sprint-v1`. The sprint is closed through S6; the
+reconciled phase ledger, deliberate deferrals, and claim boundaries live in
+[Job-Ready Current State](docs/job-ready/CURRENT_STATE.md) and
+[the closure ledger](docs/job-ready/evidence/JOB_SEARCH_SPRINT_V1_CLOSURE.md).
+Current headline state:
+
+- Deterministic vector/pgvector/FastAPI/Node integration: PASS (migration 005 →
+  `deterministic-test-1536-v1` → PostgreSQL → Python/FastAPI retrieval → Node
+  `FastApiRetrievalService` → `PostgresRagRegistry` canonical reconciliation,
+  verified by the independent clean runner). This proves integration correctness,
+  not semantic retrieval quality.
+- Hosted OpenAI embedding: BLOCKED — VALID API CREDENTIAL UNAVAILABLE. No
+  hosted-provider PASS is claimed.
+- Retrieval quality acceptance: NOT CLAIMED — GAP-05 unresolved. The public
+  retrieval regression is not semantic/vector retrieval quality acceptance.
+- The current primary full-regression evidence is the S6 clean runner (Customer
+  Support Agent Gate, run `34699201771`, job `103567849816`, conclusion success).
+
+The application surface on this branch remains:
 
 - The authenticated shell mounts the existing StoreOps views. Node resolves scope
   and capabilities for Availability, Booking Intents, Knowledge metadata, and
@@ -55,14 +89,17 @@ approved and does not authorize a release or a real-provider rerun.
   catalog is therefore empty in default demo mode.
 - `ENTERPRISE_RETRIEVAL_MODE=lexical` remains the default. The reviewed
   `FastApiRetrievalService` can be injected through the enterprise runtime factory;
-  deterministic integration tests cover canonical reconciliation and failure.
-  `vector` mode explicitly fails startup: GAP-03 embedding profile and GAP-04
-  relevance floor are not approved. There is no vector-to-lexical fallback.
+  deterministic integration tests and the clean runner cover canonical
+  reconciliation and failure. Explicit `vector` mode is an opt-in that requires the
+  full vector configuration (approved profile, dimension, service endpoint) and is
+  exercised in CI with the deterministic `deterministic-test-1536-v1` profile;
+  lexical is never silently replaced and there is no vector-to-lexical fallback.
 - The private FastAPI image uses Python 3.11.15 and pinned `psycopg[binary]==3.2.10`.
-  Its existing unconfigured engine remains unavailable: `/health` requires a
-  service credential and returns 503 until dependencies/profile are approved.
-  The driver is verified against disposable PostgreSQL in CI, not used to invent
-  a production embedding configuration. No public FastAPI or PostgreSQL ports.
+  It remains a private retrieval service on the compose network: no public FastAPI
+  or PostgreSQL ports are published, and its service credential is still required
+  (an unauthenticated `/health` returns 401). The deterministic 1536-profile path is
+  verified end-to-end against disposable PostgreSQL in CI; that is integration
+  evidence, not a production embedding configuration.
 - Policy-owned knowledge operations and real Pi tool events are reported
   separately. Set `JOB_READY_EVAL_REPORT_ROOT` to an external fresh directory for
   current offline regression reports without overwriting historical evidence.
@@ -93,11 +130,15 @@ restart-persistence gates, with no external provider or embedding calls. Exact
 tested/not-tested state and unresolved contracts are recorded in
 [Job-Ready Current State](docs/job-ready/CURRENT_STATE.md).
 
-The code checkpoint `9371b9de3628ad1fcec0c11c96566f42227cfcc0` passed
-[clean-runner 34080970418](https://github.com/wanghanyu654321-cell/-agent/actions/runs/34080970418),
-including real PostgreSQL 003/004, Python driver, and Docker persistence/private
-service checks. This is integration evidence for independent review, not approval
-of the unresolved production vector or live-channel contracts.
+The current primary full-regression evidence on this sprint source is the S6
+clean runner: [run 34699201771](https://github.com/wanghanyu654321-cell/-agent/actions/runs/34699201771),
+job `103567849816`, whose checkout tree exactly equals the S6 baseline tree. It
+includes real PostgreSQL 001–005 identity/business/application, Core A, Core B,
+Job-Ready gates, Python RAG 43/43, vector-postgres cross-language E2E, Docker
+build/start/persistence, build/check, and all eval suites. This is regression
+evidence, not approval of the unresolved hosted-provider or retrieval-quality
+claims above; see
+[S6 Final Regression Evidence](docs/job-ready/evidence/S6_FINAL_REGRESSION_V1.md).
 
 ## Synthetic demo identities
 
@@ -125,8 +166,13 @@ ENTERPRISE_RUNTIME_MODE=pi-real
 PI_PROVIDER=<Pi provider id>
 PI_MODEL=<Pi model id>
 DATABASE_URL=<PostgreSQL URL>
-npm run start:enterprise
+node --experimental-transform-types src/enterprise/application.ts
 ```
+
+The documented direct-Node command above uses the transform-types runtime option
+because local Node v24 cannot strip the parameter-property syntax in the imported
+modules; `npm run start:enterprise` is the same entrypoint without that option and
+is not universally valid under local Node v24 (the Docker path sets it internally).
 
 If Pi authentication or the configured model is unavailable, startup fails before
 the HTTP server listens. The process does not fall back to deterministic mode.
@@ -163,14 +209,23 @@ for the bounded smoke and credential-handling rules.
 - Pi remains an upstream runtime dependency; Pi core is not vendored or modified.
 - The semantic selector is not a synchronous runtime dependency.
 - No real provider/model call is made by the Docker delivery smoke.
+- Hosted OpenAI embedding remains BLOCKED — VALID API CREDENTIAL UNAVAILABLE; no
+  hosted-provider PASS is claimed.
+- Retrieval quality acceptance remains NOT CLAIMED — GAP-05 unresolved; the public
+  retrieval regression is not semantic/vector retrieval quality acceptance.
+- S3 (bounded real-provider Golden Path), S4 retrieval ablation (including
+  Hybrid/RRF), the S5 reranker, live WeCom protocol/identity wiring (GAP-01/02),
+  public HTTPS/domain hosting, and MCP are deferred from Job Search Sprint V1.
+  They are sprint deferrals that remain successor roadmap work requiring new
+  explicit user authorization, not global cancellations.
 - This stack is a bounded local Docker delivery proof, not a production, hosted,
   customer, SaaS, or production-operations deployment claim. It has no external
-  live IM integration or multi-agent workflow. pgvector schema/guard evidence does
-  not establish production vector search. WeCom protocol/identity (GAP-01/02),
-  embedding profile/egress (GAP-03), relevance floor (GAP-04), retrieval quality
-  thresholds (GAP-05), and the frozen measurement DTO's missing returned sourceRefs
-  remain unresolved. No hosted HTTPS/customer deployment is claimed.
+  live IM integration or multi-agent workflow. Deterministic pgvector integration
+  evidence does not establish production vector search or semantic retrieval
+  quality. No hosted HTTPS/customer deployment is claimed.
 
-See [Phase 2C-B's successor contract](docs/portfolio/PHASE_2C_B_FINAL_EXECUTION_DIRECTIVE.md)
-for the delivery boundary and the frozen architecture documents under `docs/` for
-the underlying runtime guarantees.
+See [Job Search Sprint V1](docs/job-ready/JOB_SEARCH_SPRINT_V1.md),
+[Job-Ready Current State](docs/job-ready/CURRENT_STATE.md), and
+[the closure ledger](docs/job-ready/evidence/JOB_SEARCH_SPRINT_V1_CLOSURE.md) for
+the current authoritative sprint state and claim boundaries, and the frozen
+architecture documents under `docs/` for the underlying runtime guarantees.
