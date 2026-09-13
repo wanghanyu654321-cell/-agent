@@ -1,12 +1,28 @@
 # Job Search Sprint V1 — Closure Ledger
 
-Status: **DOCS-ONLY PLAN RECONCILIATION — RECORDED FOR INDEPENDENT CLOSURE REVIEW**
+Status: **S7 DELIVERABLES COMPLETE / PENDING INDEPENDENT FINAL CLOSURE REVIEW**
 
-This ledger reconciles the original sprint plan (`docs/job-ready/JOB_SEARCH_SPRINT_V1.md`), the subsequent owner-approved decisions, and the actual repository evidence into one truthful current state. It is a documentation artifact only: it authorizes no implementation, no provider call, no CI rerun, and no S7 start.
+This ledger reconciles the original sprint plan (`docs/job-ready/JOB_SEARCH_SPRINT_V1.md`), the subsequent owner-approved decisions, and the actual repository evidence into one truthful current state. It records the already-executed S7-A and S7-B; it authorizes no new implementation, provider call, CI rerun, or S7 repeat.
 
 ## Source identity
 
-The exact source used for this docs-only closure task:
+The exact source for this final state reconciliation is the completed S7-B:
+
+- Repository: `wanghanyu654321-cell/-agent`
+- Source branch: `job-search/sprint-v1`
+- Final S7-B commit: `782ddddf4a0193ab2f056f50e0ab7b7cd70e08b6`
+- Final S7-B tree: `3b8ad30c78717f2f97a06231c47e2f56d0755d35`
+- Final S7-B GitHub Actions run: [34759070549](https://github.com/wanghanyu654321-cell/-agent/actions/runs/34759070549)
+- Job: [103728515129](https://github.com/wanghanyu654321-cell/-agent/actions/runs/34759070549/job/103728515129)
+- Workflow: `Customer Support Agent Gate`; conclusion: `success` (PASS).
+
+This reconciliation changes only `docs/job-ready/CURRENT_STATE.md`, this ledger,
+and `docs/job-ready/evidence/S7_JOB_SEARCH_EVIDENCE_PACKAGE_V1.md`. The completed
+S7-B run is not CI evidence for the later reconciliation edit.
+
+### Original pre-S7 reconciliation provenance (historical)
+
+The exact source used for the earlier docs-only plan reconciliation:
 
 - Repository: `wanghanyu654321-cell/-agent`
 - Branch: `job-search/sprint-v1`
@@ -15,7 +31,7 @@ The exact source used for this docs-only closure task:
 - Working tree at task start: clean
 - Remote `origin/job-search/sprint-v1` at task start: `bb39db708613353bf418f4e38b28adbf6597e2bb` (aligned, no newer commits)
 
-The only files changed by this closure task are `docs/job-ready/CURRENT_STATE.md` and this file.
+The only files changed by that earlier reconciliation were `docs/job-ready/CURRENT_STATE.md` and this file.
 
 ## Closure principle
 
@@ -39,7 +55,23 @@ This sprint is judged completion-first, not by framework or feature count.
 | S4 Retrieval ablation (R0–R4 incl. Hybrid/RRF) | One-factor-at-a-time retrieval comparison preserving answerability/Safety contract | DEFERRED / NOT IMPLEMENTED / NOT CLAIMED | Owner-approved scope decision recorded here; no ablation benchmark, merge strategy, retrieval selector, or hybrid/RRF implementation exists | Deliberate deferral, not a failure; meaningful comparison requires the real hosted provider evidence class that remains blocked |
 | S5 Optional reranker | Only when R0–R4 show a concrete reason within the unchanged runtime budget | NOT JUSTIFIED / NOT IMPLEMENTED | No R0–R4 evidence exists that would justify a reranker | No measured reason; no empty adapter was built for resume keyword coverage |
 | S6 Full regression and existing CI | Run the complete existing Gate on the exact final source without redesigning CI | CLOSED / PASS | `docs/job-ready/evidence/S6_FINAL_REGRESSION_V1.md` — Workflow `Customer Support Agent Gate`, Run `34699201771`, Job `103567849816`; CI tree exactly equals the S6 baseline tree `061e69d17e2cc8600ca3912a2c48ebd6f98bd4a7` | Limitations in that file retained verbatim: real hosted OpenAI embedding BLOCKED; retrieval quality acceptance NOT CLAIMED |
-| S7 Job-search evidence package and freeze | Reproducible comparison report, exact commit/tree CI evidence, 3–5 minute demonstration, one-page explanation, observed badcases | NOT STARTED | — | S7 begins only after an independent review approves this closure; this ledger does not authorize S7 |
+| S7 Job-search evidence package and freeze | Reproducible comparison report, exact commit/tree CI evidence, 3–5 minute demonstration, one-page explanation, observed badcases | DELIVERABLES COMPLETE / PENDING INDEPENDENT FINAL CLOSURE REVIEW | `S7_JOB_SEARCH_EVIDENCE_PACKAGE_V1.md`; `S7_ENGINEERING_EXPLANATION_V1.md`; `S7_BADCASES_AND_TRADEOFFS_V1.md`; final S7-B Run `34759070549` / Job `103728515129`, conclusion `success` | S7-A: PASS WITH ENVIRONMENT LIMITATIONS; S7-B package: COMPLETE; final S7-B CI: PASS; feature expansion FROZEN. Independent final S7 closure approval is not evidenced |
+
+### S7 completion and review boundary
+
+- S7 deliverables: COMPLETE; S7-B evidence package: COMPLETE.
+- S7-A deterministic demo: PASS WITH ENVIRONMENT LIMITATIONS — 7/7 curated
+  scenarios passed in the recorded local run. Local PostgreSQL/Docker journeys
+  J1–J6 remain BLOCKED; the existing S6 clean-runner proof is separate evidence.
+- Final S7-B CI: PASS on the exact commit/tree/run/job in Source identity above.
+- The bounded comparison explains evidence and trade-offs; it is not S4 retrieval
+  ablation or retrieval-quality acceptance.
+- No independent final S7 closure review is evidenced in the repository at this
+  source. Deliverable completion and CI success are not independent approval.
+  The sprint is not upgraded to CLOSED/PASS, and no owner interview-performance
+  assessment is inferred from the existence of documents.
+- Feature expansion is FROZEN for Job-Search Sprint V1. No S7 repeat, Request
+  Debugging Closure, observability, or new Harness/evaluation work starts here.
 
 ### S2 claim separation (explicit)
 
@@ -99,6 +131,11 @@ No technology outside the protected contract list was added: no LangGraph, no se
 - Model text saying an action succeeded is not durable business success.
 - Historical provider failures and blocked hosted attempts (including recorded HTTP 401 failures from historical attempts) remain immutable evidence and are not rewritten by this closure.
 
-## Final transition condition
+## Final closure review boundary
 
-S7 (job-search evidence package) may begin only after an independent review approves this closure. This file records reconciled state; it does not authorize S7 implementation, any provider call, any PR merge, any CI rerun, or any architecture change.
+S7-A and S7-B have already been executed. The earlier pre-S7 transition condition
+is retained in Git history; recording completed deliverables does not invent a
+retrospective approval. Independent final S7 closure review remains PENDING.
+Feature expansion is frozen for Job-Search Sprint V1. This ledger authorizes no
+S7 repeat, provider call, PR merge, CI rerun, architecture change, or successor
+implementation. Stop after this documentation reconciliation.

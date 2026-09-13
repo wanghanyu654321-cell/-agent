@@ -1,6 +1,6 @@
 # S7 Job-Search Evidence Package V1
 
-Status: **EVIDENCE INDEX — JOB-SEARCH / INTERVIEW USE**
+Status: **S7-B EVIDENCE PACKAGE COMPLETE / PENDING INDEPENDENT FINAL S7 CLOSURE REVIEW**
 
 This is a concise evidence index for interview and job-search use. It points at
 repository evidence; it does not create new claims, authorize any provider call,
@@ -14,9 +14,20 @@ statement in this file.
 - S7-B source baseline commit: `a7934e049b56b5d9519c74fa332efe8d72c0b4a0`
 - S7-B source baseline tree: `c6c22faa6ec5c264e42bb8108eb74ef71a05edbf`
 - Working tree at S7-B task start: clean
-- The final S7-B docs commit will be a docs-only descendant of this baseline
-  (only the five S7-B documentation files differ); no product, test, migration,
-  workflow, or dependency file changes in between.
+- Final S7-B docs commit: `782ddddf4a0193ab2f056f50e0ab7b7cd70e08b6`
+- Final S7-B tree: `3b8ad30c78717f2f97a06231c47e2f56d0755d35`
+- Final S7-B GitHub Actions run: [34759070549](https://github.com/wanghanyu654321-cell/-agent/actions/runs/34759070549)
+- Job: [103728515129](https://github.com/wanghanyu654321-cell/-agent/actions/runs/34759070549/job/103728515129)
+- Workflow: `Customer Support Agent Gate`; conclusion: `success` (PASS).
+- The final S7-B commit is a docs-only descendant of the baseline above: only
+  `AGENTS.md`, `README.md`, and the three S7-B documentation files differ; no
+  product, test, migration, workflow, or dependency files changed in between.
+
+These identities belong to the completed S7-B package, not to the subsequent
+docs-only final state reconciliation. S7 deliverables are complete and feature
+expansion is frozen for Job-Search Sprint V1. No independent final S7 closure
+review is evidenced in the repository at this source; CI success does not
+upgrade the sprint to CLOSED/PASS. S7 is not rerun by this reconciliation.
 
 ## 2. What is actually demonstrated
 
@@ -128,6 +139,11 @@ Boundary properties verified by S7-A:
 - Closure docs gate (documentation-only descendant of the S6 baseline): Customer
   Support Agent Gate — Run `34745748585` / Job `103693268338`, conclusion
   success.
+- Final S7-B gate: Customer Support Agent Gate — Run `34759070549` / Job
+  `103728515129`, conclusion `success`; commit
+  `782ddddf4a0193ab2f056f50e0ab7b7cd70e08b6`, tree
+  `3b8ad30c78717f2f97a06231c47e2f56d0755d35`. Final S7-B CI: PASS. This is
+  CI evidence for that exact source, not an independent final S7 closure verdict.
 - S7-A existing-demo smoke: local read/run evidence recorded in this package
   (sections 4 and 7). It is NOT a committed CI artifact; no CI run ID is claimed
   for it.
