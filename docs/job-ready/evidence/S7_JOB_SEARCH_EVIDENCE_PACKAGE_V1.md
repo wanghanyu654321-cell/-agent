@@ -1,6 +1,6 @@
 # S7 Job-Search Evidence Package V1
 
-Status: **S7-B EVIDENCE PACKAGE COMPLETE / PENDING INDEPENDENT FINAL S7 CLOSURE REVIEW**
+Status: **S7-B EVIDENCE PACKAGE COMPLETE / JOB-SEARCH SPRINT V1 CLOSED / FROZEN**
 
 This is a concise evidence index for interview and job-search use. It points at
 repository evidence; it does not create new claims, authorize any provider call,
@@ -23,11 +23,22 @@ statement in this file.
   `AGENTS.md`, `README.md`, and the three S7-B documentation files differ; no
   product, test, migration, workflow, or dependency files changed in between.
 
-These identities belong to the completed S7-B package, not to the subsequent
-docs-only final state reconciliation. S7 deliverables are complete and feature
-expansion is frozen for Job-Search Sprint V1. No independent final S7 closure
-review is evidenced in the repository at this source; CI success does not
-upgrade the sprint to CLOSED/PASS. S7 is not rerun by this reconciliation.
+Final reconciled closure baseline (distinct from the original S7-B evidence
+identity above):
+
+- Commit: `0a2d0f723814eb787e079195dc4326a944c1fd76`
+- Tree: `f11b7f4ebec16c60d84a4a53065b6b10d406fe80`
+- GitHub Actions run: [34766236491](https://github.com/wanghanyu654321-cell/-agent/actions/runs/34766236491)
+- Job: [103747586810](https://github.com/wanghanyu654321-cell/-agent/actions/runs/34766236491/job/103747586810)
+- Workflow: `Customer Support Agent Gate`; conclusion: `success`.
+- Independent Final S7 Closure Review: **APPROVED WITH CONDITIONS**; review
+  conditions: **SATISFIED** by authoritative branch integration and the final
+  clean-runner Gate on this exact commit/tree.
+
+S7 deliverables are complete and Job-Search Sprint V1 is CLOSED / FROZEN.
+This is a sprint-only closure, not a production-readiness, hosted-provider, or
+retrieval-quality PASS. The original S7-B identity remains historical evidence
+and is not replaced; S7 is not rerun by this reconciliation.
 
 ## 2. What is actually demonstrated
 
@@ -144,6 +155,11 @@ Boundary properties verified by S7-A:
   `782ddddf4a0193ab2f056f50e0ab7b7cd70e08b6`, tree
   `3b8ad30c78717f2f97a06231c47e2f56d0755d35`. Final S7-B CI: PASS. This is
   CI evidence for that exact source, not an independent final S7 closure verdict.
+- Final reconciled closure gate: Customer Support Agent Gate — Run `34766236491`
+  / Job `103747586810`, conclusion `success`; commit
+  `0a2d0f723814eb787e079195dc4326a944c1fd76`, tree
+  `f11b7f4ebec16c60d84a4a53065b6b10d406fe80`. This exact clean-runner evidence
+  satisfies the conditions of the Independent Final S7 Closure Review.
 - S7-A existing-demo smoke: local read/run evidence recorded in this package
   (sections 4 and 7). It is NOT a committed CI artifact; no CI run ID is claimed
   for it.

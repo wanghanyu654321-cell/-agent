@@ -1,8 +1,8 @@
 # Job-Ready Current State
 
-Status: **JOB-SEARCH SPRINT V1 — S7 DELIVERABLES COMPLETE / PENDING INDEPENDENT FINAL CLOSURE REVIEW**
+Status: **JOB-SEARCH SPRINT V1 — CLOSED / FROZEN**
 
-This update is a docs-only final state reconciliation for Job Search Sprint V1. It changes no
+This update is a docs-only final closure status reconciliation for Job Search Sprint V1. It changes no
 product code, tests, migrations, dependencies, or workflow. The sprint closure ledger is
 `docs/job-ready/evidence/JOB_SEARCH_SPRINT_V1_CLOSURE.md`. The pre-sprint integration
 baseline material is preserved unchanged in meaning in the Historical record section
@@ -11,11 +11,15 @@ below.
 ## Current authoritative checkpoint
 
 - Branch: `job-search/sprint-v1`
-- Source commit for this docs-only reconciliation (final S7-B commit): `782ddddf4a0193ab2f056f50e0ab7b7cd70e08b6`
-- Final S7-B source tree: `3b8ad30c78717f2f97a06231c47e2f56d0755d35`
+- Final reconciled closure baseline commit: `0a2d0f723814eb787e079195dc4326a944c1fd76`
+- Final reconciled closure baseline tree: `f11b7f4ebec16c60d84a4a53065b6b10d406fe80`
+- Final clean-runner Gate: [34766236491](https://github.com/wanghanyu654321-cell/-agent/actions/runs/34766236491) /
+  [103747586810](https://github.com/wanghanyu654321-cell/-agent/actions/runs/34766236491/job/103747586810),
+  `Customer Support Agent Gate`, conclusion `success`.
 - This checkpoint update changes only this file, the closure ledger above, and
   `docs/job-ready/evidence/S7_JOB_SEARCH_EVIDENCE_PACKAGE_V1.md`.
-- These identities describe the completed S7-B evidence, not the later reconciliation edit.
+- Original S7-B evidence identity remains separate: `782ddddf4a0193ab2f056f50e0ab7b7cd70e08b6` /
+  `3b8ad30c78717f2f97a06231c47e2f56d0755d35` / Run `34759070549` / Job `103728515129`.
 
 Current sprint state in brief:
 
@@ -45,10 +49,11 @@ Current sprint state in brief:
   LIMITATIONS (7/7 curated scenarios; local PostgreSQL/Docker journeys remain BLOCKED).
 - S7-B evidence package: COMPLETE; final S7-B CI: PASS — Run `34759070549`,
   Job `103728515129`, conclusion `success`, bound to the final S7-B commit/tree above.
-- Feature expansion: FROZEN for Job-Search Sprint V1. S7 is not to be redone.
-- Independent final S7 closure review: PENDING — no such review is evidenced in
-  the repository at this source. Deliverable completion and CI success do not
-  establish independent closure approval; the sprint is not upgraded to CLOSED/PASS.
+- Independent Final S7 Closure Review: APPROVED WITH CONDITIONS; both conditions
+  are SATISFIED by integration of `0a2d0f7` into `job-search/sprint-v1` and the
+  successful final clean-runner Gate on that exact commit/tree.
+- Sprint state: CLOSED / FROZEN. Feature expansion is frozen for Job-Search Sprint V1.
+  This sprint closure is not a production-readiness, hosted-provider, or retrieval-quality PASS.
 
 ## Current verified engineering capabilities
 
@@ -98,7 +103,18 @@ hosted-provider, or retrieval-quality claims.
 
 ## Current clean-runner evidence
 
-Final S7-B evidence identity:
+Final reconciled closure baseline:
+
+- Commit: `0a2d0f723814eb787e079195dc4326a944c1fd76`
+- Tree: `f11b7f4ebec16c60d84a4a53065b6b10d406fe80`
+- Workflow: Customer Support Agent Gate
+- Run: [34766236491](https://github.com/wanghanyu654321-cell/-agent/actions/runs/34766236491)
+- Job: [103747586810](https://github.com/wanghanyu654321-cell/-agent/actions/runs/34766236491/job/103747586810)
+- Conclusion: `success`.
+- Independent Final S7 Closure Review: APPROVED WITH CONDITIONS; review conditions:
+  SATISFIED.
+
+Original S7-B evidence identity (historical S7-B package, retained separately):
 
 - Commit: `782ddddf4a0193ab2f056f50e0ab7b7cd70e08b6`
 - Tree: `3b8ad30c78717f2f97a06231c47e2f56d0755d35`
@@ -107,9 +123,9 @@ Final S7-B evidence identity:
 - Job: [103728515129](https://github.com/wanghanyu654321-cell/-agent/actions/runs/34759070549/job/103728515129)
 - Conclusion: `success` (final S7-B CI: PASS).
 
-This completed run is bound to S7-B, not to this later documentation edit, and
-does not constitute an independent final S7 closure review. The evidence package
-records S7-A and S7-B separately; neither is rerun by this reconciliation.
+The S7-B run is bound to the historical S7-B evidence package; the final
+clean-runner Gate above is bound to the reconciled closure baseline. Neither
+evidence identity is replaced by this later docs-only status update.
 
 Retained S6 full-regression evidence:
 
