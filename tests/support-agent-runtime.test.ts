@@ -12,6 +12,7 @@ import {
 } from "@earendil-works/pi-ai/compat";
 import { type CustomEntry, SessionManager } from "@earendil-works/pi-coding-agent";
 import { afterEach, describe, expect, it } from "vitest";
+import { DEFAULT_AGENT_PROFILE } from "../src/enterprise/agent-profile.ts";
 import {
 	InMemoryRetrievalService,
 	InMemorySupportStore,
@@ -1067,6 +1068,7 @@ describe("SupportAgentRuntime", () => {
 				store: new InMemorySupportStore(),
 				faq: [],
 				skillsDirectory: directory,
+				agentProfile: { ...DEFAULT_AGENT_PROFILE, allowedSkills: ["complaint"] },
 			});
 
 			const result = await runtime.run(request({ text: "我要投诉服务态度" }));

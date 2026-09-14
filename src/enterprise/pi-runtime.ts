@@ -11,6 +11,7 @@ import {
 } from "../index.ts";
 import { GovernedKnowledgeRetrievalService } from "../knowledge.ts";
 import { portfolioDemoFaq, portfolioDemoKnowledge } from "../portfolio-demo-data.ts";
+import { type AgentProfile, DEFAULT_AGENT_PROFILE } from "./agent-profile.ts";
 import type { EnterpriseRuntimeFactory, EnterpriseRuntimeResource } from "./application.ts";
 
 export interface PiModelRuntimePublic {
@@ -93,7 +94,11 @@ export function createPiEnterpriseRuntimeFactory(
 	resolved: ResolvedPiEnterpriseRuntime,
 	knowledgeComposition: PiEnterpriseKnowledgeComposition = portfolioKnowledgeComposition(),
 ): EnterpriseRuntimeFactory {
-	return (businessStore: SupportBusinessStore, retrieval?: RetrievalService): EnterpriseRuntimeResource => {
+	return (
+		businessStore: SupportBusinessStore,
+		retrieval?: RetrievalService,
+		agentProfile: AgentProfile = DEFAULT_AGENT_PROFILE,
+	): EnterpriseRuntimeResource => {
 		const runtime = new SupportAgentRuntime({
 			model: resolved.model,
 			streamFn: resolved.streamFn,
@@ -106,6 +111,7 @@ export function createPiEnterpriseRuntimeFactory(
 			businessStore,
 			faq: knowledgeComposition.faq,
 			allowSyntheticTestKnowledge: knowledgeComposition.allowSyntheticTestKnowledge,
+			agentProfile,
 		});
 		return { runtime: runtime as SupportRuntimePort };
 	};
