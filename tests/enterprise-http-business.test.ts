@@ -164,6 +164,9 @@ describe("enterprise business read API", () => {
 			toolsCalled: ["search_faq"],
 			requestId: "audit-request-1",
 			runtimeDurationMs: 27,
+			agentProfileId: "customer-support-agent",
+			agentProfileVersion: "v1",
+			agentProfileHash: "a".repeat(64),
 			providerPayload: "internal-provider-payload",
 		};
 		const server = createEnterpriseHttpServer({ auth, supportService: service });
@@ -182,7 +185,31 @@ describe("enterprise business read API", () => {
 			headers: { cookie: avaLogin.headers.get("set-cookie")! },
 		});
 		expect(await audit.json()).toEqual([
-			expect.objectContaining({ requestId: "audit-request-1", runtimeDurationMs: 27 }),
+			expect.objectContaining({
+				requestId: "audit-request-1",
+				runtimeDurationMs: 27,
+				agentProfileId: "customer-support-agent",
+				agentProfileVersion: "v1",
+				agentProfileHash: "a".repeat(64),
+			}),
+		]);
+
+		service.auditPayload = {
+			outcome: "answer",
+			toolsCalled: ["search_faq"],
+			agentProfileId: " ",
+			agentProfileVersion: " ",
+			agentProfileHash: "not-a-sha256-hash",
+		};
+		const historicalAudit = await fetch(`${origin}/api/v1/audit-events`, {
+			headers: { cookie: avaLogin.headers.get("set-cookie")! },
+		});
+		expect(await historicalAudit.json()).toEqual([
+			expect.not.objectContaining({
+				agentProfileId: expect.anything(),
+				agentProfileVersion: expect.anything(),
+				agentProfileHash: expect.anything(),
+			}),
 		]);
 	});
 });

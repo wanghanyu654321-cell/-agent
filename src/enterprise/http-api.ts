@@ -396,6 +396,9 @@ type PublicAuditEvent = {
 	toolsCalled: Array<"search_faq" | "search_knowledge" | "create_ticket" | "handoff_to_human">;
 	requestId?: string;
 	runtimeDurationMs?: number;
+	agentProfileId?: string;
+	agentProfileVersion?: string;
+	agentProfileHash?: string;
 	createdAt: string;
 };
 
@@ -421,6 +424,12 @@ function publicAuditEvent(event: PersistentAuditEventRecord): PublicAuditEvent {
 		payload.runtimeDurationMs >= 0
 			? payload.runtimeDurationMs
 			: undefined;
+	const agentProfileId = nonEmptyAuditText(payload.agentProfileId);
+	const agentProfileVersion = nonEmptyAuditText(payload.agentProfileVersion);
+	const agentProfileHash =
+		typeof payload.agentProfileHash === "string" && /^[a-f0-9]{64}$/.test(payload.agentProfileHash)
+			? payload.agentProfileHash
+			: undefined;
 	return {
 		id: event.id,
 		tenantId: event.tenantId,
@@ -431,8 +440,15 @@ function publicAuditEvent(event: PersistentAuditEventRecord): PublicAuditEvent {
 		toolsCalled,
 		...(requestId ? { requestId } : {}),
 		...(runtimeDurationMs !== undefined ? { runtimeDurationMs } : {}),
+		...(agentProfileId ? { agentProfileId } : {}),
+		...(agentProfileVersion ? { agentProfileVersion } : {}),
+		...(agentProfileHash ? { agentProfileHash } : {}),
 		createdAt: event.createdAt.toISOString(),
 	};
+}
+
+function nonEmptyAuditText(value: unknown): string | undefined {
+	return typeof value === "string" && value.trim().length > 0 ? value : undefined;
 }
 
 function methodNotAllowed(response: ServerResponse, method: "GET" | "POST"): void {
