@@ -135,6 +135,7 @@ describe("EnterpriseSupportService", () => {
 		});
 		expect(requests).toEqual([
 			{
+				requestId: "request-1",
 				conversationId: "conversation-a",
 				customerId: "customer-a",
 				text: "请问营业时间？",

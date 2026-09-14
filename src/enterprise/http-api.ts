@@ -286,7 +286,9 @@ async function support(
 	response: ServerResponse,
 	options: EnterpriseHttpServerOptions,
 ): Promise<void> {
-	const context = await authenticatedContext(request, options.auth);
+	const requestId = randomUUID();
+	response.setHeader("X-Request-Id", requestId);
+	const context = await authenticatedContext(request, options.auth, requestId);
 	if (!context) return sendJson(response, 401, { error: "unauthenticated" });
 	if (!context.actor.capabilities.includes("agent:invoke")) return sendJson(response, 403, { error: "forbidden" });
 	const body = await readJsonBody(request);
@@ -322,8 +324,9 @@ async function readBusiness(
 async function authenticatedContext(
 	request: IncomingMessage,
 	auth: EnterpriseAuthService,
+	requestId = randomUUID(),
 ): Promise<SupportExecutionContext | undefined> {
-	return auth.resolveExecutionContext(readCookie(request, SESSION_COOKIE), randomUUID());
+	return auth.resolveExecutionContext(readCookie(request, SESSION_COOKIE), requestId);
 }
 
 function requireRuntime(options: EnterpriseHttpServerOptions): SupportRuntimePort {
@@ -391,6 +394,8 @@ type PublicAuditEvent = {
 	eventType: "support-agent.audit";
 	outcome?: "answer" | "fallback" | "escalation";
 	toolsCalled: Array<"search_faq" | "search_knowledge" | "create_ticket" | "handoff_to_human">;
+	requestId?: string;
+	runtimeDurationMs?: number;
 	createdAt: string;
 };
 
@@ -408,6 +413,14 @@ function publicAuditEvent(event: PersistentAuditEventRecord): PublicAuditEvent {
 					typeof tool === "string" && publicAuditTools.includes(tool as PublicAuditEvent["toolsCalled"][number]),
 			)
 		: [];
+	const requestId =
+		typeof payload.requestId === "string" && payload.requestId.trim().length > 0 ? payload.requestId : undefined;
+	const runtimeDurationMs =
+		typeof payload.runtimeDurationMs === "number" &&
+		Number.isFinite(payload.runtimeDurationMs) &&
+		payload.runtimeDurationMs >= 0
+			? payload.runtimeDurationMs
+			: undefined;
 	return {
 		id: event.id,
 		tenantId: event.tenantId,
@@ -416,6 +429,8 @@ function publicAuditEvent(event: PersistentAuditEventRecord): PublicAuditEvent {
 		eventType: "support-agent.audit",
 		...(outcome ? { outcome } : {}),
 		toolsCalled,
+		...(requestId ? { requestId } : {}),
+		...(runtimeDurationMs !== undefined ? { runtimeDurationMs } : {}),
 		createdAt: event.createdAt.toISOString(),
 	};
 }
