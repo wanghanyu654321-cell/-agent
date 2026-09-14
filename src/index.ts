@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Agent, type AgentEvent, type AgentTool, type StreamFn } from "@earendil-works/pi-agent-core";
@@ -30,6 +31,7 @@ export interface SupportRequest {
 	storeId: string;
 	customerId: string;
 	text: string;
+	requestId?: string;
 	permissions?: string[];
 	mayEscalate?: boolean;
 	requiresEscalation?: boolean;
@@ -356,6 +358,8 @@ export class SupportAgentRuntime {
 
 	async run(request: SupportRequest): Promise<SupportResult> {
 		this.validateRequest(request);
+		const requestId = request.requestId ?? randomUUID();
+		const runtimeStartedAt = Date.now();
 		const sessionManager = this.getOrCreateSession(request);
 		const sessionEvents: AgentEvent[] = [];
 		const toolsCalled: string[] = [];
@@ -698,7 +702,12 @@ export class SupportAgentRuntime {
 				this.options.store.releaseHandoffReservation(request.conversationId);
 			}
 			const routingAudit = knowledgeRouting;
+			const elapsedRuntimeMs = Date.now() - runtimeStartedAt;
+			const runtimeDurationMs = Number.isFinite(elapsedRuntimeMs) ? Math.max(0, elapsedRuntimeMs) : 0;
 			const auditPayload: Record<string, unknown> = {
+				schemaVersion: "support-agent-audit-v1",
+				requestId,
+				runtimeDurationMs,
 				conversationId: request.conversationId,
 				outcome: result.type,
 				toolsCalled,

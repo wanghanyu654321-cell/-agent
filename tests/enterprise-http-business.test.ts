@@ -19,6 +19,42 @@ afterEach(async () => {
 });
 
 describe("enterprise business read API", () => {
+	it("returns a server-generated request header bound to the support execution context", async () => {
+		const repository = new InMemoryIdentityRepository();
+		const demo = await seedPortfolioEnterpriseDemoData(repository);
+		const auth = new EnterpriseAuthService(repository);
+		const service = new CapturingEnterpriseSupportPort();
+		const server = createEnterpriseHttpServer({ auth, supportService: service });
+		servers.push(server);
+		server.listen(0, "127.0.0.1");
+		await once(server, "listening");
+		const address = server.address() as AddressInfo;
+		const origin = `http://127.0.0.1:${address.port}`;
+		const login = await fetch(`${origin}/api/v1/auth/login`, {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify(demo.credentials.alice),
+		});
+		const cookie = login.headers.get("set-cookie")!;
+
+		const response = await fetch(`${origin}/api/v1/support/respond`, {
+			method: "POST",
+			headers: { "content-type": "application/json", cookie },
+			body: JSON.stringify({
+				conversationId: "request-correlation-a",
+				customerId: "customer-a",
+				text: "请问营业时间？",
+				requestId: "client-controlled-id",
+			}),
+		});
+
+		expect(response.status).toBe(200);
+		const requestId = response.headers.get("x-request-id");
+		expect(requestId).toEqual(expect.any(String));
+		expect(requestId).not.toBe("client-controlled-id");
+		expect(service.requestIds).toEqual([requestId]);
+	});
+
 	it("derives ticket scope from the authenticated session and rejects query-scope spoofing", async () => {
 		const repository = new InMemoryIdentityRepository();
 		const demo = await seedPortfolioEnterpriseDemoData(repository);
@@ -117,13 +153,52 @@ describe("enterprise business read API", () => {
 		});
 		expect(spoofed.status).toBe(400);
 	});
+
+	it("projects valid request correlation fields and leaves historical audit records unchanged", async () => {
+		const repository = new InMemoryIdentityRepository();
+		await seedPortfolioEnterpriseDemoData(repository);
+		const auth = new EnterpriseAuthService(repository);
+		const service = new CapturingEnterpriseSupportPort();
+		service.auditPayload = {
+			outcome: "answer",
+			toolsCalled: ["search_faq"],
+			requestId: "audit-request-1",
+			runtimeDurationMs: 27,
+			providerPayload: "internal-provider-payload",
+		};
+		const server = createEnterpriseHttpServer({ auth, supportService: service });
+		servers.push(server);
+		server.listen(0, "127.0.0.1");
+		await once(server, "listening");
+		const address = server.address() as AddressInfo;
+		const origin = `http://127.0.0.1:${address.port}`;
+		const avaLogin = await fetch(`${origin}/api/v1/auth/login`, {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({ email: "ava.admin@demo.example", password: "AvaDemo!2026" }),
+		});
+
+		const audit = await fetch(`${origin}/api/v1/audit-events`, {
+			headers: { cookie: avaLogin.headers.get("set-cookie")! },
+		});
+		expect(await audit.json()).toEqual([
+			expect.objectContaining({ requestId: "audit-request-1", runtimeDurationMs: 27 }),
+		]);
+	});
 });
 
 class CapturingEnterpriseSupportPort implements EnterpriseSupportPort {
 	readonly ticketScopes: Array<{ tenantId: string; storeId: string }> = [];
 	readonly auditScopes: Array<{ tenantId: string; storeId: string }> = [];
+	readonly requestIds: string[] = [];
+	auditPayload: Record<string, unknown> = {
+		outcome: "answer",
+		toolsCalled: ["search_faq", "unknown_tool"],
+		providerPayload: "internal-provider-payload",
+	};
 
-	async respond(): Promise<SupportResult> {
+	async respond(context: Parameters<EnterpriseSupportPort["respond"]>[0]): Promise<SupportResult> {
+		this.requestIds.push(context.request.requestId);
 		return {
 			type: "answer",
 			text: "unused",
@@ -166,11 +241,7 @@ class CapturingEnterpriseSupportPort implements EnterpriseSupportPort {
 				storeId: context.scope.storeId,
 				conversationId: "conversation-a",
 				eventType: "support-agent.audit" as const,
-				payload: {
-					outcome: "answer",
-					toolsCalled: ["search_faq", "unknown_tool"],
-					providerPayload: "internal-provider-payload",
-				},
+				payload: structuredClone(this.auditPayload),
 				createdAt: new Date("2026-09-01T00:00:00.000Z"),
 			},
 		];
