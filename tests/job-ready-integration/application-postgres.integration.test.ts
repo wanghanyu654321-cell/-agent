@@ -66,6 +66,7 @@ describe.skipIf(!url)("Job-Ready real application StoreOps and registry composit
 				"002_support_business_persistence",
 				"003_job_ready_storeops",
 				"004_job_ready_rag",
+				"005_job_ready_rag_profiles",
 			].map((id) => ({ id })),
 		);
 		const metadata = await (await request("/storeops/knowledge")).json();

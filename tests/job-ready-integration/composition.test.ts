@@ -4,7 +4,7 @@ import { enterpriseRetrievalModeFromEnv } from "../../src/enterprise/application
 import { applyJobReadyMigrations } from "../../src/enterprise/postgres.ts";
 
 describe("Job-Ready shared composition", () => {
-	it("registers exactly 001 through 004 once, preserving the existing transaction ledger", async () => {
+	it("registers exactly 001 through 005 once, preserving the existing transaction ledger", async () => {
 		const ledger = new Set<string>();
 		const statements: string[] = [];
 		const release = vi.fn();
@@ -25,15 +25,16 @@ describe("Job-Ready shared composition", () => {
 			"002_support_business_persistence",
 			"003_job_ready_storeops",
 			"004_job_ready_rag",
+			"005_job_ready_rag_profiles",
 		]);
 		expect(statements.filter((sql) => sql.includes("CREATE TABLE rag_documents"))).toHaveLength(1);
-		expect(statements.filter((sql) => sql === "BEGIN")).toHaveLength(8);
-		expect(statements.filter((sql) => sql === "COMMIT")).toHaveLength(8);
+		expect(statements.filter((sql) => sql === "BEGIN")).toHaveLength(10);
+		expect(statements.filter((sql) => sql === "COMMIT")).toHaveLength(10);
 		expect(release).toHaveBeenCalledTimes(2);
 	});
-	it("defaults to lexical, rejects unknown mode, and keeps vector unavailable pending profile/floor approval", () => {
+	it("defaults to lexical and accepts only explicitly named retrieval modes", () => {
 		expect(enterpriseRetrievalModeFromEnv({})).toBe("lexical");
 		expect(() => enterpriseRetrievalModeFromEnv({ ENTERPRISE_RETRIEVAL_MODE: "auto" })).toThrow();
-		expect(() => enterpriseRetrievalModeFromEnv({ ENTERPRISE_RETRIEVAL_MODE: "vector" })).toThrow("GAP-03/GAP-04");
+		expect(enterpriseRetrievalModeFromEnv({ ENTERPRISE_RETRIEVAL_MODE: "vector" })).toBe("vector");
 	});
 });

@@ -41,6 +41,9 @@ class PostgresRepository:
                       AND NOT EXISTS (SELECT 1 FROM pg_constraint
                         WHERE conrelid = to_regclass('public.rag_chunks')
                           AND conname = 'gap03_profile_unresolved')
+                      AND EXISTS (SELECT 1 FROM pg_constraint
+                        WHERE conrelid = to_regclass('public.rag_chunks')
+                          AND conname = 'rag_chunks_s2_profile' AND convalidated)
                       AND EXISTS (SELECT 1 FROM pg_attribute
                         WHERE attrelid = to_regclass('public.rag_chunks') AND attname = 'embedding'
                           AND format_type(atttypid, atttypmod) = %s)

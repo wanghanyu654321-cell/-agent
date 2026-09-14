@@ -25,7 +25,11 @@ services:
       HOST: 0.0.0.0
       PORT: "3000"
       DATABASE_URL: postgresql://customer_support_agent_demo:customer_support_agent_demo_password@postgres:5432/customer_support_agent_demo
-      ENTERPRISE_RETRIEVAL_MODE: lexical
+      ENTERPRISE_RETRIEVAL_MODE: ${ENTERPRISE_RETRIEVAL_MODE:-lexical}
+      RAG_SERVICE_URL: ${RAG_SERVICE_URL:-}
+      RAG_SERVICE_CREDENTIAL: ${RAG_SERVICE_CREDENTIAL:-}
+      RAG_EMBEDDING_PROFILE: ${RAG_EMBEDDING_PROFILE:-}
+      RAG_CORPUS_CLASSIFICATION: ${RAG_CORPUS_CLASSIFICATION:-}
     ports:
       - "3000:3000"
     depends_on:
@@ -38,10 +42,16 @@ services:
       dockerfile: ai-service/Dockerfile
     environment:
       RAG_SERVICE_CREDENTIAL: ${RAG_SERVICE_CREDENTIAL:-}
+      RAG_DATABASE_URL: ${RAG_DATABASE_URL:-}
+      RAG_EMBEDDING_MODE: ${RAG_EMBEDDING_MODE:-}
+      RAG_EMBEDDING_PROFILE: ${RAG_EMBEDDING_PROFILE:-}
+      RAG_CORPUS_CLASSIFICATION: ${RAG_CORPUS_CLASSIFICATION:-}
+      RAG_INGEST_TIMEOUT_SECONDS: ${RAG_INGEST_TIMEOUT_SECONDS:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy
-    # No host ports. GAP-03/04 intentionally leave authenticated readiness 503.
+    # No host ports. Missing explicit S2 configuration keeps readiness 503.
 
 volumes:
   postgres-data:

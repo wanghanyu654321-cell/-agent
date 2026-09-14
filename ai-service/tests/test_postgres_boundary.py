@@ -41,6 +41,8 @@ class PostgresWireTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(await self.repo.ready())
         sql, params = self.connection.calls[-1]
         self.assertIn("gap03_profile_unresolved", sql)
+        self.assertIn("rag_chunks_s2_profile", sql)
+        self.assertIn("convalidated", sql)
         self.assertEqual(params, ("vector(2)",))
     async def test_ingest_emits_locks_scoped_read_and_atomic_insert(self):
         self.connection.is_ready = True

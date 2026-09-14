@@ -22,13 +22,15 @@ Do not rely on chat summaries, prior agent memory, inferred intent, or old task 
 
 Before modifying an existing architectural boundary, read the current implementation and every applicable current architecture/contract/directive document. Directional agreement is not a document review. A code review requires reading the changed implementation and applicable tests/contracts.
 
-For the current Job-Ready successor, every coding agent MUST read before implementation:
+For the current Job-Search V1 sprint, every coding agent MUST read before implementation:
 
-1. this `AGENTS.md`;
-2. `docs/job-ready/CURRENT_STATE.md`;
-3. `docs/job-ready/JOB_READY_PARALLEL_EXECUTION_DIRECTIVE.md`;
+1. this `AGENTS.md` (repository-wide permanent governance and architecture invariants);
+2. `docs/job-ready/JOB_SEARCH_SPRINT_V1.md` (the current sprint contract);
+3. `docs/job-ready/CURRENT_STATE.md` and `docs/job-ready/evidence/JOB_SEARCH_SPRINT_V1_CLOSURE.md` (the current reconciled sprint state and closure ledger);
 4. the relevant existing architecture/enterprise/runtime contracts for the files being changed;
-5. `docs/job-ready/ARCHITECTURE_CONTRACT.md` once that file exists and has passed independent review.
+5. `docs/job-ready/ARCHITECTURE_CONTRACT.md`.
+
+The prior Job-Ready successor directive, `docs/job-ready/JOB_READY_PARALLEL_EXECUTION_DIRECTIVE.md`, is retained unchanged as the historical/pre-sprint successor directive. Its sprint-specific ownership and sequencing no longer govern the current Job-Search V1 sprint; its scope must not be silently re-expanded by citing it.
 
 Historical phase documents are evidence of prior decisions; they do not silently authorize new scope.
 
@@ -79,6 +81,8 @@ Do NOT add without a new explicit user authorization:
 - GraphRAG, Self-RAG, Agentic RAG or complex reranking;
 - a large observability platform;
 - any feature whose main effect is product expansion rather than job-readiness evidence or a proven Pilot blocker.
+
+Sprint deferral is not global cancellation. Hybrid/RRF retrieval, a conditional reranker, MCP, and live WeCom wiring were deliberately deferred from Job-Search Sprint V1 (see `docs/job-ready/evidence/JOB_SEARCH_SPRINT_V1_CLOSURE.md`); they remain successor roadmap work that requires a new explicit user authorization before implementation, and the deferral itself does not permanently prohibit them repository-wide. Nothing in this section removes the explicit-user-authorization requirement.
 
 When uncertain, choose the smaller implementation and escalate the scope question rather than inventing features.
 
@@ -144,8 +148,11 @@ Independent Gate review must inspect repository evidence and may conclude only:
 
 ## 10. Current execution directive
 
-The authoritative current sprint directive is:
+The authoritative current document layering is:
 
-`docs/job-ready/JOB_READY_PARALLEL_EXECUTION_DIRECTIVE.md`
+1. this `AGENTS.md` — repository-wide permanent governance and architecture invariants;
+2. `docs/job-ready/JOB_SEARCH_SPRINT_V1.md` — the current Job-Search V1 sprint contract;
+3. `docs/job-ready/CURRENT_STATE.md` plus `docs/job-ready/evidence/JOB_SEARCH_SPRINT_V1_CLOSURE.md` — the current reconciled sprint state and closure ledger;
+4. `docs/job-ready/JOB_READY_PARALLEL_EXECUTION_DIRECTIVE.md` — the prior Job-Ready successor directive, retained as historical/pre-sprint governance evidence.
 
-This `AGENTS.md` controls repository-wide governance and architecture invariants. The current directive controls sprint-specific ownership, sequencing and implementation scope when it does not conflict with this file.
+This `AGENTS.md` controls repository-wide governance and architecture invariants. The current sprint contract controls sprint-specific scope while the sprint is active; the closure ledger records which phases closed PASS, BLOCKED, or DEFERRED and must not be rewritten. When a sprint document conflicts with this file, this file prevails.

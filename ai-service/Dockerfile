@@ -5,4 +5,4 @@ COPY ai-service/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 COPY ai-service/rag_service ./rag_service
 USER 65534:65534
-CMD ["python", "-m", "uvicorn", "rag_service.app:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
+CMD ["python", "-m", "uvicorn", "rag_service.bootstrap:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
