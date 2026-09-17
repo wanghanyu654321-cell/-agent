@@ -44,7 +44,7 @@ export interface MatrixRow {
 	readonly source: RowSource;
 }
 
-/** A violated exact-value (===) invariant, listed at the top of the matrix and never offsettable. */
+/** A violated HARD_INVARIANT rubric with an exact-value (===) threshold; listed at the top of the matrix and never offsettable. */
 export interface HardInvariantViolation {
 	readonly domain: string;
 	readonly rubricId: string;

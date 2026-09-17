@@ -84,11 +84,22 @@ matrix aggregator (`evals/regression/matrix.ts`), and report-only MRR plus
 difficulty breakdown in the retrieval evaluation (`src/retrieval-eval.ts`).
 These are reported values; they create no new acceptance claim.
 
-No clean-runner Gate run has ever been triggered by this branch: it was not in
-the gate workflow's push list before this commit. The open review conditions —
-the first clean-runner Gate baseline and the PostgreSQL acceptance assertions —
-are therefore still pending evidence, expected from the first CI run after this
-commit.
+Clean-runner Gate evidence for this branch:
+
+- Workflow: `Customer Support Agent Gate`
+- Run: [35234497767](https://github.com/wanghanyu654321-cell/-agent/actions/runs/35234497767)
+- Head: `8a780131cdb776de3fd0b7b1b62f9a9503fece18`
+- Branch: `job-ready/thin-digital-employee-v1`
+- Conclusion: `success`
+
+This run supports: deterministic regression, PostgreSQL integration gates,
+Python/RAG tests, Docker build/composition/persistence smoke, existing
+evaluation gates.
+
+This run does NOT support: public HTTPS deployment, ICP production deployment,
+live WeCom wire integration, real production traffic, production Data Flywheel,
+thin MCP, production-calibrated retrieval-quality acceptance, production-ready
+claim.
 
 Still true, inherited from the frozen sprint baseline:
 
@@ -164,9 +175,9 @@ build/start/persistence, build/check, and all eval suites. It is regression
 evidence, not approval of the unresolved hosted-provider or retrieval-quality
 claims above; see
 [S6 Final Regression Evidence](docs/job-ready/evidence/S6_FINAL_REGRESSION_V1.md).
-That runner predates this branch's successor stages; this branch's first
-clean-runner Gate baseline is still pending (see the current branch section
-above).
+That runner predates this branch's successor stages; this branch's own
+clean-runner Gate evidence is recorded above (run 35234497767, conclusion:
+success).
 
 ## Synthetic demo identities
 

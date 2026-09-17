@@ -137,9 +137,9 @@ const retrievalRubrics: readonly GovernanceRubric[] = [
 		...RETRIEVAL_DEFAULTS,
 		rubricId: "retrieval.reportedMetrics",
 		metric:
-			"evidencePrecision, extraneousEvidenceRate, meanReturnedEvidenceCount, queryProvenanceBreakdown, categoryBreakdown",
+			"evidencePrecision, extraneousEvidenceRate, meanReturnedEvidenceCount, queryProvenanceBreakdown, categoryBreakdown, mrr, difficultyBreakdown",
 		failureMode:
-			"Retrieval quality observability gaps (precision of returned evidence, extraneous evidence, result density, provenance and category distributions).",
+			"Retrieval quality observability gaps (precision of returned evidence, extraneous evidence, result density, provenance, category and difficulty distributions, mean reciprocal rank).",
 		rubricType: "ENGINEERING_THRESHOLD",
 		threshold: "none — reported only, no acceptance threshold",
 		gateBehavior: "report_only",

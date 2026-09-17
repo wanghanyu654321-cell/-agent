@@ -136,6 +136,17 @@ describe("governance manifest structure", () => {
 		expect(GOVERNANCE_RUBRICS.filter((rubric) => rubric.rubricType === "PRODUCTION_CALIBRATED")).toEqual([]);
 		expect(GOVERNANCE_RUBRICS.filter((rubric) => rubric.calibrationStatus === "production-calibrated")).toEqual([]);
 	});
+
+	it("anchors retrieval.reportedMetrics to include mrr and difficultyBreakdown (report-only, uncalibrated)", () => {
+		const rubric = byId.get("retrieval.reportedMetrics");
+		expect(rubric).toBeDefined();
+		expect(rubric?.metric).toContain("mrr");
+		expect(rubric?.metric).toContain("difficultyBreakdown");
+		expect(rubric?.rubricType).toBe("ENGINEERING_THRESHOLD");
+		expect(rubric?.threshold).toBe("none — reported only, no acceptance threshold");
+		expect(rubric?.gateBehavior).toBe("report_only");
+		expect(rubric?.calibrationStatus).toBe("uncalibrated");
+	});
 });
 
 describe("governance manifest threshold literals", () => {

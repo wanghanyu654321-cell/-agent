@@ -19,11 +19,17 @@ import {
  * Comparison layer of the unified regression matrix (Workstream B).
  *
  * Every row is judged INDEPENDENTLY from every other row; there is no
- * aggregation that could trade an improvement against a regression. In
- * particular, a violated exact-value invariant (op "===") forces its row to
- * REGRESSED and is additionally listed in `hardInvariantViolations` at the top
- * of the matrix — no improvement anywhere else in the matrix can offset it,
- * because no such offsetting code path exists.
+ * aggregation that could trade an improvement against a regression.
+ *
+ * Row status is purely numeric: `determineRowStatus()` compares baseline and
+ * current values against the parsed threshold regardless of rubricType.  A row
+ * whose exact-value threshold (op "===") is violated always becomes REGRESSED.
+ *
+ * Governance classification is separate: only violations of rubrics whose
+ * `rubricType === "HARD_INVARIANT"` are listed in `hardInvariantViolations`.
+ * Exact-value failures on GOLD_EXPECTATION, BUSINESS_CONTRACT, or other rubric
+ * types remain REGRESSED rows but do NOT enter the violations list — the two
+ * concepts (numeric comparison vs. governance class) are intentionally distinct.
  */
 
 export interface RegressionMatrixInput {
@@ -40,20 +46,23 @@ const NO_ARTIFACT_NOTE =
 	"no tracked report artifact for this domain; the gate executes directly (vitest/exit_code) and produces no comparable file report";
 
 /**
- * Conservative status semantics:
+ * Conservative status semantics (purely numeric; governance class is irrelevant here):
  * - Either value unavailable (null) → BLOCKED (never a synthesized success).
  * - No numeric acceptance threshold → equal values UNCHANGED; differing values
  *   BLOCKED because the direction is undeterminable without inventing a
  *   threshold (fail-closed, no business semantics are re-evaluated here).
- * - Exact-value invariant (op "===") → a violating current value is REGRESSED
- *   (and recorded as a hard-invariant violation) regardless of baseline
- *   availability, because the violation is absolute; a satisfied current value
- *   with an unavailable baseline is BLOCKED (UNCHANGED vs IMPROVED is
- *   undeterminable), IMPROVED when the baseline violated it, otherwise
- *   UNCHANGED.
+ * - Exact-value comparison (op "===") → a violating current value is REGRESSED
+ *   regardless of baseline availability, because the violation is absolute; a
+ *   satisfied current value with an unavailable baseline is BLOCKED (UNCHANGED
+ *   vs IMPROVED is undeterminable), IMPROVED when the baseline violated it,
+ *   otherwise UNCHANGED.
  * - Engineering thresholds (>= / > / <= / <) → purely directional against the
  *   baseline: worse is REGRESSED even if the gate would still pass, better is
  *   IMPROVED, equal is UNCHANGED.
+ *
+ * NOTE: determineRowStatus does NOT classify violations by rubricType.  Only
+ * buildRow (below) uses rubricType to decide whether a REGRESSED exact-value
+ * row also belongs in hardInvariantViolations.
  */
 export function determineRowStatus(
 	threshold: ParsedThreshold | null,
@@ -152,7 +161,13 @@ function buildRow(
 		reasons.push("no acceptance threshold recorded; values differ, direction undeterminable");
 	}
 
-	if (threshold !== null && threshold.op === "===" && current !== null && current !== threshold.value) {
+	if (
+		rubric.rubricType === "HARD_INVARIANT" &&
+		threshold !== null &&
+		threshold.op === "===" &&
+		current !== null &&
+		current !== threshold.value
+	) {
 		violations.push({
 			domain: rubric.domain,
 			rubricId: rubric.rubricId,

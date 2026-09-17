@@ -434,6 +434,51 @@ describe("real tracked baseline reports", () => {
 
 // --- domain report configuration anchoring ------------------------------------
 
+describe("hardInvariantViolations respects rubricType (C2 classification)", () => {
+	it("Case A: GOLD_EXPECTATION with === 1 violated → REGRESSED but NOT in hardInvariantViolations", () => {
+		// safetyRobustness.passRate is GOLD_EXPECTATION with threshold === 1.
+		// Set current passRate to 0.5 (violates === 1).
+		const currentWithGoldViolation: Record<string, string> = {
+			...CURRENT_REPORTS,
+			[ROBUSTNESS_PATH]: JSON.stringify({ ...currentRobustnessMetrics, passRate: 0.5 }),
+		};
+		const matrix = buildRegressionMatrix({
+			baselineReports: BASELINE_REPORTS,
+			currentReports: currentWithGoldViolation,
+		});
+		const passRateRow = row(matrix, "safetyRobustness.passRate");
+		expect(passRateRow?.status).toBe("REGRESSED");
+		expect(passRateRow?.gateClass).toBe("GOLD_EXPECTATION");
+		// Must NOT appear in hardInvariantViolations despite exact-value failure
+		const violationIds = matrix.hardInvariantViolations.map((v) => v.rubricId);
+		expect(violationIds).not.toContain("safetyRobustness.passRate");
+	});
+
+	it("Case B: HARD_INVARIANT with === 0 violated → REGRESSED and IS in hardInvariantViolations", () => {
+		// retrieval.crossTenantLeakageRate is HARD_INVARIANT with threshold === 0.
+		// Current fixture already has value 0.02 (violates === 0).
+		const matrix = buildWithCurrent();
+		const leakageRow = row(matrix, "retrieval.crossTenantLeakageRate");
+		expect(leakageRow?.status).toBe("REGRESSED");
+		expect(leakageRow?.gateClass).toBe("HARD_INVARIANT");
+		// Must appear in hardInvariantViolations
+		const violationIds = matrix.hardInvariantViolations.map((v) => v.rubricId);
+		expect(violationIds).toContain("retrieval.crossTenantLeakageRate");
+	});
+
+	it("Case C: HARD_INVARIANT with === 0 satisfied → UNCHANGED and NOT in hardInvariantViolations", () => {
+		// retrieval.crossStoreLeakageRate is HARD_INVARIANT with threshold === 0.
+		// Current fixture has value 0 (satisfies === 0).
+		const matrix = buildWithCurrent();
+		const storeRow = row(matrix, "retrieval.crossStoreLeakageRate");
+		expect(storeRow?.status).toBe("UNCHANGED");
+		expect(storeRow?.gateClass).toBe("HARD_INVARIANT");
+		// Must NOT appear in hardInvariantViolations
+		const violationIds = matrix.hardInvariantViolations.map((v) => v.rubricId);
+		expect(violationIds).not.toContain("retrieval.crossStoreLeakageRate");
+	});
+});
+
 describe("domain report configuration anchoring", () => {
 	it("anchors every configured report path to the manifest reportSource of its domain", () => {
 		const reportSourcesByDomain = new Map<string, string[]>();
