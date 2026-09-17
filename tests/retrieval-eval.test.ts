@@ -111,6 +111,7 @@ describe("V2.1 retrieval-quality evaluator", () => {
 			isRetrievalQualityGatePassed({
 				top1HitRate: 0.84,
 				recallAt3: 1,
+				mrr: 1,
 				noAnswerCorrectRejectionRate: 1,
 				wrongEvidenceRate: 0,
 				evidencePrecision: 1,
@@ -121,7 +122,89 @@ describe("V2.1 retrieval-quality evaluator", () => {
 				unauthorizedKnowledgeExposureRate: 0,
 				queryProvenanceBreakdown: {},
 				categoryBreakdown: {},
+				difficultyBreakdown: {},
 			}),
 		).toBe(false);
+	});
+});
+
+describe("retrieval MRR and difficulty breakdown", () => {
+	const rankedRetrieval = (rankings: Record<string, string[]>) => ({
+		search: async (query: string) => (rankings[query] ?? []).map((id) => ({ id, text: `stub evidence ${id}` })),
+	});
+
+	const answerableCase = (
+		caseId: string,
+		query: string,
+		expectedEvidenceIds: string[],
+		difficulty: string,
+	): RetrievalEvalCase => ({
+		caseId,
+		query,
+		tenantId: "tenant-a",
+		storeId: "store-a",
+		expectedAnswerable: true,
+		expectedEvidenceIds,
+		queryProvenance: "SYNTHETIC_QUERY",
+		category: "controlled",
+		difficulty,
+	});
+
+	it("scores a relevant rank-1 result as reciprocal rank 1", async () => {
+		const evaluation = await runRetrievalEvaluation(rankedRetrieval({ "rank-1": ["gold", "noise"] }), [
+			answerableCase("mrr-rank-1", "rank-1", ["gold"], "direct"),
+		]);
+		expect(evaluation.metrics.mrr).toBe(1);
+	});
+
+	it("scores rank 2 and rank 3 hits as 1/2 and 1/3", async () => {
+		const evaluation = await runRetrievalEvaluation(
+			rankedRetrieval({ "rank-2": ["noise", "gold"], "rank-3": ["noise", "noise", "gold"] }),
+			[
+				answerableCase("mrr-rank-2", "rank-2", ["gold"], "direct"),
+				answerableCase("mrr-rank-3", "rank-3", ["gold"], "customer-variant"),
+			],
+		);
+		expect(evaluation.metrics.mrr).toBeCloseTo((1 / 2 + 1 / 3) / 2);
+	});
+
+	it("contributes 0 when no expected evidence is retrieved", async () => {
+		const evaluation = await runRetrievalEvaluation(rankedRetrieval({ miss: ["noise"], empty: [] }), [
+			answerableCase("mrr-miss", "miss", ["gold"], "direct"),
+			answerableCase("mrr-empty-result", "empty", ["gold"], "direct"),
+		]);
+		expect(evaluation.metrics.mrr).toBe(0);
+	});
+
+	it("uses the best rank across multiple expected evidence ids", async () => {
+		const evaluation = await runRetrievalEvaluation(rankedRetrieval({ multi: ["noise", "gold-b", "gold-a"] }), [
+			answerableCase("mrr-multi-gold", "multi", ["gold-a", "gold-b"], "direct"),
+		]);
+		expect(evaluation.metrics.mrr).toBe(1 / 2);
+	});
+
+	it("aggregates difficultyBreakdown per stratum with the same rate shape as the other breakdowns", async () => {
+		const evaluation = await runRetrievalEvaluation(
+			rankedRetrieval({ "direct-hit": ["gold"], "variant-miss": ["noise"], absent: [] }),
+			[
+				answerableCase("difficulty-direct-hit", "direct-hit", ["gold"], "direct"),
+				answerableCase("difficulty-variant-miss", "variant-miss", ["gold"], "customer-variant"),
+				{
+					...answerableCase("difficulty-fail-closed-reject", "absent", [], "fail-closed"),
+					expectedAnswerable: false,
+				},
+			],
+		);
+		expect(evaluation.metrics.difficultyBreakdown).toEqual({
+			"customer-variant": 0,
+			direct: 1,
+			"fail-closed": 1,
+		});
+	});
+
+	it("returns mrr 0 and an empty difficultyBreakdown for an empty case set", async () => {
+		const evaluation = await runRetrievalEvaluation(rankedRetrieval({}), []);
+		expect(evaluation.metrics.mrr).toBe(0);
+		expect(evaluation.metrics.difficultyBreakdown).toEqual({});
 	});
 });
