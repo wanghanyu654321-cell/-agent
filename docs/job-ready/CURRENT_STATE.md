@@ -2,6 +2,14 @@
 
 Status: **JOB-SEARCH SPRINT V1 — CLOSED / FROZEN**
 
+Current branch pointer (pre-ICP evaluation governance consolidation): the active development
+branch is now `job-ready/thin-digital-employee-v1`, which has closed Request Debugging (`e4a4c43`),
+Durable Acceptance (`1ebbd37`), and the Thin Digital Employee AgentProfile layer (`48748ef`) at the
+engineering level, and added the evaluation governance consolidation (governance manifest, regression
+matrix, report-only MRR/difficulty). That branch has no clean-runner Gate run yet. Everything from
+`## Current authoritative checkpoint` down is the frozen Job-Search Sprint V1 record for
+`job-search/sprint-v1`; it is historical for the current branch and is not rewritten by this pointer.
+
 This update is a docs-only final closure status reconciliation for Job Search Sprint V1. It changes no
 product code, tests, migrations, dependencies, or workflow. The sprint closure ledger is
 `docs/job-ready/evidence/JOB_SEARCH_SPRINT_V1_CLOSURE.md`. The pre-sprint integration

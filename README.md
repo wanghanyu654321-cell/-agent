@@ -57,25 +57,50 @@ node --experimental-transform-types src/enterprise/application.ts
 This is a local direct-execution documentation clarification, not a product defect,
 and the underlying limitation is not hidden: the package script itself is unchanged.
 
-## Job-Search Sprint V1 (current branch)
+## Current branch: thin digital employee (pre-ICP)
 
-The current branch is `job-search/sprint-v1`. The sprint is closed through S6; the
-reconciled phase ledger, deliberate deferrals, and claim boundaries live in
+The current branch is `job-ready/thin-digital-employee-v1`. Job-Search Sprint V1
+is historical and frozen; its reconciled phase ledger, deliberate deferrals, and
+claim boundaries live in
 [Job-Ready Current State](docs/job-ready/CURRENT_STATE.md) and
 [the closure ledger](docs/job-ready/evidence/JOB_SEARCH_SPRINT_V1_CLOSURE.md).
-Current headline state:
+On top of that frozen baseline, this branch closed three successor engineering
+stages, each with focused tests passing:
 
-- Deterministic vector/pgvector/FastAPI/Node integration: PASS (migration 005 →
-  `deterministic-test-1536-v1` → PostgreSQL → Python/FastAPI retrieval → Node
-  `FastApiRetrievalService` → `PostgresRagRegistry` canonical reconciliation,
-  verified by the independent clean runner). This proves integration correctness,
-  not semantic retrieval quality.
+- Support request correlation (Request Debugging): engineering closure at
+  `e4a4c43` on `job-ready/request-debugging-closure-v1`.
+- Durable acceptance outcomes (Harness Acceptance Extension): engineering
+  closure at `1ebbd37`, with the harness acceptance gate wired into the
+  PostgreSQL application gate; independent read-only review: APPROVED WITH
+  CONDITIONS.
+- Thin digital employee identity: engineering closure at `48748ef` with a
+  first-class AgentProfile layer; independent read-only review: APPROVED WITH
+  CONDITIONS. The current runtime is the AgentProfile-governed architecture.
+
+This task (Pre-ICP Evaluation Governance Consolidation V1) adds the evaluation
+governance consolidation: a descriptive governance manifest over the existing
+evaluation gates (`evals/governance/manifest.ts`), a deterministic regression
+matrix aggregator (`evals/regression/matrix.ts`), and report-only MRR plus
+difficulty breakdown in the retrieval evaluation (`src/retrieval-eval.ts`).
+These are reported values; they create no new acceptance claim.
+
+No clean-runner Gate run has ever been triggered by this branch: it was not in
+the gate workflow's push list before this commit. The open review conditions —
+the first clean-runner Gate baseline and the PostgreSQL acceptance assertions —
+are therefore still pending evidence, expected from the first CI run after this
+commit.
+
+Still true, inherited from the frozen sprint baseline:
+
+- Deterministic vector/pgvector/FastAPI/Node integration: PASS (historical S6
+  evidence; integration correctness, not semantic retrieval quality).
 - Hosted OpenAI embedding: BLOCKED — VALID API CREDENTIAL UNAVAILABLE. No
   hosted-provider PASS is claimed.
 - Retrieval quality acceptance: NOT CLAIMED — GAP-05 unresolved. The public
-  retrieval regression is not semantic/vector retrieval quality acceptance.
-- The current primary full-regression evidence is the S6 clean runner (Customer
-  Support Agent Gate, run `34699201771`, job `103567849816`, conclusion success).
+  retrieval regression is not semantic/vector retrieval quality acceptance,
+  and MRR/difficulty are report-only.
+- Waiting / not closed on this branch: public HTTPS deployment / ICP filing,
+  live WeCom wire integration, production Data Flywheel, and thin MCP.
 
 The application surface on this branch remains:
 
@@ -130,15 +155,18 @@ restart-persistence gates, with no external provider or embedding calls. Exact
 tested/not-tested state and unresolved contracts are recorded in
 [Job-Ready Current State](docs/job-ready/CURRENT_STATE.md).
 
-The current primary full-regression evidence on this sprint source is the S6
-clean runner: [run 34699201771](https://github.com/wanghanyu654321-cell/-agent/actions/runs/34699201771),
-job `103567849816`, whose checkout tree exactly equals the S6 baseline tree. It
-includes real PostgreSQL 001–005 identity/business/application, Core A, Core B,
-Job-Ready gates, Python RAG 43/43, vector-postgres cross-language E2E, Docker
-build/start/persistence, build/check, and all eval suites. This is regression
+Historical sprint full-regression evidence: the S6 clean runner
+([run 34699201771](https://github.com/wanghanyu654321-cell/-agent/actions/runs/34699201771),
+job `103567849816`, checkout tree exactly equal to the S6 baseline tree) covered
+real PostgreSQL 001–005 identity/business/application, Core A, Core B, Job-Ready
+gates, Python RAG 43/43, vector-postgres cross-language E2E, Docker
+build/start/persistence, build/check, and all eval suites. It is regression
 evidence, not approval of the unresolved hosted-provider or retrieval-quality
 claims above; see
 [S6 Final Regression Evidence](docs/job-ready/evidence/S6_FINAL_REGRESSION_V1.md).
+That runner predates this branch's successor stages; this branch's first
+clean-runner Gate baseline is still pending (see the current branch section
+above).
 
 ## Synthetic demo identities
 
@@ -214,18 +242,23 @@ for the bounded smoke and credential-handling rules.
 - Retrieval quality acceptance remains NOT CLAIMED — GAP-05 unresolved; the public
   retrieval regression is not semantic/vector retrieval quality acceptance.
 - S3 (bounded real-provider Golden Path), S4 retrieval ablation (including
-  Hybrid/RRF), the S5 reranker, live WeCom protocol/identity wiring (GAP-01/02),
-  public HTTPS/domain hosting, and MCP are deferred from Job Search Sprint V1.
-  They are sprint deferrals that remain successor roadmap work requiring new
-  explicit user authorization, not global cancellations.
+  Hybrid/RRF), and the S5 reranker are deferred from the historical Job Search
+  Sprint V1. They are sprint deferrals that remain successor roadmap work
+  requiring new explicit user authorization, not global cancellations.
+- Live WeCom protocol/identity wiring (GAP-01/02), public HTTPS/domain hosting
+  and ICP filing, production Data Flywheel, and thin MCP are not closed on this
+  branch and wait for explicit successor authorization.
 - This stack is a bounded local Docker delivery proof, not a production, hosted,
   customer, SaaS, or production-operations deployment claim. It has no external
   live IM integration or multi-agent workflow. Deterministic pgvector integration
   evidence does not establish production vector search or semantic retrieval
   quality. No hosted HTTPS/customer deployment is claimed.
 
-See [Job Search Sprint V1](docs/job-ready/JOB_SEARCH_SPRINT_V1.md),
-[Job-Ready Current State](docs/job-ready/CURRENT_STATE.md), and
-[the closure ledger](docs/job-ready/evidence/JOB_SEARCH_SPRINT_V1_CLOSURE.md) for
-the current authoritative sprint state and claim boundaries, and the frozen
-architecture documents under `docs/` for the underlying runtime guarantees.
+See [Job-Ready Current State](docs/job-ready/CURRENT_STATE.md) for the frozen
+sprint state and claim boundaries,
+[the closure ledger](docs/job-ready/evidence/JOB_SEARCH_SPRINT_V1_CLOSURE.md) and
+[Job Search Sprint V1](docs/job-ready/JOB_SEARCH_SPRINT_V1.md) for the
+historical sprint record, and
+[Architecture Expansion Governance](docs/job-ready/ARCHITECTURE_EXPANSION_GOVERNANCE.md)
+for the questions every future architecture proposal must answer. The frozen
+architecture documents under `docs/` record the underlying runtime guarantees.
