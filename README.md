@@ -1,25 +1,64 @@
 # 数字前台 Agent · Support Runtime V0
 
-> **面向小型门店 / 服务型商家的线上第一接待 Agent Runtime 工程切片。**  
+> **面向小型门店 / 服务型商家的线上第一接待 Agent Runtime 工程。**  
 > 从“能聊天”继续推进到 **有依据地回答、受控地调用工具、真实地记录业务动作、必要时稳定转人工**。
 
-**当前状态：Runtime V0 已冻结｜41 / 41 Tests PASS｜Build / Type Check / Clean Install PASS**
+**Main：Runtime V0 Frozen｜41 / 41 Tests PASS｜Build / Type Check / Clean Install PASS**  
+**Branch work：Safety / Eval → Governed Knowledge → PostgreSQL / React / Docker → FastAPI / pgvector / Integration**
+
+> **阅读说明**：`main` 是冻结的 V0 基线；后续能力保留在独立分支中。下文会明确区分 **已通过 Gate、实现候选、实验未通过、尚未进入 Runtime**，不会把“分支存在”写成“主干已发布”或“生产已上线”。
 
 ---
 
 ## 30 秒看懂这个项目
 
-这个仓库不是完整 CRM，也不是一个通用 Chatbot。它是“数字前台 Agent”里的 **核心 Runtime V0**，重点验证 Agent 真正进入业务流程之前最容易出问题的边界。
+这个仓库不是完整 CRM，也不是一个通用 Chatbot。它围绕“数字前台 Agent”持续验证一条更实际的业务链：
 
-| 招聘官关心的问题 | 这个仓库给出的工程回答 |
+**线上咨询 → Evidence → Agent Decision → Authorized Tool → Ticket / Handoff → Durable State → Eval / Audit**
+
+| 招聘官关心的问题 | 工程回答 |
 | --- | --- |
 | 模型为什么可以回答？ | FAQ / Knowledge 必须有可验证 Evidence；没有依据就 fail closed |
 | 模型说要创建 Ticket，就能执行吗？ | 不能。写操作必须经过服务端 Permission / Scope 判断 |
-| 模型说“已完成”，业务动作真的完成了吗？ | 文本不等于业务状态；副作用必须由 Tool 真正执行 |
+| 模型说“已完成”，业务动作真的完成了吗？ | 文本不等于业务状态；副作用必须由 Tool 真正执行并可验证 |
 | 并发调用会不会重复创建？ | Ticket / Handoff 有幂等与 reservation，阻止重复和 race |
 | Provider / Tool 卡住怎么办？ | Agent / Tool Budget + Overall / Per-tool Timeout + cancellation |
 | 多轮恢复会不会串租户 / 串用户？ | Session 恢复时校验 tenant / store / customer identity |
-| 这些机制怎么证明？ | 41 个自动化测试 + 独立安装验证 + 架构 / Test Report |
+| Agent 改了以后怎么证明更好？ | Runtime regression、Safety holdout、Knowledge / Retrieval eval、CI Gate |
+| Demo 怎么继续走向可交付？ | 分支中继续验证 PostgreSQL persistence、React、Docker、FastAPI / pgvector 与完整 Integration |
+
+---
+
+## 工程演进不是都在 main：分支证据地图
+
+这个项目采用“**冻结基线 + 独立验证分支**”推进。主干刻意保持稳定，新的 Safety、Eval、Retrieval、Delivery 能力先在独立分支通过 Gate，再决定是否进入后续集成。
+
+| 阶段 | 分支 | 当前证据 / 结论 |
+| --- | --- | --- |
+| **V0 Runtime** | `main` | Pi Agent loop、4 个业务 Tool、Evidence / Authority / Side-effect Guard、Session / Audit；41 / 41 tests |
+| **V1 Safety** | [`feat/v1-safety-vertical-slice`](https://github.com/wanghanyu654321-cell/-agent/tree/feat/v1-safety-vertical-slice) | 专业安全风险 evidence-gated；证据不足 / 部分命中时暂停并升级人工 |
+| **V1.1 Robustness** | [`feat/v1.1-safety-robustness`](https://github.com/wanghanyu654321-cell/-agent/tree/feat/v1.1-safety-robustness) | 100-case runtime-derived evaluation：required escalation recall 100%，unsupported professional-claim rate 0%，duplicate handoff 0 |
+| **V1.2 Blind Eval / CI** | [`feat/v1.2-blind-eval-ci`](https://github.com/wanghanyu654321-cell/-agent/tree/feat/v1.2-blind-eval-ci) | 独立 60-case blind holdout，含 hard-negative / adversarial cases，并进入 clean-runner CI Gate |
+| **V2.0 Knowledge Governance** | [`feat/v2.0-knowledge-grounding`](https://github.com/wanghanyu654321-cell/-agent/tree/feat/v2.0-knowledge-grounding) | FAQ / Knowledge 统一进入 approval、version、source-reference、tenant/store-scope admission；Grounding 信息进入 result / audit |
+| **V2.1 Retrieval Quality** | [`feat/v2.1-real-knowledge-retrieval`](https://github.com/wanghanyu654321-cell/-agent/tree/feat/v2.1-real-knowledge-retrieval) | 使用公开官方本地服务知识 + 脱敏场景做 bounded real-world retrieval benchmark；不冒充真实门店数据 |
+| **V2.2 Evidence Selection** | [`feat/v2.2-evidence-selection`](https://github.com/wanghanyu654321-cell/-agent/tree/feat/v2.2-evidence-selection) | 确认当前 deterministic score 无法同时满足既定 correctness / coverage Gate，因此没有硬凑规则上线，而是记录“需要 semantic selection”的工程结论 |
+| **V2.3 Semantic Selector** | [`feat/v2.3-semantic-evidence-selector`](https://github.com/wanghanyu654321-cell/-agent/tree/feat/v2.3-semantic-evidence-selector) | 做了真实模型离线 Gate、unseen holdout、order robustness 与 latency characterization；30 次时延观测 P50 ≈ 7.35s、P95 ≈ 16.67s，当前不满足同步主链预算，因此 **没有进入 Runtime 主路径** |
+| **Enterprise / Delivery** | [`feat/phase-2c-docker-delivery`](https://github.com/wanghanyu654321-cell/-agent/tree/feat/phase-2c-docker-delivery) | Server-side identity / RBAC、tenant/store authority、PostgreSQL durable Ticket / Handoff / Audit、React shell、两服务 Docker delivery 已分别经过阶段 Gate |
+| **Real Provider / Private Knowledge** | [`feat/pilot-real-source-runtime-proof`](https://github.com/wanghanyu654321-cell/-agent/tree/feat/pilot-real-source-runtime-proof) | Real Pi provider adapter 与 private store knowledge composition 已验证；real-source runtime proof 暴露过 cross-tool badcase 与 evidence-durability gap，因此未包装成“真实客户 Pilot 已通过” |
+| **Job-Ready Integration** | [`job-search/sprint-v1`](https://github.com/wanghanyu654321-cell/-agent/tree/job-search/sprint-v1) | React + Node + PostgreSQL 16 / pgvector + private FastAPI retrieval + Docker 集成；S6 clean-runner 全回归成功。Deterministic vector integration PASS，但 hosted embedding 与 semantic retrieval quality acceptance 仍明确未宣称 |
+
+### Job-Ready 专项分支
+
+为便于按岗位验证能力，还保留了专项支线：
+
+- [`job-ready/core-a-runtime-storeops-v1`](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/core-a-runtime-storeops-v1) — Runtime / StoreOps 边界。
+- [`job-ready/core-b-fastapi-rag-v1`](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/core-b-fastapi-rag-v1) — Python 3.11 / FastAPI Retrieval Service、严格 HTTP contract、PostgreSQL adapter boundary；Python 29 tests，Node Core-B regression 44 passed / 1 skipped。
+- [`job-ready/react-storeops-v1`](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/react-storeops-v1) — React StoreOps 展示面与受服务端 Scope 控制的业务视图。
+- [`job-ready/eval-delivery-v1`](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/eval-delivery-v1) — Eval / Delivery 证据链与 Docker 可复现演示。
+- [`job-ready/integration-v1`](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/integration-v1) — Core A / B + StoreOps + PostgreSQL + FastAPI 的集成候选。
+- [`job-ready/harness-acceptance-extension-v1`](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/harness-acceptance-extension-v1) — Harness / Acceptance extension，继续把“能跑”转成“可验收”。
+
+**这些分支证明的是工程演进和决策过程，不等于生产发布记录。**
 
 ---
 
@@ -77,11 +116,15 @@ V0 聚焦四类受控业务 Tool：
 
 **Evidence → Decision → Authorized Tool → Side Effect / Handoff → Session / Audit**
 
+后续分支再逐层补齐：
+
+**Safety → Blind Eval → Governed Knowledge → Retrieval Quality → Evidence Selection → Persistent Business State → UI / Delivery → RAG / Integration → Acceptance**
+
 ---
 
 ## Recruiter Quick View
 
-这个仓库主要证明 5 类能力：
+这个仓库主要证明 6 类能力：
 
 | 能力 | 可验证工程证据 |
 | --- | --- |
@@ -89,7 +132,8 @@ V0 聚焦四类受控业务 Tool：
 | **Evidence-first** | FAQ / Knowledge 没有可靠 Evidence 时 fail closed，不允许模型猜业务事实 |
 | **Tool / Authority** | 写操作由服务端权限控制，LLM 只能提出动作，不能直接获得授权 |
 | **Safe Side Effects** | Ticket / Handoff 使用 strict schema、幂等和并发 reservation |
-| **Quality Gate** | 41 个自动化测试覆盖 runtime、session、权限、超时、fallback、race 与 extraction independence |
+| **Eval / Gate** | Runtime regression、100-case Safety、60-case blind holdout、Knowledge / Retrieval / Selector Gate |
+| **Delivery / Integration** | 分支中验证 PostgreSQL persistence、React、Docker、FastAPI / pgvector 与跨语言集成，并保留未通过 / 未授权结论 |
 
 ---
 
@@ -196,7 +240,7 @@ Runtime 不只返回“答案”，也保留一次 Agent 执行为什么结束�
 
 ## 自动化验证
 
-当前验证结果：
+### Main / V0
 
 ```text
 Vitest: 41 / 41 PASS
@@ -205,7 +249,7 @@ Biome + Type Check: PASS
 Clean install verification: PASS
 ```
 
-覆盖范围：
+V0 覆盖：
 
 - Session recovery / identity consistency
 - 4 个业务 Tool 的 schema 与执行
@@ -219,7 +263,21 @@ Clean install verification: PASS
 - Audit persistence
 - Extraction independence / exact dependency pins
 
-验证命令：
+### Branch / Job-Search Sprint
+
+当前集成证据集中在 [`job-search/sprint-v1`](https://github.com/wanghanyu654321-cell/-agent/tree/job-search/sprint-v1)：
+
+- PostgreSQL 001–005 identity / business / application / Core A / Core B gates
+- Python RAG：43 / 43
+- vector-postgres cross-language E2E
+- Docker build / start / restart-persistence
+- build / check / integrity
+- historical Safety / Knowledge / Retrieval eval suites
+- S6 clean-runner：success
+
+这里的 **deterministic vector / pgvector / FastAPI / Node integration PASS** 证明的是集成正确性，**不等于 hosted embedding 已通过，也不等于 semantic retrieval quality 已验收**。
+
+Main 验证命令：
 
 ```bash
 npm ci
@@ -228,11 +286,11 @@ npm run build
 npm run check
 ```
 
-详细结果见 [TEST_REPORT.md](docs/support-agent/TEST_REPORT.md)。
-
 ---
 
 ## 技术栈
+
+### Main / V0
 
 - **TypeScript / Node.js 22+**
 - **Vitest**
@@ -241,11 +299,23 @@ npm run check
 - **Pi Agent Core / Pi AI / Pi Coding Agent**
 - **JSONL Session persistence（Pi SessionManager）**
 
-依赖固定在明确版本，不使用 floating branch / tag，也没有 vendored Pi core 源码。
+### 已在分支中验证 / 集成的扩展能力
+
+- **React**
+- **PostgreSQL 16**
+- **pgvector**
+- **Python 3.11 / FastAPI**
+- **psycopg**
+- **Docker / Compose**
+- **GitHub Actions / clean-runner Gates**
+
+依赖和能力状态以对应分支的 Gate / Current State 为准，不把实验分支自动等同于主干能力。
 
 ---
 
 ## 仓库结构
+
+Main / V0：
 
 ```text
 src/
@@ -274,13 +344,15 @@ docs/
     EXTRACTION_GATE_REPORT.md
 ```
 
+集成分支还会出现 `web/`、`migrations/`、`ai-service/`、`evals/`、`harness/`、`deploy/`、`Dockerfile` 与 `compose.yaml` 等目录；请以对应分支源码为准。
+
 ---
 
 ## 当前边界
 
-这个仓库是一个**刻意收敛的 Runtime V0**。
+必须区分两层：
 
-当前没有声称已经实现：
+### Main / V0 没有宣称
 
 - Vector DB / Embedding RAG
 - UI / Web / Mini Program
@@ -289,16 +361,35 @@ docs/
 - 真实客户生产部署
 - Production SLA / 大规模流量验证
 
-这些不是 README 遗漏，而是当前工程事实边界。
+### 分支已经做过，但仍不能被扩大解释
 
-V0 的目的，是先把 Agent 进入真实业务流程之前最容易出问题的 **Evidence、Authority、Side Effect、Session、Timeout 与 Audit** 做成可测试、可审查的工程基线。
+- React / PostgreSQL / Docker / FastAPI / pgvector 等已有分支工程证据，但不等于全部已 merge 到 `main`。
+- Deterministic vector integration PASS，不等于 hosted embedding PASS。
+- Public / synthetic benchmark，不等于真实商家知识或客户数据。
+- Real Pi provider adapter / private knowledge composition，不等于真实客户 Pilot 已验收。
+- Semantic selector 做过真实模型与 unseen holdout，但当前没有获得进入 Runtime 主路径的授权。
+- 当前仍不声称 Production SLA、真实企业 CRM/ERP 集成、生产流量或正式客户验收。
+
+这里最重要的不是“所有实验都成功”，而是：
+
+> **成功的进入 Gate；失败的保留证据；不满足质量、时延或证据条件的能力不硬塞进主链。**
 
 ---
 
 ## 延伸阅读
+
+Main / V0：
 
 - [Runtime Architecture](docs/support-agent/ARCHITECTURE.md)
 - [Current State](docs/support-agent/CURRENT_STATE.md)
 - [Test Report](docs/support-agent/TEST_REPORT.md)
 - [Pi Integration](docs/architecture/PI_INTEGRATION.md)
 - [Extraction Manifest](docs/extraction/EXTRACTION_MANIFEST.md)
+
+Branch / Integrated evidence：
+
+- [Job-Search Sprint V1](https://github.com/wanghanyu654321-cell/-agent/tree/job-search/sprint-v1)
+- [Core B · FastAPI / RAG](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/core-b-fastapi-rag-v1)
+- [Eval / Delivery](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/eval-delivery-v1)
+- [Integration](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/integration-v1)
+- [Harness / Acceptance](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/harness-acceptance-extension-v1)
