@@ -1,80 +1,78 @@
-# Job-Ready Environment Template — ISOLATED Track D support file
+# Public HTTPS Deployment Environment Template
 
-Template only. **Every value below is a placeholder.** Real credentials, domains,
-connection strings and certificates must stay **outside Git** (secret manager or
-host env file with restricted permissions). The Job-Ready directive is explicit:
-missing deployment credentials, domain, database or store timezone are execution
-prerequisites, **not** permission to hard-code real values.
+Template only. Real values belong in a host-local `.env.production` with restrictive
+permissions and must never be committed.
 
-Copy to a host-local `.env` (never committed) and fill in per environment.
+The production compose contract is `compose.production.yaml`. Required values use
+Compose fail-fast interpolation so a missing secret or deployment prerequisite blocks
+startup.
 
-## 1. Public edge / TLS (Nginx)
+## Host-local `.env.production`
 
-| Variable | Meaning | Example placeholder |
-| --- | --- | --- |
-| `DOMAIN` | Public HTTPS host name | `<DOMAIN>` |
-| `NODE_APP_PORT` | Host-published port of the Node enterprise app | `<NODE_APP_PORT>` |
-| `TLS_FULLCHAIN_PEM_PATH` | Absolute path to the TLS full-chain PEM | `<TLS_FULLCHAIN_PEM_PATH>` |
-| `TLS_PRIVKEY_PEM_PATH` | Absolute path to the TLS private key PEM | `<TLS_PRIVKEY_PEM_PATH>` |
-| `PROXY_READ_TIMEOUT_S` | Nginx upstream read timeout (seconds) | `<PROXY_READ_TIMEOUT_S>` |
+```dotenv
+# PostgreSQL — choose a URL-safe strong password so the same value can be used in DATABASE_URL.
+POSTGRES_DB=customer_support_agent
+POSTGRES_USER=customer_support_agent
+POSTGRES_PASSWORD=<STRONG_URL_SAFE_PASSWORD>
+DATABASE_URL=postgresql://customer_support_agent:<STRONG_URL_SAFE_PASSWORD>@postgres:5432/customer_support_agent
 
-## 2. Node enterprise app
+# Public app composition.
+NODE_APP_PORT=3000
+STOREOPS_TIME_ZONE=Asia/Shanghai
+ENTERPRISE_RUNTIME_MODE=deterministic
+ENTERPRISE_KNOWLEDGE_MODE=portfolio
+ENTERPRISE_RETRIEVAL_MODE=lexical
+ENTERPRISE_SECURE_COOKIES=true
 
-| Variable | Meaning | Example placeholder |
-| --- | --- | --- |
-| `NODE_ENV` | Runtime mode | `production` |
-| `PORT` | In-container listen port | `<PORT>` |
-| `DATABASE_URL` | PostgreSQL connection string (secret) | `<DATABASE_URL>` |
-| `AI_SERVICE_URL` | Internal FastAPI ai-service base URL | `<AI_SERVICE_URL>` |
-| `RETRIEVAL_MODE` | `lexical` or `vector` (vector requires GAP-03 profile) | `lexical` |
-| `STORE_DEFAULT_TIME_ZONE` | Explicit IANA store timezone (execution prerequisite) | `<STORE_DEFAULT_TIME_ZONE>` |
+# Private FastAPI service. It is never published to the host.
+RAG_SERVICE_CREDENTIAL=<RANDOM_PRIVATE_SERVICE_CREDENTIAL>
+RAG_DATABASE_URL=postgresql://customer_support_agent:<STRONG_URL_SAFE_PASSWORD>@postgres:5432/customer_support_agent
+RAG_EMBEDDING_MODE=deterministic
+RAG_EMBEDDING_PROFILE=deterministic-test-1536-v1
+RAG_CORPUS_CLASSIFICATION=public-synthetic
+RAG_INGEST_TIMEOUT_SECONDS=5
 
-## 3. PostgreSQL + pgvector (internal only)
+# Leave unset/empty for the current deterministic + lexical public portfolio deployment.
+PI_PROVIDER=
+PI_MODEL=
+```
 
-| Variable | Meaning | Example placeholder |
-| --- | --- | --- |
-| `POSTGRES_DB` | Database name | `<POSTGRES_DB>` |
-| `POSTGRES_USER` | Application DB role | `<POSTGRES_USER>` |
-| `POSTGRES_PASSWORD` | Application DB password (secret) | `<POSTGRES_PASSWORD>` |
-| `POSTGRES_HOST` | Internal compose service host | `<POSTGRES_HOST>` |
-| `POSTGRES_PORT` | Internal compose service port | `<POSTGRES_PORT>` |
+Use `chmod 600 .env.production`. Do not paste its contents into issues, logs,
+screenshots, README files, or deployment evidence.
 
-The database is on the internal compose network and must **not** be published to
-the public edge. Python index-write roles are isolated from Node authority tables
-by DB grants (owned by Integration).
+The current public portfolio deployment deliberately remains
+`ENTERPRISE_RUNTIME_MODE=deterministic` and `ENTERPRISE_RETRIEVAL_MODE=lexical`.
+That preserves the already-reviewed deterministic demo behavior and does not turn
+public hosting into a real-provider or retrieval-quality claim.
 
-## 4. FastAPI ai-service (internal only)
+## Public smoke variables
 
-| Variable | Meaning | Example placeholder |
-| --- | --- | --- |
-| `AI_SERVICE_PORT` | Internal ai-service port | `<AI_SERVICE_PORT>` |
-| `EMBEDDING_PROFILE_ID` | Approved embedding artifact/profile id — **GAP-03 pending** | `<EMBEDDING_PROFILE_ID>` |
+The existing environment-driven smoke can verify the real HTTPS edge without
+hard-coding credentials:
 
-Do not select `RETRIEVAL_MODE=vector` until CONTRACT GAP-03 (pinned embedding
-artifact/model/revision/dimension/location/data-egress profile + compatible
-pgvector build) is independently approved.
+```bash
+export JOB_READY_BASE_URL=https://frontagent.cn
+export JOB_READY_REQUIRE_HTTPS=true
+export JOB_READY_HTTP_REDIRECT_URL=http://frontagent.cn
+export JOB_READY_CANONICAL_HTTPS_URL=https://frontagent.cn
+export JOB_READY_SMOKE_EMAIL=<DEMO_EMAIL>
+export JOB_READY_SMOKE_PASSWORD=<DEMO_PASSWORD>
+export JOB_READY_SMOKE_EXPECT_TENANT=<EXPECTED_TENANT>
+export JOB_READY_SMOKE_EXPECT_STORE=<EXPECTED_STORE>
+node scripts/job-ready-delivery-smoke.mjs
+```
 
-## 5. WeCom channel — GAP-01 / GAP-02 pending
+With `JOB_READY_REQUIRE_HTTPS=true`, the smoke requires:
+- an HTTPS base URL;
+- HSTS and `X-Content-Type-Options: nosniff` at the edge;
+- an authenticated session cookie with `HttpOnly`, `SameSite=Strict`, and
+  `Secure`;
+- optional HTTP-to-canonical-HTTPS redirect verification when the two redirect
+  variables are supplied.
 
-No WeCom environment keys are templated here on purpose. CONTRACT GAP-01
-(official WeCom API family / wire callback / ack / egress contract) and GAP-02
-(employee vs external-customer mapping) are unresolved; inventing configuration
-keys would pre-empt those independent decisions. Integration adds them after
-approval.
+## Claim boundary
 
-## 6. Smoke helpers (`scripts/job-ready-*.mjs`)
-
-| Variable | Meaning | Example placeholder |
-| --- | --- | --- |
-| `JOB_READY_BASE_URL` | Public base URL to probe | `<JOB_READY_BASE_URL>` |
-| `JOB_READY_HEALTH_TIMEOUT_MS` | Health wait deadline (ms) | `60000` |
-| `JOB_READY_HEALTH_INTERVAL_MS` | Health poll interval (ms) | `500` |
-| `JOB_READY_SMOKE_EMAIL` | Delivery-smoke login email (secret) | `<JOB_READY_SMOKE_EMAIL>` |
-| `JOB_READY_SMOKE_PASSWORD` | Delivery-smoke login password (secret) | `<JOB_READY_SMOKE_PASSWORD>` |
-| `JOB_READY_SMOKE_EXPECT_TENANT` | Expected tenant scope for the smoke identity | `<JOB_READY_SMOKE_EXPECT_TENANT>` |
-| `JOB_READY_SMOKE_EXPECT_STORE` | Expected store scope for the smoke identity | `<JOB_READY_SMOKE_EXPECT_STORE>` |
-| `JOB_READY_SMOKE_CONVERSATION_ID` | Optional opaque conversation id | `job-ready-delivery-smoke` |
-| `JOB_READY_SMOKE_PROMPT` | Optional prompt; unset skips the respond probe | _(unset)_ |
-
-When any required smoke variable is missing, the helpers print `BLOCKED` and exit
-non-zero. **BLOCKED is never reported as PASS.**
+This environment is a public HTTPS portfolio deployment using synthetic demo
+identity/data. It is not production IAM, real customer data, a production SLA,
+a live WeCom integration, production Data Flywheel, MCP, or retrieval-quality
+acceptance.

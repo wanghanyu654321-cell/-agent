@@ -37,6 +37,7 @@ export interface EnterpriseApplicationConfig {
 	databaseUrl: string;
 	host: string;
 	port: number;
+	secureCookies: boolean;
 }
 
 export type EnterpriseRuntimeMode = "deterministic" | "pi-real";
@@ -91,7 +92,16 @@ export function enterpriseApplicationConfigFromEnv(env: NodeJS.ProcessEnv = proc
 	const configuredPort = env.PORT ?? "3000";
 	const port = Number(configuredPort);
 	if (!Number.isInteger(port) || port < 1 || port > 65_535) throw new Error("PORT must be a valid TCP port.");
-	return { databaseUrl, host: env.HOST?.trim() || "127.0.0.1", port };
+	const secureCookiesValue = env.ENTERPRISE_SECURE_COOKIES?.trim() || "false";
+	if (secureCookiesValue !== "true" && secureCookiesValue !== "false") {
+		throw new Error("ENTERPRISE_SECURE_COOKIES must be true or false.");
+	}
+	return {
+		databaseUrl,
+		host: env.HOST?.trim() || "127.0.0.1",
+		port,
+		secureCookies: secureCookiesValue === "true",
+	};
 }
 
 export function enterpriseRuntimeModeFromEnv(env: NodeJS.ProcessEnv = process.env): EnterpriseRuntimeModeConfig {

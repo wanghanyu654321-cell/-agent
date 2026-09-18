@@ -1,27 +1,29 @@
-# deploy/job-ready — Isolated Delivery Support (Track D)
+# deploy/job-ready — Delivery and Public HTTPS Closure
 
-Isolated, non-wired delivery **support** artifacts authored by Track D
-(`job-ready/eval-delivery-v1`). Nothing here is referenced by `compose.yaml`, any
-`Dockerfile`, root package files, the GitHub Actions workflow, application code,
-Runtime, the RAG algorithm, the React app or shared configuration. **Final
-Integration owns all real deployment wiring.**
+The original Track D support artifacts remain for provenance. Public HTTPS
+Deployment Closure adds a concrete host-Nginx configuration for `frontagent.cn`
+plus a production Compose contract. Runtime, Authority, RAG answerability, Safety,
+AgentProfile and business semantics are not redesigned here.
 
 ## Contents
 
 | Path | Purpose |
 | --- | --- |
-| `nginx/job-ready.example.conf` | Example HTTPS reverse proxy for the section-10 topology. Placeholders only; fronts the Node app, keeps FastAPI + PostgreSQL internal. |
-| `runbook/environment-template.md` | Environment variable template. Placeholders only; secrets stay outside Git. |
-| `runbook/failure-runbooks.md` | Seven bounded failure runbooks mapped to safe error categories. |
+| `nginx/job-ready.example.conf` | Historical generic reverse-proxy example. |
+| `public-https/nginx/frontagent.bootstrap.conf` | HTTP-only ACME bootstrap for first certificate issuance. |
+| `public-https/nginx/frontagent.cn.conf` | Final HTTPS edge: canonical host redirect, TLS, bounded rate limits, security headers, Node-only proxy. |
+| `public-https/README.md` | Exact bounded deployment procedure for the current Tencent Cloud Ubuntu host. |
+| `runbook/environment-template.md` | Actual production Compose/env contract; secrets stay outside Git. |
+| `runbook/failure-runbooks.md` | Bounded failure runbooks mapped to safe error categories. |
 
 ## Hard rules honored here
 
 - **No secrets.** Every credential, domain, connection string and certificate
   path is a placeholder. Missing prerequisites are execution blockers, not
   license to hard-code real values.
-- **No new infrastructure.** The topology stays Nginx -> Linux host -> Docker
-  Compose (Node app, FastAPI ai-service, PostgreSQL + pgvector). No Kubernetes,
-  Redis or Kafka is introduced to look more enterprise.
+- **No new infrastructure.** The topology stays host Nginx -> loopback-published
+  Node -> internal Docker network (FastAPI + PostgreSQL/pgvector). No Kubernetes,
+  Redis, Kafka, service mesh or public database port is introduced.
 - **BLOCKED, not PASS.** Health/smoke helpers report `BLOCKED` on any missing
   environment; dependency failure is never a successful no-answer.
 - **Gap discipline.** WeCom callback wiring (GAP-01/02) and vector profile
