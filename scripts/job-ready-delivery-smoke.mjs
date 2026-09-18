@@ -19,6 +19,9 @@ const expectedStore = process.env.JOB_READY_SMOKE_EXPECT_STORE;
 const conversationId = process.env.JOB_READY_SMOKE_CONVERSATION_ID ?? "job-ready-delivery-smoke";
 const promptText = process.env.JOB_READY_SMOKE_PROMPT; // optional; no default prompt is invented
 const timeoutMs = Number(process.env.JOB_READY_HEALTH_TIMEOUT_MS ?? "60000");
+const requireHttps = process.env.JOB_READY_REQUIRE_HTTPS === "true";
+const httpRedirectUrl = process.env.JOB_READY_HTTP_REDIRECT_URL;
+const canonicalHttpsUrl = process.env.JOB_READY_CANONICAL_HTTPS_URL;
 
 function blocked(reason) {
 	console.error(`job-ready-delivery-smoke: BLOCKED - ${reason}`);
@@ -34,6 +37,9 @@ if (!email) blocked("JOB_READY_SMOKE_EMAIL is not set");
 if (!password) blocked("JOB_READY_SMOKE_PASSWORD is not set");
 if (!expectedTenant) blocked("JOB_READY_SMOKE_EXPECT_TENANT is not set");
 if (!expectedStore) blocked("JOB_READY_SMOKE_EXPECT_STORE is not set");
+if (requireHttps && new URL(baseUrl).protocol !== "https:") {
+	blocked("JOB_READY_BASE_URL must use https when JOB_READY_REQUIRE_HTTPS=true");
+}
 
 async function request(path, options = {}) {
 	return fetch(new URL(path, baseUrl), options);
@@ -70,6 +76,11 @@ async function login() {
 	await readJson(response, "login");
 	const setCookie = response.headers.get("set-cookie");
 	assert(setCookie, "login did not return a session cookie");
+	assert(/(?:^|;\s*)HttpOnly(?:;|$)/i.test(setCookie), "session cookie must be HttpOnly");
+	assert(/(?:^|;\s*)SameSite=Strict(?:;|$)/i.test(setCookie), "session cookie must use SameSite=Strict");
+	if (requireHttps) {
+		assert(/(?:^|;\s*)Secure(?:;|$)/i.test(setCookie), "HTTPS deployment session cookie must be Secure");
+	}
 	return setCookie.split(";", 1)[0];
 }
 
@@ -90,6 +101,23 @@ function assertNoRawLeak(body, description) {
 
 await waitForHealthy();
 console.log("healthz: HTTP 200");
+
+if (requireHttps) {
+	const edge = await request("/healthz");
+	assert(edge.headers.get("strict-transport-security"), "HTTPS edge must return Strict-Transport-Security");
+	assert(
+		edge.headers.get("x-content-type-options")?.toLowerCase() === "nosniff",
+		"HTTPS edge must return X-Content-Type-Options: nosniff",
+	);
+}
+if (httpRedirectUrl) {
+	assert(canonicalHttpsUrl, "JOB_READY_CANONICAL_HTTPS_URL is required with JOB_READY_HTTP_REDIRECT_URL");
+	const redirect = await fetch(httpRedirectUrl, { redirect: "manual" });
+	assert([301, 302, 307, 308].includes(redirect.status), `HTTP edge must redirect, got ${redirect.status}`);
+	const location = redirect.headers.get("location");
+	assert(location?.startsWith(canonicalHttpsUrl), `HTTP redirect must target ${canonicalHttpsUrl}`);
+	console.log(`http redirect: ${redirect.status} -> ${location}`);
+}
 
 const cookie = await login();
 const me = await authenticatedJson("/api/v1/auth/me", cookie, undefined, "auth/me");
