@@ -12,6 +12,7 @@ import {
 } from "@earendil-works/pi-ai/compat";
 import { type CustomEntry, SessionManager } from "@earendil-works/pi-coding-agent";
 import { afterEach, describe, expect, it } from "vitest";
+import { DEFAULT_AGENT_PROFILE } from "../src/enterprise/agent-profile.ts";
 import {
 	InMemoryRetrievalService,
 	InMemorySupportStore,
@@ -586,7 +587,7 @@ describe("SupportAgentRuntime", () => {
 		try {
 			const faux = registerFauxProvider();
 			registrations.push(faux);
-			faux.setResponses([fauxAssistantMessage("已记录。")]);
+			faux.setResponses([fauxAssistantMessage("已记录。"), fauxAssistantMessage("已记录。")]);
 			const persistentRuntime = new SupportAgentRuntime({
 				model: faux.getModel(),
 				streamFn: streamSimple,
@@ -596,7 +597,9 @@ describe("SupportAgentRuntime", () => {
 				sessionDirectory: directory,
 			});
 
-			const result = await persistentRuntime.run(request());
+			const explicitRequest = { ...request(), requestId: "runtime-request-1" };
+			const result = await persistentRuntime.run(explicitRequest);
+			await persistentRuntime.run(request({ conversationId: "conversation-2" }));
 			const restored = SessionManager.open(
 				persistentRuntime.getSessionFile("conversation-1")!,
 				directory,
@@ -609,11 +612,30 @@ describe("SupportAgentRuntime", () => {
 				);
 
 			expect(auditEntries).toHaveLength(1);
-			expect(auditEntries[0]?.data).toMatchObject({
+			const auditData = auditEntries[0]?.data as Record<string, unknown>;
+			expect(auditData).toMatchObject({
+				schemaVersion: "support-agent-audit-v1",
+				requestId: "runtime-request-1",
 				outcome: "fallback",
 				toolsCalled: ["search_knowledge"],
 				knowledgeChecks: [{ knowledgeCheckOrigin: "policy", status: "completed" }],
 			});
+			const runtimeDurationMs = auditData.runtimeDurationMs;
+			expect(runtimeDurationMs).toEqual(expect.any(Number));
+			expect(Number.isFinite(runtimeDurationMs as number)).toBe(true);
+			expect(runtimeDurationMs).toBeGreaterThanOrEqual(0);
+			const generatedAuditEntries = SessionManager.open(
+				persistentRuntime.getSessionFile("conversation-2")!,
+				directory,
+				process.cwd(),
+			)
+				.getEntries()
+				.filter(
+					(entry): entry is CustomEntry => entry.type === "custom" && entry.customType === "support-agent.audit",
+				);
+			const generatedAuditData = generatedAuditEntries[0]?.data as Record<string, unknown>;
+			expect(generatedAuditData.requestId).toEqual(expect.any(String));
+			expect((generatedAuditData.requestId as string).trim()).not.toBe("");
 			expect(result.type).toBe("fallback");
 			expect(result.evidence).toEqual([]);
 		} finally {
@@ -1046,6 +1068,7 @@ describe("SupportAgentRuntime", () => {
 				store: new InMemorySupportStore(),
 				faq: [],
 				skillsDirectory: directory,
+				agentProfile: { ...DEFAULT_AGENT_PROFILE, allowedSkills: ["complaint"] },
 			});
 
 			const result = await runtime.run(request({ text: "我要投诉服务态度" }));

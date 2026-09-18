@@ -86,3 +86,81 @@ export interface IntegrityEvaluation {
 	issues: string[];
 	quality: "not_evaluated";
 }
+
+/** A declared final runtime outcome; it is evaluated only from CaseMeasurement.finalResult. */
+export type OutcomeExpectation =
+	| { finalResult: CaseMeasurement["finalResult"] }
+	| "not_required";
+
+/** A declared reference requirement; it is evaluated only from CaseMeasurement.evidence. */
+export type EvidenceRequirement = Exclude<CaseMeasurement["evidence"], null>[number];
+
+export type EvidenceExpectation =
+	| { required: readonly EvidenceRequirement[] }
+	| "not_required";
+
+export type DurableStateExpectation =
+	| {
+			kind: "ticket";
+			tenantId: string;
+			storeId: string;
+			conversationId: string;
+			idempotencyKey: string;
+			count: 1;
+	  }
+	| {
+			kind: "handoff";
+			tenantId: string;
+			storeId: string;
+			conversationId: string;
+			count: 1;
+	  }
+	| {
+			kind: "no_write";
+			tenantId: string;
+			storeId: string;
+			conversationId: string;
+			count: 0;
+	  }
+	| { kind: "not_required" };
+
+/**
+ * An externally derived complete durable-state read for one case. Empty arrays
+ * mean an observed empty result; a missing case observation is not the same thing.
+ */
+export interface DurableObservation {
+	caseId: string;
+	tickets: readonly {
+		tenantId: string;
+		storeId: string;
+		conversationId: string;
+		idempotencyKey: string;
+	}[];
+	handoffs: readonly {
+		tenantId: string;
+		storeId: string;
+		conversationId: string;
+	}[];
+}
+
+export interface AcceptanceExpectation {
+	caseId: string;
+	outcome: OutcomeExpectation;
+	evidence: EvidenceExpectation;
+	durableState: DurableStateExpectation;
+}
+
+export type AcceptanceDimensionStatus = "pass" | "fail" | "not_required";
+
+export interface AcceptanceCaseEvaluation {
+	caseId: string;
+	outcome: AcceptanceDimensionStatus;
+	evidence: AcceptanceDimensionStatus;
+	durableState: AcceptanceDimensionStatus;
+}
+
+export interface AcceptanceEvaluation {
+	acceptance: "pass" | "fail";
+	cases: AcceptanceCaseEvaluation[];
+	issues: string[];
+}

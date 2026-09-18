@@ -35,6 +35,13 @@ export interface RetrievalEvalResult {
 export interface RetrievalQualityMetrics {
 	top1HitRate: number;
 	recallAt3: number;
+	/**
+	 * Mean reciprocal rank over answerable cases only: each case contributes the
+	 * reciprocal of the 1-based rank of the first expected evidence id present in
+	 * the ordered actualEvidenceIds (best rank over the expected-id set); complete
+	 * misses contribute 0. Report-only metric — no acceptance threshold.
+	 */
+	mrr: number;
 	noAnswerCorrectRejectionRate: number;
 	/** Complete retrieval misses only; extraneous evidence is measured separately. */
 	wrongEvidenceRate: number;
@@ -46,13 +53,31 @@ export interface RetrievalQualityMetrics {
 	unauthorizedKnowledgeExposureRate: number;
 	queryProvenanceBreakdown: Record<string, number>;
 	categoryBreakdown: Record<string, number>;
+	difficultyBreakdown: Record<string, number>;
 }
 
 function rate<T>(items: T[], predicate: (item: T) => boolean): number {
 	return items.filter(predicate).length / Math.max(1, items.length);
 }
 
-function breakdown(results: RetrievalEvalResult[], key: "queryProvenance" | "category"): Record<string, number> {
+/**
+ * Reciprocal rank for one answerable case: 1 divided by the 1-based rank of the
+ * first expected evidence id present in the ordered actualEvidenceIds. With a
+ * set-valued gold (multiple expected ids) the best (smallest) rank over the
+ * expected set is used — the standard conservative MRR reading for set-gold
+ * retrieval — and a complete miss contributes 0.
+ */
+function reciprocalRank(result: RetrievalEvalResult): number {
+	for (let rank = 1; rank <= result.actualEvidenceIds.length; rank++) {
+		if (result.expectedEvidenceIds.includes(result.actualEvidenceIds[rank - 1])) return 1 / rank;
+	}
+	return 0;
+}
+
+function breakdown(
+	results: RetrievalEvalResult[],
+	key: "queryProvenance" | "category" | "difficulty",
+): Record<string, number> {
 	const groups = new Map<string, RetrievalEvalResult[]>();
 	for (const result of results) {
 		const group = result[key];
@@ -119,6 +144,7 @@ export async function runRetrievalEvaluation(
 		metrics: {
 			top1HitRate: rate(answerable, (result) => result.top1Hit),
 			recallAt3: rate(answerable, (result) => result.recallAt3Hit),
+			mrr: answerable.reduce((sum, result) => sum + reciprocalRank(result), 0) / Math.max(1, answerable.length),
 			noAnswerCorrectRejectionRate: rate(noAnswer, (result) => result.noAnswerRejected),
 			wrongEvidenceRate: rate(results, (result) => result.wrongEvidence),
 			evidencePrecision,
@@ -129,6 +155,7 @@ export async function runRetrievalEvaluation(
 			unauthorizedKnowledgeExposureRate: rate(noAnswer, (result) => result.unauthorizedKnowledgeExposure),
 			queryProvenanceBreakdown: breakdown(results, "queryProvenance"),
 			categoryBreakdown: breakdown(results, "category"),
+			difficultyBreakdown: breakdown(results, "difficulty"),
 		},
 	};
 }

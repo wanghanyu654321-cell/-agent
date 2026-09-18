@@ -1,14 +1,37 @@
 # Job-Ready Current State
 
-Status: **JOB-SEARCH SPRINT V1 — CLOSED / FROZEN**
+Status: **PRE-ICP ENGINEERING BASELINE — CLOSED / FROZEN**
 
-This update is a docs-only final closure status reconciliation for Job Search Sprint V1. It changes no
-product code, tests, migrations, dependencies, or workflow. The sprint closure ledger is
-`docs/job-ready/evidence/JOB_SEARCH_SPRINT_V1_CLOSURE.md`. The pre-sprint integration
-baseline material is preserved unchanged in meaning in the Historical record section
-below.
+Current authoritative implementation source: `55182eb11e801b49a5c5564d05acc72207b249f1`
+(tree `68499338168aed05353247ce5196503b7118bcf7`) from
+`job-ready/thin-digital-employee-v1`. It closes Request Debugging (`e4a4c43`),
+Durable Acceptance (`1ebbd37`), Thin Digital Employee / AgentProfile (`48748ef`),
+and Pre-ICP Evaluation Governance Consolidation V1. Exact-source clean-runner
+`35238937264` / job `105262039153` completed successfully.
 
-## Current authoritative checkpoint
+The main-convergence operation preserves the frozen implementation semantics and
+reconciles only main-facing documentation. Historical Job-Search Sprint V1 evidence
+below remains immutable in meaning and continues to explain the predecessor baseline.
+This Pre-ICP closure is not a production-readiness, hosted-provider,
+retrieval-quality-acceptance, live-WeCom, Data-Flywheel, or MCP claim.
+
+Current Pre-ICP closure state:
+
+- Request Debugging: CLOSED.
+- Durable Acceptance: CLOSED.
+- Thin Digital Employee / AgentProfile: CLOSED.
+- Evaluation Governance Consolidation V1: CLOSED.
+- Container Delivery: CLOSED.
+- Public HTTPS / ICP deployment: WAITING.
+- Live WeCom wire integration: WAITING FOR DEPLOYMENT.
+- Production Data Flywheel: WAITING FOR REAL TRAFFIC.
+- Thin MCP: WAITING FOR FLYWHEEL.
+
+The sprint closure ledger remains
+`docs/job-ready/evidence/JOB_SEARCH_SPRINT_V1_CLOSURE.md`; it is historical
+provenance, not the current implementation pointer.
+
+## Historical Job-Search Sprint V1 checkpoint
 
 - Branch: `job-search/sprint-v1`
 - Final reconciled closure baseline commit: `0a2d0f723814eb787e079195dc4326a944c1fd76`

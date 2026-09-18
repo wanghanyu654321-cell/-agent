@@ -25,6 +25,7 @@ describe("V2.1 public real-world retrieval benchmark", () => {
 			isRetrievalQualityGatePassed({
 				top1HitRate: 1,
 				recallAt3: 1,
+				mrr: 1,
 				noAnswerCorrectRejectionRate: 1,
 				wrongEvidenceRate: 0.06,
 				evidencePrecision: 1,
@@ -35,6 +36,7 @@ describe("V2.1 public real-world retrieval benchmark", () => {
 				unauthorizedKnowledgeExposureRate: 0,
 				queryProvenanceBreakdown: {},
 				categoryBreakdown: {},
+				difficultyBreakdown: {},
 			}),
 		).toBe(false);
 	});

@@ -11,6 +11,7 @@ on:
       - feat/v2.1-real-knowledge-retrieval
       - fix/v2.1.1-eval-integrity
       - job-ready/integration-v1
+      - job-ready/thin-digital-employee-v1
 
 jobs:
   independent-gate:
