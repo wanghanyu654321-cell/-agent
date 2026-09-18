@@ -1,0 +1,86 @@
+name: customer-support-agent-public
+
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.0-pg16-bookworm@sha256:a132765ec351c65111b5b675928a3a0515a466a40f97277329db8b8209ad8bc9
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - public-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    networks:
+      - internal
+
+  app:
+    build:
+      context: .
+    restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: "3000"
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      ENTERPRISE_SECURE_COOKIES: "true"
+      ENTERPRISE_RUNTIME_MODE: ${ENTERPRISE_RUNTIME_MODE:-deterministic}
+      ENTERPRISE_KNOWLEDGE_MODE: ${ENTERPRISE_KNOWLEDGE_MODE:-portfolio}
+      ENTERPRISE_RETRIEVAL_MODE: ${ENTERPRISE_RETRIEVAL_MODE:-lexical}
+      STOREOPS_TIME_ZONE: ${STOREOPS_TIME_ZONE:?STOREOPS_TIME_ZONE is required}
+      RAG_SERVICE_URL: ${RAG_SERVICE_URL:-http://ai-service:8000}
+      RAG_SERVICE_CREDENTIAL: ${RAG_SERVICE_CREDENTIAL:?RAG_SERVICE_CREDENTIAL is required}
+      RAG_EMBEDDING_PROFILE: ${RAG_EMBEDDING_PROFILE:-deterministic-test-1536-v1}
+      RAG_CORPUS_CLASSIFICATION: ${RAG_CORPUS_CLASSIFICATION:-public-synthetic}
+      PI_PROVIDER: ${PI_PROVIDER:-}
+      PI_MODEL: ${PI_MODEL:-}
+    ports:
+      - "127.0.0.1:${NODE_APP_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - --input-type=module
+        - -e
+        - "const r=await fetch('http://127.0.0.1:3000/healthz',{signal:AbortSignal.timeout(2000)});if(!r.ok)process.exit(1)"
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 20s
+    stop_grace_period: 20s
+    networks:
+      - internal
+
+  ai-service:
+    build:
+      context: .
+      dockerfile: ai-service/Dockerfile
+    restart: unless-stopped
+    environment:
+      RAG_SERVICE_CREDENTIAL: ${RAG_SERVICE_CREDENTIAL:?RAG_SERVICE_CREDENTIAL is required}
+      RAG_DATABASE_URL: ${RAG_DATABASE_URL:?RAG_DATABASE_URL is required}
+      RAG_EMBEDDING_MODE: ${RAG_EMBEDDING_MODE:-deterministic}
+      RAG_EMBEDDING_PROFILE: ${RAG_EMBEDDING_PROFILE:-deterministic-test-1536-v1}
+      RAG_CORPUS_CLASSIFICATION: ${RAG_CORPUS_CLASSIFICATION:-public-synthetic}
+      RAG_INGEST_TIMEOUT_SECONDS: ${RAG_INGEST_TIMEOUT_SECONDS:-5}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+    # Intentionally no host ports: this service remains private.
+
+networks:
+  internal:
+
+volumes:
+  public-postgres-data:
