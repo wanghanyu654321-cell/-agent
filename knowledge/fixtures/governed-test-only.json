@@ -1,0 +1,13 @@
+[
+  {
+    "id": "synthetic-governed-faq-fixture",
+    "kind": "faq",
+    "status": "synthetic_test_only",
+    "title": "Controlled test FAQ",
+    "content": "NON-PRODUCTION controlled fixture content.",
+    "version": "fixture-v1",
+    "updatedAt": "2026-08-28",
+    "sourceRef": "test://synthetic-governed-faq-fixture",
+    "tags": ["controlled", "fixture"]
+  }
+]

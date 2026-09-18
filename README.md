@@ -1,395 +1,310 @@
-# 数字前台 Agent · Support Runtime V0
+# 数字前台 Agent · Job-Ready Integrated Baseline
 
-> **面向小型门店 / 服务型商家的线上第一接待 Agent Runtime 工程。**  
-> 从“能聊天”继续推进到 **有依据地回答、受控地调用工具、真实地记录业务动作、必要时稳定转人工**。
+> **面向小型门店 / 服务型商家的线上第一接待 Agent 工程。**  
+> 从“能聊天”继续推进到 **Evidence 可追溯、Tool 有权限边界、业务动作可持久化、异常可转人工、版本可评测、系统可复现交付**。
 
-**Main：Runtime V0 Frozen｜41 / 41 Tests PASS｜Build / Type Check / Clean Install PASS**  
-**Branch work：Safety / Eval → Governed Knowledge → PostgreSQL / React / Docker → FastAPI / pgvector / Integration**
-
-> **阅读说明**：`main` 是冻结的 V0 基线；后续能力保留在独立分支中。下文会明确区分 **已通过 Gate、实现候选、实验未通过、尚未进入 Runtime**，不会把“分支存在”写成“主干已发布”或“生产已上线”。
+**Integrated baseline：Agent Runtime + Safety / Eval + Governed Knowledge + PostgreSQL + React + Docker + FastAPI / pgvector**  
+**Final Job-Search Sprint clean-runner：PASS**  
+**不声称：Production Ready / 真实客户部署 / Hosted Embedding PASS / Retrieval Quality Acceptance**
 
 ---
 
 ## 30 秒看懂这个项目
 
-这个仓库不是完整 CRM，也不是一个通用 Chatbot。它围绕“数字前台 Agent”持续验证一条更实际的业务链：
+这个项目不是通用 Chatbot，也不是为了堆技术栈。
 
-**线上咨询 → Evidence → Agent Decision → Authorized Tool → Ticket / Handoff → Durable State → Eval / Audit**
+它围绕一个真实问题展开：
+
+> **如果一个 Agent 要进入线上接待 / 客服业务，它凭什么回答、谁允许它执行动作、业务状态是否真的发生、失败后如何收口、版本改变以后怎么知道是变好了还是变坏了？**
+
+最终形成的工程链路：
+
+**线上咨询 → Governed Evidence → Agent Decision → Authorized Tool → Durable Ticket / Handoff → Eval / Audit → Docker / Integration**
 
 | 招聘官关心的问题 | 工程回答 |
 | --- | --- |
-| 模型为什么可以回答？ | FAQ / Knowledge 必须有可验证 Evidence；没有依据就 fail closed |
-| 模型说要创建 Ticket，就能执行吗？ | 不能。写操作必须经过服务端 Permission / Scope 判断 |
-| 模型说“已完成”，业务动作真的完成了吗？ | 文本不等于业务状态；副作用必须由 Tool 真正执行并可验证 |
-| 并发调用会不会重复创建？ | Ticket / Handoff 有幂等与 reservation，阻止重复和 race |
-| Provider / Tool 卡住怎么办？ | Agent / Tool Budget + Overall / Per-tool Timeout + cancellation |
-| 多轮恢复会不会串租户 / 串用户？ | Session 恢复时校验 tenant / store / customer identity |
-| Agent 改了以后怎么证明更好？ | Runtime regression、Safety holdout、Knowledge / Retrieval eval、CI Gate |
-| Demo 怎么继续走向可交付？ | 分支中继续验证 PostgreSQL persistence、React、Docker、FastAPI / pgvector 与完整 Integration |
+| 模型为什么可以回答？ | FAQ / Knowledge 先经过 approval、version、source-reference、tenant/store scope admission |
+| 模型说要执行动作，就真的能执行吗？ | 不能；服务端解析 identity / membership / capability / scope 后决定是否允许 |
+| Tool Call 就代表业务成功了吗？ | 不代表；Ticket / Handoff 需要持久化并通过 scoped read-back 证明 |
+| 不同租户会不会串数据？ | tenant/store authority 与 PostgreSQL isolation 有独立 Gate |
+| Agent / Provider / Tool 卡住怎么办？ | Turn / Tool Budget、整体 / 单 Tool Timeout、cancellation、controlled fallback |
+| 版本修改后怎么验证？ | Runtime regression、Safety evaluation、blind holdout、Knowledge / Retrieval eval、CI Gate |
+| Demo 怎么走向可交付？ | 同源 React + Node API + PostgreSQL + Docker；RAG 支线加入 private FastAPI + pgvector 的 deterministic integration proof |
 
 ---
 
-## 工程演进不是都在 main：分支证据地图
+## 当前主干收口范围
 
-这个项目采用“**冻结基线 + 独立验证分支**”推进。主干刻意保持稳定，新的 Safety、Eval、Retrieval、Delivery 能力先在独立分支通过 Gate，再决定是否进入后续集成。
+这次主干收口采用已经关闭并冻结的 **Job-Search Sprint V1** 作为稳定集成基线，而不是把所有历史 / 实验分支逐条强行合并。
 
-| 阶段 | 分支 | 当前证据 / 结论 |
-| --- | --- | --- |
-| **V0 Runtime** | `main` | Pi Agent loop、4 个业务 Tool、Evidence / Authority / Side-effect Guard、Session / Audit；41 / 41 tests |
-| **V1 Safety** | [`feat/v1-safety-vertical-slice`](https://github.com/wanghanyu654321-cell/-agent/tree/feat/v1-safety-vertical-slice) | 专业安全风险 evidence-gated；证据不足 / 部分命中时暂停并升级人工 |
-| **V1.1 Robustness** | [`feat/v1.1-safety-robustness`](https://github.com/wanghanyu654321-cell/-agent/tree/feat/v1.1-safety-robustness) | 100-case runtime-derived evaluation：required escalation recall 100%，unsupported professional-claim rate 0%，duplicate handoff 0 |
-| **V1.2 Blind Eval / CI** | [`feat/v1.2-blind-eval-ci`](https://github.com/wanghanyu654321-cell/-agent/tree/feat/v1.2-blind-eval-ci) | 独立 60-case blind holdout，含 hard-negative / adversarial cases，并进入 clean-runner CI Gate |
-| **V2.0 Knowledge Governance** | [`feat/v2.0-knowledge-grounding`](https://github.com/wanghanyu654321-cell/-agent/tree/feat/v2.0-knowledge-grounding) | FAQ / Knowledge 统一进入 approval、version、source-reference、tenant/store-scope admission；Grounding 信息进入 result / audit |
-| **V2.1 Retrieval Quality** | [`feat/v2.1-real-knowledge-retrieval`](https://github.com/wanghanyu654321-cell/-agent/tree/feat/v2.1-real-knowledge-retrieval) | 使用公开官方本地服务知识 + 脱敏场景做 bounded real-world retrieval benchmark；不冒充真实门店数据 |
-| **V2.2 Evidence Selection** | [`feat/v2.2-evidence-selection`](https://github.com/wanghanyu654321-cell/-agent/tree/feat/v2.2-evidence-selection) | 确认当前 deterministic score 无法同时满足既定 correctness / coverage Gate，因此没有硬凑规则上线，而是记录“需要 semantic selection”的工程结论 |
-| **V2.3 Semantic Selector** | [`feat/v2.3-semantic-evidence-selector`](https://github.com/wanghanyu654321-cell/-agent/tree/feat/v2.3-semantic-evidence-selector) | 做了真实模型离线 Gate、unseen holdout、order robustness 与 latency characterization；30 次时延观测 P50 ≈ 7.35s、P95 ≈ 16.67s，当前不满足同步主链预算，因此 **没有进入 Runtime 主路径** |
-| **Enterprise / Delivery** | [`feat/phase-2c-docker-delivery`](https://github.com/wanghanyu654321-cell/-agent/tree/feat/phase-2c-docker-delivery) | Server-side identity / RBAC、tenant/store authority、PostgreSQL durable Ticket / Handoff / Audit、React shell、两服务 Docker delivery 已分别经过阶段 Gate |
-| **Real Provider / Private Knowledge** | [`feat/pilot-real-source-runtime-proof`](https://github.com/wanghanyu654321-cell/-agent/tree/feat/pilot-real-source-runtime-proof) | Real Pi provider adapter 与 private store knowledge composition 已验证；real-source runtime proof 暴露过 cross-tool badcase 与 evidence-durability gap，因此未包装成“真实客户 Pilot 已通过” |
-| **Job-Ready Integration** | [`job-search/sprint-v1`](https://github.com/wanghanyu654321-cell/-agent/tree/job-search/sprint-v1) | React + Node + PostgreSQL 16 / pgvector + private FastAPI retrieval + Docker 集成；S6 clean-runner 全回归成功。Deterministic vector integration PASS，但 hosted embedding 与 semantic retrieval quality acceptance 仍明确未宣称 |
+主干集成后覆盖：
 
-### Job-Ready 专项分支
+- **Agent Runtime**：Pi-owned Agent loop；产品侧控制 Tools、Evidence、Safety、Session / Audit。
+- **Safety / Eval**：Safety vertical slice、100-case robustness、60-case blind holdout，以及历史 Knowledge / Retrieval evaluation。
+- **Knowledge Governance**：FAQ / Knowledge 的 approval、version、source reference 与 tenant/store scope admission。
+- **Authority / Persistence**：server-derived identity / capability / scope；PostgreSQL durable Ticket / Handoff / Audit。
+- **Product Surface**：同源 React shell / StoreOps views。
+- **Delivery**：Docker / Compose 的本地可复现交付与 restart-persistence proof。
+- **RAG Integration**：private Python / FastAPI retrieval service + PostgreSQL 16 / pgvector + Node canonical reconciliation 的 deterministic integration proof。
+- **CI / Gate**：PostgreSQL、Python、Node、React、Docker、cross-language E2E 与 Eval suites 的 clean-runner evidence。
 
-为便于按岗位验证能力，还保留了专项支线：
+仍然保留在独立分支、不作为本次 main 收口内容的包括：
 
-- [`job-ready/core-a-runtime-storeops-v1`](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/core-a-runtime-storeops-v1) — Runtime / StoreOps 边界。
-- [`job-ready/core-b-fastapi-rag-v1`](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/core-b-fastapi-rag-v1) — Python 3.11 / FastAPI Retrieval Service、严格 HTTP contract、PostgreSQL adapter boundary；Python 29 tests，Node Core-B regression 44 passed / 1 skipped。
-- [`job-ready/react-storeops-v1`](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/react-storeops-v1) — React StoreOps 展示面与受服务端 Scope 控制的业务视图。
-- [`job-ready/eval-delivery-v1`](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/eval-delivery-v1) — Eval / Delivery 证据链与 Docker 可复现演示。
-- [`job-ready/integration-v1`](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/integration-v1) — Core A / B + StoreOps + PostgreSQL + FastAPI 的集成候选。
-- [`job-ready/harness-acceptance-extension-v1`](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/harness-acceptance-extension-v1) — Harness / Acceptance extension，继续把“能跑”转成“可验收”。
+- Semantic Selector 的真实模型实验与 latency characterization；
+- Harness / Acceptance 的 successor extension；
+- 其他 failed / blocked / exploratory checkpoints。
 
-**这些分支证明的是工程演进和决策过程，不等于生产发布记录。**
+这样可以让 **main 表示“已经集成并有稳定 Gate 的能力”**，而历史分支继续保留“为什么这么做 / 哪些方案没有通过”的工程证据。
 
 ---
 
-## 它解决的不是“聊天”，而是这一条业务链
+## 一条业务链，而不是一个聊天框
 
 ```mermaid
 flowchart LR
     A[线上咨询] --> B[FAQ / Knowledge]
-    B --> C{Evidence 是否足够}
-    C -- 否 --> D[Controlled Fallback / Handoff]
-    C -- 是 --> E[Agent 判断下一步]
+    B --> C{Evidence 可授权?}
+    C -- 否 --> D[Fallback / Handoff]
+    C -- 是 --> E[Agent Decision]
 
-    E --> F[只读查询]
+    E --> F[Read-only Query]
     E --> G[Create Ticket]
     E --> H[Human Handoff]
 
-    G --> I[Permission + Idempotency]
+    G --> I[Permission + Scope + Idempotency]
     H --> I
 
-    I --> J[真实业务动作]
-    J --> K[Session / Audit]
+    I --> J[PostgreSQL Durable State]
+    J --> K[Scoped Read-back]
+    K --> L[Audit / Eval]
 ```
 
-V0 聚焦四类受控业务 Tool：
+核心判断始终保持：
 
-- `search_faq`
-- `search_knowledge`
-- `create_ticket`
-- `handoff_to_human`
-
-其中前两类只读；后两类有副作用，必须经过权限、幂等和安全边界控制。
-
----
-
-## 为什么要做这个 Runtime
-
-做客服 / 数字前台 Agent 时，真正困难的不是生成一句自然语言，而是几个更实际的问题：
-
-1. **Retrieval ≠ Answer Authorization**  
-   检索到内容，不代表当前租户 / 门店 / 场景就可以据此回答。
-
-2. **LLM Proposal ≠ Server Authorization**  
-   模型可以提出“创建 Ticket / 转人工”，但不能自行获得业务权限。
-
-3. **Text ≠ Business State**  
-   模型文本里的“已退款 / 已取消 / 已完成”不能替代真实业务动作。
-
-4. **Agent 不能无限执行**  
-   Provider、Tool、Retrieval 都可能超时或失败，需要明确 Budget、Timeout 与 fallback。
-
-5. **Session 必须绑定身份**  
-   多轮上下文恢复不能绕过 tenant / store / customer 的身份一致性。
-
-因此 V0 先把下面这条最小闭环做正确：
-
-**Evidence → Decision → Authorized Tool → Side Effect / Handoff → Session / Audit**
-
-后续分支再逐层补齐：
-
-**Safety → Blind Eval → Governed Knowledge → Retrieval Quality → Evidence Selection → Persistent Business State → UI / Delivery → RAG / Integration → Acceptance**
+- **Retrieval ≠ Answer Authorization**
+- **LLM Proposal ≠ Server Authorization**
+- **Tool Call ≠ Durable Business Success**
+- **Text ≠ Business State**
+- **Eval PASS ≠ Production Ready**
 
 ---
 
 ## Recruiter Quick View
 
-这个仓库主要证明 6 类能力：
-
 | 能力 | 可验证工程证据 |
 | --- | --- |
-| **Agent Runtime** | 基于公开 Pi Agent API 运行真实 Agent loop，而不是手写模拟状态机 |
-| **Evidence-first** | FAQ / Knowledge 没有可靠 Evidence 时 fail closed，不允许模型猜业务事实 |
-| **Tool / Authority** | 写操作由服务端权限控制，LLM 只能提出动作，不能直接获得授权 |
-| **Safe Side Effects** | Ticket / Handoff 使用 strict schema、幂等和并发 reservation |
-| **Eval / Gate** | Runtime regression、100-case Safety、60-case blind holdout、Knowledge / Retrieval / Selector Gate |
-| **Delivery / Integration** | 分支中验证 PostgreSQL persistence、React、Docker、FastAPI / pgvector 与跨语言集成，并保留未通过 / 未授权结论 |
-
----
-
-## Runtime 架构
-
-```mermaid
-flowchart LR
-    A[SupportRequest] --> B[SupportAgentRuntime]
-    B --> C[Pi Agent Loop]
-
-    C --> D[search_faq]
-    C --> E[search_knowledge]
-    C --> F[create_ticket]
-    C --> G[handoff_to_human]
-
-    D --> H[Evidence Guard]
-    E --> H
-
-    F --> I[Permission + Idempotency Guard]
-    G --> I
-
-    H --> J[Answer / Controlled Fallback]
-    I --> K[Business Side Effect / Escalation]
-
-    B --> L[SessionManager]
-    L --> M[Session Recovery + Audit Metadata]
-```
-
-核心原则：
-
-- **Retrieval ≠ Answer Authorization**：没有经过验证的 FAQ / Knowledge Evidence，不输出业务事实答案。
-- **LLM Proposal ≠ Server Authorization**：Ticket / Handoff 在 Tool 执行前检查权限。
-- **Text ≠ Business State**：模型文本不能单独证明“已退款 / 已取消 / 已完成”等副作用已经发生。
-- **Fail Closed**：Evidence 缺失、Tool 失败、权限不足、超时、Agent / Tool Budget 达上限时，返回受控 fallback 或人工升级。
-- **Identity Bound Session**：同一 conversation 恢复时校验 tenant / store / customer，避免跨身份复用 Session。
+| **Agent Runtime** | 真实 Pi Agent loop、4 个受控业务 Tool、turn / tool budget、timeout / cancellation |
+| **Evidence-first** | Governed FAQ / Knowledge admission；0 / 1 / 2+ answerability；没有合法 Evidence 时 fail closed |
+| **Tool / Authority** | server-derived identity、membership、capability、tenant/store scope；LLM 不直接拥有写权限 |
+| **Durable Business State** | PostgreSQL Ticket / Handoff / Audit；幂等、隔离、scoped read-back |
+| **Eval / Quality Gate** | Runtime regression、Safety 100-case、60-case blind holdout、Knowledge / Retrieval suites、CI Gates |
+| **Delivery / Integration** | React + Node + PostgreSQL + Docker；private FastAPI / pgvector deterministic cross-language integration |
+| **Engineering Trade-off** | Semantic Selector 因质量 / 时延 / contract 问题未被硬塞进主路径，失败证据保留在历史分支 |
 
 ---
 
 ## 关键工程机制
 
-### 1. Evidence Guard
+### 1. Governed Evidence
 
-`search_faq` 与 `search_knowledge` 都是只读 Tool。
+FAQ / Knowledge 不因为“检索到了”就自动获得答复资格。
 
-Runtime 会记录当前 turn 是否得到经过验证的 Evidence；如果模型回答包含营业、退款、预约、订单、价格、政策等业务事实，但没有 Evidence 支撑，则直接 fallback。
+Evidence 会经过：
 
-这解决的是：
+- approval lifecycle
+- version
+- source reference
+- tenant / store scope
+- synthetic / test admission boundary
 
-> **“检索到了内容”不等于“当前可以回答”。**
+普通 Knowledge 使用明确的 **0 / 1 / 2+** 路由：
+
+- 0 个 admissible candidate → fallback
+- 1 个 canonical candidate → answer eligible
+- 2+ candidates → ambiguous / fallback
 
 ### 2. Tool / Authority
 
-当前有副作用的 Tool：
+业务写操作不由模型直接授权。
 
-- `create_ticket`
-- `handoff_to_human`
+服务端负责：
 
-执行前由 Runtime 检查：
+- identity / membership
+- capability
+- tenant / store authority
+- Ticket / Handoff permission
+- durable business write
 
-- Ticket：`tickets:write`
-- Handoff：`handoff:write` + `mayEscalate`
+LLM 只负责理解场景并提出下一步动作。
 
-Tool 参数全部使用 TypeBox strict schema，拒绝额外字段。
+### 3. Durable Side Effects
 
-这解决的是：
+Ticket / Handoff 不以模型文本或单次 Tool Call 作为成功证明。
 
-> **模型负责理解和提出动作；最终业务授权由服务端控制。**
+关键动作需要：
 
-### 3. Idempotency & Concurrency
+**authorize → write → persistence → scoped read-back**
 
-Ticket 使用 `tenantId + idempotencyKey` 防重复；Ticket 与 Handoff 都增加 reservation，避免并发调用在真正写入前出现 race condition。
+同时保留：
 
-这解决的是：
+- idempotency
+- duplicate / race protection
+- tenant/store isolation
+- safe audit projection
 
-> 同一个 Agent turn / 并发请求不能因为重复 Tool Call 产生重复业务动作。
+### 4. Runtime Budget / Failure Handling
 
-### 4. Runtime Budget & Timeout
-
-默认约束：
+Runtime 保留明确预算：
 
 - Agent turns：4
 - Tool calls：6
 - Overall turn timeout：10s
 - Per-tool timeout：2s
 
-Timeout 使用 `AbortSignal` 向 Retrieval / Tool 传播取消，并隔离 late events，避免超时以后继续产生不可控副作用。
+超时、provider failure、tool failure、evidence failure、权限不足都进入 bounded failure path，而不是让 Agent 无限继续执行。
 
-### 5. Session & Audit
+### 5. Eval / Gate
 
-通过 Pi `SessionManager` 保存 / 恢复上下文，并额外写入 `support-agent.audit`：
+项目不是只修单个 Badcase。
 
-- outcome
-- toolsCalled
-- turns
-- toolCalls
-- timedOut
-- limitReached
-- escalationRequested
-- toolFailed
+质量链路包括：
 
-Runtime 不只返回“答案”，也保留一次 Agent 执行为什么结束的审计信息。
+**Case / Config → Runtime → Evaluation → Report → Gate → Version Decision**
+
+并保留 Safety、blind holdout、Knowledge、Retrieval 与完整 regression evidence。
 
 ---
 
-## 自动化验证
+## Job-Search Sprint V1 · 当前稳定证据
 
-### Main / V0
+冻结的 Sprint closure 记录：
 
-```text
-Vitest: 41 / 41 PASS
-Build: PASS
-Biome + Type Check: PASS
-Clean install verification: PASS
-```
+- Final reconciled closure baseline：`0a2d0f723814eb787e079195dc4326a944c1fd76`
+- Final clean-runner：`34766236491`
+- Conclusion：**success**
 
-V0 覆盖：
+Clean-runner 覆盖的已验证能力包括：
 
-- Session recovery / identity consistency
-- 4 个业务 Tool 的 schema 与执行
-- Tool permission guard
-- Ticket / Handoff 幂等与并发 race
-- Agent / Tool budget
-- Overall / per-tool timeout 与 cancellation
-- Provider failure fallback
-- Empty / unsafe model output guard
-- No-evidence / FAQ hallucination guard
-- Audit persistence
-- Extraction independence / exact dependency pins
-
-### Branch / Job-Search Sprint
-
-当前集成证据集中在 [`job-search/sprint-v1`](https://github.com/wanghanyu654321-cell/-agent/tree/job-search/sprint-v1)：
-
-- PostgreSQL 001–005 identity / business / application / Core A / Core B gates
+- PostgreSQL migrations 001–005
+- Identity / Business / Application gates
+- Core A / Core B PostgreSQL gates
+- Tenant / store isolation
 - Python RAG：43 / 43
 - vector-postgres cross-language E2E
-- Docker build / start / restart-persistence
+- React application
+- Docker build / start / persistence
 - build / check / integrity
-- historical Safety / Knowledge / Retrieval eval suites
-- S6 clean-runner：success
+- historical Safety / Knowledge / Retrieval evaluation suites
 
-这里的 **deterministic vector / pgvector / FastAPI / Node integration PASS** 证明的是集成正确性，**不等于 hosted embedding 已通过，也不等于 semantic retrieval quality 已验收**。
+这里的 **deterministic vector / pgvector / FastAPI / Node integration PASS** 表示集成正确性，不等于 hosted embedding 或 semantic retrieval quality 已通过验收。
 
-Main 验证命令：
+---
 
-```bash
-npm ci
-npm test
-npm run build
-npm run check
-```
+## RAG / FastAPI 支线
+
+在 Job-Ready 集成中，Python 服务被设计为 **private Candidate Evidence service**：
+
+- Python 3.11 / FastAPI
+- Pydantic strict contracts
+- PostgreSQL / pgvector
+- service credential
+- bounded request / response
+- cancellation / timeout
+- tenant/store/version/profile filtering
+- Node canonical registry reconciliation
+
+边界保持：
+
+> **Python 可以返回 Candidate Evidence，但不能自行批准 Knowledge、扩大 Scope、改变业务状态或直接决定最终回答。**
+
+Lexical retrieval 仍是默认路径；vector mode 为显式 opt-in。
 
 ---
 
 ## 技术栈
 
-### Main / V0
-
-- **TypeScript / Node.js 22+**
-- **Vitest**
-- **TypeBox**
-- **Biome**
-- **Pi Agent Core / Pi AI / Pi Coding Agent**
-- **JSONL Session persistence（Pi SessionManager）**
-
-### 已在分支中验证 / 集成的扩展能力
-
+- **TypeScript / Node.js**
 - **React**
 - **PostgreSQL 16**
 - **pgvector**
 - **Python 3.11 / FastAPI**
 - **psycopg**
+- **Vitest**
+- **TypeBox**
+- **Pydantic**
 - **Docker / Compose**
-- **GitHub Actions / clean-runner Gates**
-
-依赖和能力状态以对应分支的 Gate / Current State 为准，不把实验分支自动等同于主干能力。
+- **GitHub Actions**
+- **Pi Agent Core / Pi AI / Pi Coding Agent**
 
 ---
 
-## 仓库结构
-
-Main / V0：
+## 主要目录
 
 ```text
 src/
-  index.ts                         # Runtime、4 个业务 Tool、guards、session / audit
+  index.ts                    # Agent Runtime / Tools / Guards
+  enterprise/                 # identity / authority / business / HTTP / PostgreSQL
 
-skills/
-  appointment/
-  complaint/
-  escalation/
-  greeting/
-  refund/                          # 产品侧业务 SOP / Skill
-
-tests/
-  support-agent-runtime.test.ts    # V0 runtime 主测试集
-  extraction-independence.test.ts  # 独立仓库与依赖边界验证
-
-docs/
-  support-agent/
-    ARCHITECTURE.md
-    CURRENT_STATE.md
-    TEST_REPORT.md
-  architecture/
-    PI_INTEGRATION.md
-  extraction/
-    EXTRACTION_MANIFEST.md
-    EXTRACTION_GATE_REPORT.md
+web/                          # React product surface
+ai-service/                   # private FastAPI Candidate Evidence service
+migrations/                   # PostgreSQL schema / ledger / RAG profile
+evals/                        # Safety / Knowledge / Retrieval evaluation
+skills/                       # product-owned business Skills
+tests/                        # runtime / enterprise / PostgreSQL / integration tests
+scripts/                      # Docker / Gate / delivery verification
+Dockerfile
+compose.yaml
 ```
 
-集成分支还会出现 `web/`、`migrations/`、`ai-service/`、`evals/`、`harness/`、`deploy/`、`Dockerfile` 与 `compose.yaml` 等目录；请以对应分支源码为准。
+---
+
+## 为什么保留失败实验
+
+这个仓库刻意不把所有实验都包装成成功。
+
+例如 Semantic Evidence Selector 做过真实模型、unseen holdout、order robustness 与 latency characterization；其中 30 次历史时延观测得到：
+
+- P50 ≈ **7.35s**
+- P95 ≈ **16.67s**
+
+这不满足当前同步主链的整体 / 单 Tool 时延预算，因此没有把它硬塞进 Runtime 主路径。
+
+历史分支仍然保留这些 Failed / Blocked / Deferred 证据，用来解释：
+
+> **为什么最终架构选择了当前方案。**
 
 ---
 
-## 当前边界
+## 当前明确不声称
 
-必须区分两层：
+- **Production Ready**
+- **真实客户部署 / Pilot 已验收**
+- **Production SLA / 大规模真实流量**
+- **Hosted OpenAI Embedding PASS**
+- **Semantic / Vector Retrieval Quality Acceptance**
+- **Hybrid / RRF 已实现**
+- **Reranker 已上线**
+- **Live WeCom protocol / identity wiring**
+- **Public HTTPS / domain hosting**
+- **MCP 已进入当前产品主链**
+- **复杂 CRM / ERP 生产集成**
 
-### Main / V0 没有宣称
-
-- Vector DB / Embedding RAG
-- UI / Web / Mini Program
-- CRM / ERP 等真实企业系统集成
-- 多 Agent orchestration
-- 真实客户生产部署
-- Production SLA / 大规模流量验证
-
-### 分支已经做过，但仍不能被扩大解释
-
-- React / PostgreSQL / Docker / FastAPI / pgvector 等已有分支工程证据，但不等于全部已 merge 到 `main`。
-- Deterministic vector integration PASS，不等于 hosted embedding PASS。
-- Public / synthetic benchmark，不等于真实商家知识或客户数据。
-- Real Pi provider adapter / private knowledge composition，不等于真实客户 Pilot 已验收。
-- Semantic selector 做过真实模型与 unseen holdout，但当前没有获得进入 Runtime 主路径的授权。
-- 当前仍不声称 Production SLA、真实企业 CRM/ERP 集成、生产流量或正式客户验收。
-
-这里最重要的不是“所有实验都成功”，而是：
-
-> **成功的进入 Gate；失败的保留证据；不满足质量、时延或证据条件的能力不硬塞进主链。**
+这些属于后续真实部署 / POC 或 successor roadmap，不从当前代码证据中提前推断。
 
 ---
 
-## 延伸阅读
+## 历史 / successor 分支
 
-Main / V0：
+如果需要继续审查工程决策：
 
-- [Runtime Architecture](docs/support-agent/ARCHITECTURE.md)
-- [Current State](docs/support-agent/CURRENT_STATE.md)
-- [Test Report](docs/support-agent/TEST_REPORT.md)
-- [Pi Integration](docs/architecture/PI_INTEGRATION.md)
-- [Extraction Manifest](docs/extraction/EXTRACTION_MANIFEST.md)
-
-Branch / Integrated evidence：
-
+- [V1 Safety](https://github.com/wanghanyu654321-cell/-agent/tree/feat/v1-safety-vertical-slice)
+- [V1.2 Blind Eval / CI](https://github.com/wanghanyu654321-cell/-agent/tree/feat/v1.2-blind-eval-ci)
+- [V2 Knowledge Governance](https://github.com/wanghanyu654321-cell/-agent/tree/feat/v2.0-knowledge-grounding)
+- [V2.1 Retrieval](https://github.com/wanghanyu654321-cell/-agent/tree/feat/v2.1-real-knowledge-retrieval)
+- [V2.3 Semantic Selector](https://github.com/wanghanyu654321-cell/-agent/tree/feat/v2.3-semantic-evidence-selector)
 - [Job-Search Sprint V1](https://github.com/wanghanyu654321-cell/-agent/tree/job-search/sprint-v1)
-- [Core B · FastAPI / RAG](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/core-b-fastapi-rag-v1)
-- [Eval / Delivery](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/eval-delivery-v1)
-- [Integration](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/integration-v1)
-- [Harness / Acceptance](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/harness-acceptance-extension-v1)
+- [FastAPI / RAG Core B](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/core-b-fastapi-rag-v1)
+- [Integration V1](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/integration-v1)
+- [Harness / Acceptance successor](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/harness-acceptance-extension-v1)
+
+> **Main 用来展示“已集成且有稳定 Gate 的能力”；分支用来保留演进、实验、失败与后续能力证据。**

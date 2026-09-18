@@ -1,0 +1,48 @@
+/* Track C StoreOps styles. Namespaced under .storeops-* so Final Integration can mount the console
+   into App.tsx without touching the shared styles.css. The availability states are deliberately
+   visually distinct: unknown (not recorded/withdrawn) vs no listed window vs available, and a
+   view-level load failure (.storeops-unavailable) is separate from all row states and from empty. */
+
+.storeops-console { margin-top: 28px; display: grid; gap: 20px; }
+.storeops-view, .storeops-availability-with-editor { background: #fff; border: 1px solid #dfe5ef; box-shadow: 0 16px 48px rgba(28, 43, 70, .06); padding: 24px; }
+.storeops-view h2 { margin: 0 0 12px; letter-spacing: -.03em; }
+.storeops-list { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 10px; }
+.storeops-list li { border: 1px solid #e5eaf3; border-radius: 6px; padding: 12px; display: grid; gap: 6px; }
+.storeops-badge { align-self: start; border-radius: 999px; font-size: .76rem; font-weight: 800; padding: 4px 10px; text-transform: uppercase; letter-spacing: .04em; }
+.storeops-empty { color: #59667c; font-style: italic; }
+.storeops-bound, .storeops-note, .storeops-intent-meta { color: #64728a; font-size: .82rem; }
+.storeops-evidence-note, .storeops-readonly-note { background: #eef3fb; border-left: 3px solid #223d74; color: #24344d; padding: 10px 12px; margin: 12px 0; font-size: .88rem; }
+
+/* Availability row states — three distinct treatments. */
+.storeops-avail-row { border-left-width: 4px; }
+.storeops-avail-row.state-unknown { border-left-color: #98a2b3; background: #f7f8fa; }
+.storeops-avail-row.state-no-window { border-left-color: #b56800; background: #fffaf0; }
+.storeops-avail-row.state-available { border-left-color: #17633a; background: #f4fbf6; }
+.storeops-avail-unknown { background: #e4e7ec; color: #475467; }
+.storeops-avail-none { background: #fff4db; color: #684000; }
+.storeops-avail-open { background: #dff5e7; color: #17633a; }
+.storeops-windows { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.storeops-windows li { border: 0; padding: 0; display: inline-flex; gap: 4px; background: transparent; }
+.storeops-unavailable { background: #fbe5e7; border-left-color: #8a2330; color: #8a2330; }
+.storeops-conflict { background: #fff0f0; border-left-color: #b42318; color: #912018; }
+
+/* Booking intent status badges. */
+.storeops-status-pending_confirmation { background: #fff4db; color: #684000; }
+.storeops-status-confirmed { background: #dff5e7; color: #17633a; }
+.storeops-status-alternative_proposed { background: #e7f0ff; color: #223d74; }
+.storeops-status-cancelled { background: #eceff3; color: #475467; }
+.storeops-intent-summary { display: grid; gap: 4px; }
+.storeops-intent-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+.storeops-intent-action { display: grid; gap: 6px; }
+.storeops-intent-action-interval { grid-template-columns: auto auto auto; align-items: end; gap: 8px; }
+.storeops-terminal { color: #475467; font-style: italic; }
+
+/* Editors and create form. */
+.storeops-avail-editor, .storeops-intent-create { display: grid; gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #dfe5ef; }
+.storeops-avail-editors { display: grid; gap: 12px; }
+.storeops-avail-editor label, .storeops-intent-create label { display: grid; gap: 5px; font-size: .86rem; font-weight: 650; color: #37445b; }
+.storeops-avail-editor input, .storeops-avail-editor select, .storeops-intent-create input { border: 1px solid #bfc9d9; border-radius: 4px; padding: 8px 10px; }
+.storeops-avail-editor button, .storeops-intent-create button, .storeops-intent-action button { border: 0; border-radius: 4px; background: #223d74; color: #fff; font-weight: 700; padding: 9px 12px; justify-self: start; }
+.storeops-avail-editor button:disabled, .storeops-intent-create button:disabled, .storeops-intent-action button:disabled { opacity: .6; cursor: wait; }
+.storeops-window-editor { display: grid; gap: 8px; }
+.storeops-window-editor div { display: flex; gap: 8px; align-items: center; }

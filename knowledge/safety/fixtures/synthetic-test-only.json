@@ -1,0 +1,12 @@
+{
+	"id": "synthetic-safety-fixture-v1",
+	"domain": "safety",
+	"riskCategory": "allergy",
+	"status": "synthetic_test_only",
+	"version": "fixture-v1",
+	"updatedAt": "2026-08-28",
+	"scope": ["pause"],
+	"evidenceText": "NON-PRODUCTION synthetic workflow fixture.",
+	"allowedOptions": [{ "action": "fixture option", "risk": "fixture risk", "likelyResult": "fixture result" }],
+	"requiresEscalation": false
+}

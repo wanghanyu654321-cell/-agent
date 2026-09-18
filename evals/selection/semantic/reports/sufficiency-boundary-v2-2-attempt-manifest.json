@@ -1,0 +1,16 @@
+{
+  "kind": "V2_3_SUFFICIENCY_BOUNDARY_HOLDOUT_V2_2_ATTEMPT",
+  "attemptId": "v2.3-sufficiency-boundary-v2-2-first-exposure",
+  "createdAt": "2026-08-31T02:27:55.747Z",
+  "status": "running",
+  "provider": "openai-codex",
+  "model": "gpt-5.6-sol",
+  "promptVersion": "v2.3.0",
+  "promptHash": "ac4831b003263bf8aea76dd13f535808f84a39306055402ac1f99725707acf4f",
+  "holdoutEvidenceSha256": "33cab975a04c66e3bfb357dbc92ff88e39ff131b57bac198983fc93c4c44eda5",
+  "holdoutCasesSha256": "0a65ee1111722e367c7ca5ab4105b89b0a1b0a2b20c0b4537db9ff357c5aa71a",
+  "holdoutFrozenCommit": "e34e82847bb1e2465924e34c043d5e492d4dde2f",
+  "evaluationSourceCommit": "98ef61b9a0807234a93e9080ec43a0f08944a098",
+  "evaluationTimeoutMs": 15000,
+  "expectedSemanticCalls": 24
+}

@@ -1,0 +1,23 @@
+{
+  "holdoutVersion": "v1",
+  "authoringBaseCommit": "b6772b1a057b73c8314330ee67ea4ce4e073e751",
+  "caseCount": 30,
+  "positiveCount": 24,
+  "abstainCount": 6,
+  "casesSha256": "f9dfefbbdc985c9569254ac424528e7f3aeda027189bdee8d3a06ce385b2333d",
+  "corpusHash": "1aecf6ea0270ad48ce111737c6b6acb57a59006ff69f59257cb1c0f7f3e723af",
+  "promptVersion": "v2.3.0",
+  "promptHash": "ac4831b003263bf8aea76dd13f535808f84a39306055402ac1f99725707acf4f",
+  "futurePrimaryCalls": 30,
+  "futureReversedCalls": 30,
+  "futureTotalCalls": 60,
+  "integerPassRequirements": {
+    "positivePrimary": { "correct": 24, "wrong": 0, "abstain": 0 },
+    "abstainPrimary": { "correct": 6, "unsupportedSelection": 0 },
+    "positiveReversed": { "correct": 24, "wrong": 0, "abstain": 0 },
+    "abstainReversed": { "correct": 6, "unsupportedSelection": 0 },
+    "allCalls": { "invalid": 0, "providerError": 0, "timeout": 0 },
+    "orderRobustness": { "orderInducedWrong": 0, "orderInducedOutcomeDisagreement": 0 }
+  },
+  "createdAt": "2026-08-30T13:28:00.000Z"
+}

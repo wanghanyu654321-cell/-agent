@@ -1,0 +1,29 @@
+{
+  "kind": "V2_3_PROVIDER_RESPONSE_ENVELOPE_DIAGNOSTIC",
+  "provider": "openai-codex",
+  "model": "gpt-5.6-sol",
+  "promptVersion": "v2.3.0",
+  "transport": "sse",
+  "caseId": "public-01",
+  "candidateCount": 2,
+  "outcome": "assistant_message",
+  "envelope": {
+    "provider": "openai-codex",
+    "model": "gpt-5.6-sol",
+    "stopReason": "error",
+    "responseIdPresent": false,
+    "contentBlockCount": 0,
+    "contentBlockTypes": [],
+    "textBlockCount": 0,
+    "totalTextLength": 0,
+    "thinkingBlockCount": 0,
+    "totalThinkingLength": 0,
+    "usage": {
+      "input": 0,
+      "output": 0,
+      "totalTokens": 0
+    },
+    "diagnosticTypes": [],
+    "diagnosticCodes": []
+  }
+}

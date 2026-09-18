@@ -1,0 +1,30 @@
+{
+  "packId": "job-ready-real-source-knowledge-v1",
+  "provenance": "HUMAN_AUTHORED_TEST_CASE",
+  "notCustomerConversations": true,
+  "selectedSourceIds": [
+    "PB-MT-VOUCHER-USE",
+    "PB-MT-CHANGE-REFUND",
+    "PB-MT-MERCHANT-CANNOT-FULFILL",
+    "PB-MT-AFTERSALES-CONTACT",
+    "PB-MT-REFUND-ORIGINAL-PAYMENT",
+    "PB-MT-UNCONSUMED-REFUND",
+    "PB-MT-EXPIRED-AUTO-REFUND",
+    "PB-DP-HELP-UNVERIFIED"
+  ],
+  "cases": [
+    {"caseId":"real-source-01","category":"voucher_usage_expiry","query":"评估场景：团购券超过页面约定有效期后还能要求提供服务吗？","expectedOutcome":"answer","expectedEvidenceId":"PB-MT-VOUCHER-USE","provenance":"HUMAN_AUTHORED_TEST_CASE"},
+    {"caseId":"real-source-02","category":"merchant_change_refund","query":"评估场景：商户变更团购内容且用户不接受，规则是否支持退款？","expectedOutcome":"answer","expectedEvidenceId":"PB-MT-CHANGE-REFUND","provenance":"HUMAN_AUTHORED_TEST_CASE"},
+    {"caseId":"real-source-03","category":"merchant_cannot_fulfill","query":"评估场景：商户无法履约时，规则中的退款条件是什么？","expectedOutcome":"answer","expectedEvidenceId":"PB-MT-MERCHANT-CANNOT-FULFILL","provenance":"HUMAN_AUTHORED_TEST_CASE"},
+    {"caseId":"real-source-04","category":"post_consumption_aftersales","query":"评估场景：已消费后有特殊情况申请退款，应该如何联系处理？","expectedOutcome":"answer","expectedEvidenceId":"PB-MT-AFTERSALES-CONTACT","provenance":"HUMAN_AUTHORED_TEST_CASE"},
+    {"caseId":"real-source-05","category":"refund_return_path","query":"评估场景：符合条件的退款通常沿什么支付路径返回？","expectedOutcome":"answer","expectedEvidenceId":"PB-MT-REFUND-ORIGINAL-PAYMENT","provenance":"HUMAN_AUTHORED_TEST_CASE"},
+    {"caseId":"real-source-06","category":"unconsumed_refund","query":"评估场景：页面支持未消费退款的团购订单如何按规则处理？","expectedOutcome":"answer","expectedEvidenceId":"PB-MT-UNCONSUMED-REFUND","provenance":"HUMAN_AUTHORED_TEST_CASE"},
+    {"caseId":"real-source-07","category":"expired_auto_refund","query":"评估场景：页面标明过期自动退的未消费订单何时自动退款？","expectedOutcome":"answer","expectedEvidenceId":"PB-MT-EXPIRED-AUTO-REFUND","provenance":"HUMAN_AUTHORED_TEST_CASE"},
+    {"caseId":"real-source-08","category":"unverified_voucher_help","query":"评估场景：普通团购券未验证时在哪里申请退款帮助？","expectedOutcome":"answer","expectedEvidenceId":"PB-DP-HELP-UNVERIFIED","provenance":"HUMAN_AUTHORED_TEST_CASE"},
+    {"caseId":"real-source-09","category":"no_answer","query":"评估场景：规则要求商户在几小时内回复售后？","expectedOutcome":"fallback","provenance":"HUMAN_AUTHORED_TEST_CASE"},
+    {"caseId":"real-source-10","category":"no_answer","query":"评估场景：规则规定退款必须在具体哪一天到账？","expectedOutcome":"fallback","provenance":"HUMAN_AUTHORED_TEST_CASE"},
+    {"caseId":"real-source-11","category":"ambiguity_fail_closed","query":"评估场景：未消费且已过期的订单，应当在两条退款机制中选择哪一条？","expectedOutcome":"fallback","provenance":"HUMAN_AUTHORED_TEST_CASE"},
+    {"caseId":"real-source-12","category":"scope_isolation","query":"评估场景：不同 tenant/store 是否可读取该 Pilot scoped FAQ？","expectedOutcome":"fallback","provenance":"HUMAN_AUTHORED_TEST_CASE"},
+    {"caseId":"real-source-13","category":"no_answer","query":"评估场景：规则是否规定唯一的商户联系渠道？","expectedOutcome":"fallback","provenance":"HUMAN_AUTHORED_TEST_CASE"}
+  ]
+}

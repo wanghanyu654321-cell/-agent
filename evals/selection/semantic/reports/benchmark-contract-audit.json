@@ -1,0 +1,965 @@
+{
+  "kind": "V2_3_BENCHMARK_CONTRACT_AUDIT",
+  "rubric": {
+    "SUPPORTED": "Evidence contains the policy or fact needed to answer the query without a new business-policy fact.",
+    "PARTIAL": "Evidence addresses the workflow but misses a material component requested by the query.",
+    "UNSUPPORTED": "The requested fact or action cannot be grounded in this evidence."
+  },
+  "cases": [
+    {
+      "caseId": "public-01",
+      "query": "团购券过了有效期还能核销吗",
+      "expectedEvidenceId": "PB-MT-VOUCHER-USE",
+      "category": "group-buy voucher usage",
+      "queryProvenance": "PUBLIC_REAL_CASE",
+      "difficulty": "direct",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-VOUCHER-USE",
+        "title": "美团团购券使用与有效期",
+        "version": "mt-terms-1.6-2026-04-23",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1?activeRule=1#section-7"
+      }
+    },
+    {
+      "caseId": "public-02",
+      "query": "我的团购券已过期还能用吗",
+      "expectedEvidenceId": "PB-MT-VOUCHER-USE",
+      "category": "group-buy voucher usage",
+      "queryProvenance": "PUBLIC_REAL_CASE",
+      "difficulty": "direct",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-VOUCHER-USE",
+        "title": "美团团购券使用与有效期",
+        "version": "mt-terms-1.6-2026-04-23",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1?activeRule=1#section-7"
+      }
+    },
+    {
+      "caseId": "public-03",
+      "query": "券过期后商家还要提供服务吗",
+      "expectedEvidenceId": "PB-MT-VOUCHER-USE",
+      "category": "group-buy voucher usage",
+      "queryProvenance": "PUBLIC_REAL_CASE",
+      "difficulty": "customer-variant",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-VOUCHER-USE",
+        "title": "美团团购券使用与有效期",
+        "version": "mt-terms-1.6-2026-04-23",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1?activeRule=1#section-7"
+      }
+    },
+    {
+      "caseId": "public-04",
+      "query": "团购券有效期怎么看",
+      "expectedEvidenceId": "PB-MT-VOUCHER-USE",
+      "category": "group-buy voucher usage",
+      "queryProvenance": "PUBLIC_REAL_CASE",
+      "difficulty": "customer-variant",
+      "directness": "indirect",
+      "sufficiency": "partial",
+      "contractClassification": "PARTIAL",
+      "reason": "Evidence states the consequence after expiry; query asks where or how to check validity.",
+      "requiredUnsupportedInference": true,
+      "auditEvidence": {
+        "id": "PB-MT-VOUCHER-USE",
+        "title": "美团团购券使用与有效期",
+        "version": "mt-terms-1.6-2026-04-23",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1?activeRule=1#section-7"
+      }
+    },
+    {
+      "caseId": "public-05",
+      "query": "核销团购券要按什么说明使用",
+      "expectedEvidenceId": "PB-MT-VOUCHER-USE",
+      "category": "group-buy voucher usage",
+      "queryProvenance": "PUBLIC_REAL_CASE",
+      "difficulty": "customer-variant",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-VOUCHER-USE",
+        "title": "美团团购券使用与有效期",
+        "version": "mt-terms-1.6-2026-04-23",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1?activeRule=1#section-7"
+      }
+    },
+    {
+      "caseId": "public-06",
+      "query": "商家要变更团购内容我不接受能退款吗",
+      "expectedEvidenceId": "PB-MT-CHANGE-REFUND",
+      "category": "rescheduling / cancellation",
+      "queryProvenance": "PUBLIC_REAL_CASE",
+      "difficulty": "direct",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-CHANGE-REFUND",
+        "title": "商户变更团购内容时的退款条件",
+        "version": "mt-terms-1.6-2026-04-23",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1?activeRule=1#section-9.1"
+      }
+    },
+    {
+      "caseId": "public-07",
+      "query": "预约项目变更我不接受怎么办",
+      "expectedEvidenceId": "PB-MT-CHANGE-REFUND",
+      "category": "rescheduling / cancellation",
+      "queryProvenance": "PUBLIC_REAL_CASE",
+      "difficulty": "direct",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-CHANGE-REFUND",
+        "title": "商户变更团购内容时的退款条件",
+        "version": "mt-terms-1.6-2026-04-23",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1?activeRule=1#section-9.1"
+      }
+    },
+    {
+      "caseId": "public-08",
+      "query": "页面信息错了我不同意新内容可以取消吗",
+      "expectedEvidenceId": "PB-MT-CHANGE-REFUND",
+      "category": "rescheduling / cancellation",
+      "queryProvenance": "PUBLIC_REAL_CASE",
+      "difficulty": "customer-variant",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-CHANGE-REFUND",
+        "title": "商户变更团购内容时的退款条件",
+        "version": "mt-terms-1.6-2026-04-23",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1?activeRule=1#section-9.1"
+      }
+    },
+    {
+      "caseId": "public-09",
+      "query": "物料短缺换项目我不接受能退吗",
+      "expectedEvidenceId": "PB-MT-CHANGE-REFUND",
+      "category": "rescheduling / cancellation",
+      "queryProvenance": "PUBLIC_REAL_CASE",
+      "difficulty": "customer-variant",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-CHANGE-REFUND",
+        "title": "商户变更团购内容时的退款条件",
+        "version": "mt-terms-1.6-2026-04-23",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1?activeRule=1#section-9.1"
+      }
+    },
+    {
+      "caseId": "public-10",
+      "query": "商家改了团购服务如何退款",
+      "expectedEvidenceId": "PB-MT-CHANGE-REFUND",
+      "category": "rescheduling / cancellation",
+      "queryProvenance": "PUBLIC_REAL_CASE",
+      "difficulty": "customer-variant",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-CHANGE-REFUND",
+        "title": "商户变更团购内容时的退款条件",
+        "version": "mt-terms-1.6-2026-04-23",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1?activeRule=1#section-9.1"
+      }
+    },
+    {
+      "caseId": "public-11",
+      "query": "商家停业无法提供服务能退款吗",
+      "expectedEvidenceId": "PB-MT-MERCHANT-CANNOT-FULFILL",
+      "category": "merchant inability to provide purchased service",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "direct",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-MERCHANT-CANNOT-FULFILL",
+        "title": "商户无法提供团购服务",
+        "version": "mt-terms-1.6-2026-04-23",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1?activeRule=1#section-9.1"
+      }
+    },
+    {
+      "caseId": "public-12",
+      "query": "门店无法履约团购订单怎么办",
+      "expectedEvidenceId": "PB-MT-MERCHANT-CANNOT-FULFILL",
+      "category": "merchant inability to provide purchased service",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "direct",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-MERCHANT-CANNOT-FULFILL",
+        "title": "商户无法提供团购服务",
+        "version": "mt-terms-1.6-2026-04-23",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1?activeRule=1#section-9.1"
+      }
+    },
+    {
+      "caseId": "public-13",
+      "query": "商户原因不能提供项目如何处理",
+      "expectedEvidenceId": "PB-MT-MERCHANT-CANNOT-FULFILL",
+      "category": "merchant inability to provide purchased service",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "customer-variant",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-MERCHANT-CANNOT-FULFILL",
+        "title": "商户无法提供团购服务",
+        "version": "mt-terms-1.6-2026-04-23",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1?activeRule=1#section-9.1"
+      }
+    },
+    {
+      "caseId": "public-14",
+      "query": "买了服务商家说做不了能退吗",
+      "expectedEvidenceId": "PB-MT-MERCHANT-CANNOT-FULFILL",
+      "category": "merchant inability to provide purchased service",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "customer-variant",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-MERCHANT-CANNOT-FULFILL",
+        "title": "商户无法提供团购服务",
+        "version": "mt-terms-1.6-2026-04-23",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1?activeRule=1#section-9.1"
+      }
+    },
+    {
+      "caseId": "public-15",
+      "query": "平台核实商家无法服务后怎么办",
+      "expectedEvidenceId": "PB-MT-MERCHANT-CANNOT-FULFILL",
+      "category": "merchant inability to provide purchased service",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "customer-variant",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-MERCHANT-CANNOT-FULFILL",
+        "title": "商户无法提供团购服务",
+        "version": "mt-terms-1.6-2026-04-23",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1?activeRule=1#section-9.1"
+      }
+    },
+    {
+      "caseId": "public-16",
+      "query": "已经消费后想申请退款应该联系谁",
+      "expectedEvidenceId": "PB-MT-AFTERSALES-CONTACT",
+      "category": "customer after-sales flow",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "direct",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-AFTERSALES-CONTACT",
+        "title": "消费后的特殊退款与售后联系",
+        "version": "mt-terms-1.6-2026-04-23",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1?activeRule=1#section-9.2"
+      }
+    },
+    {
+      "caseId": "public-17",
+      "query": "服务做完有特殊情况怎么售后",
+      "expectedEvidenceId": "PB-MT-AFTERSALES-CONTACT",
+      "category": "customer after-sales flow",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "direct",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-AFTERSALES-CONTACT",
+        "title": "消费后的特殊退款与售后联系",
+        "version": "mt-terms-1.6-2026-04-23",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1?activeRule=1#section-9.2"
+      }
+    },
+    {
+      "caseId": "public-18",
+      "query": "已消费团购券还能退款吗",
+      "expectedEvidenceId": "PB-MT-AFTERSALES-CONTACT",
+      "category": "customer after-sales flow",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "customer-variant",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-AFTERSALES-CONTACT",
+        "title": "消费后的特殊退款与售后联系",
+        "version": "mt-terms-1.6-2026-04-23",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1?activeRule=1#section-9.2"
+      }
+    },
+    {
+      "caseId": "public-19",
+      "query": "消费后问题先找商户还是客服",
+      "expectedEvidenceId": "PB-MT-AFTERSALES-CONTACT",
+      "category": "customer after-sales flow",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "customer-variant",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-AFTERSALES-CONTACT",
+        "title": "消费后的特殊退款与售后联系",
+        "version": "mt-terms-1.6-2026-04-23",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1?activeRule=1#section-9.2"
+      }
+    },
+    {
+      "caseId": "public-20",
+      "query": "用过服务后需要退款怎么处理",
+      "expectedEvidenceId": "PB-MT-AFTERSALES-CONTACT",
+      "category": "customer after-sales flow",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "customer-variant",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-AFTERSALES-CONTACT",
+        "title": "消费后的特殊退款与售后联系",
+        "version": "mt-terms-1.6-2026-04-23",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1?activeRule=1#section-9.2"
+      }
+    },
+    {
+      "caseId": "public-21",
+      "query": "退款会原路退回吗",
+      "expectedEvidenceId": "PB-MT-REFUND-ORIGINAL-PAYMENT",
+      "category": "refund processing / original-payment return",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "direct",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-REFUND-ORIGINAL-PAYMENT",
+        "title": "符合条件退款的支付路径",
+        "version": "mt-terms-1.6-2026-04-23",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1?activeRule=1#section-9.4"
+      }
+    },
+    {
+      "caseId": "public-22",
+      "query": "退款到账回到哪个支付账户",
+      "expectedEvidenceId": "PB-MT-REFUND-ORIGINAL-PAYMENT",
+      "category": "refund processing / original-payment return",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "direct",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-REFUND-ORIGINAL-PAYMENT",
+        "title": "符合条件退款的支付路径",
+        "version": "mt-terms-1.6-2026-04-23",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1?activeRule=1#section-9.4"
+      }
+    },
+    {
+      "caseId": "public-23",
+      "query": "第三方支付退款没回原账户怎么办",
+      "expectedEvidenceId": "PB-MT-REFUND-ORIGINAL-PAYMENT",
+      "category": "refund processing / original-payment return",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "customer-variant",
+      "directness": "indirect",
+      "sufficiency": "partial",
+      "contractClassification": "PARTIAL",
+      "reason": "Evidence says third-party account issues may be handled separately; query asks what the user should do.",
+      "requiredUnsupportedInference": true,
+      "auditEvidence": {
+        "id": "PB-MT-REFUND-ORIGINAL-PAYMENT",
+        "title": "符合条件退款的支付路径",
+        "version": "mt-terms-1.6-2026-04-23",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1?activeRule=1#section-9.4"
+      }
+    },
+    {
+      "caseId": "public-24",
+      "query": "申请退款后原支付怎么退",
+      "expectedEvidenceId": "PB-MT-REFUND-ORIGINAL-PAYMENT",
+      "category": "refund processing / original-payment return",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "customer-variant",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-REFUND-ORIGINAL-PAYMENT",
+        "title": "符合条件退款的支付路径",
+        "version": "mt-terms-1.6-2026-04-23",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1?activeRule=1#section-9.4"
+      }
+    },
+    {
+      "caseId": "public-25",
+      "query": "退款到账路径是什么",
+      "expectedEvidenceId": "PB-MT-REFUND-ORIGINAL-PAYMENT",
+      "category": "refund processing / original-payment return",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "customer-variant",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-REFUND-ORIGINAL-PAYMENT",
+        "title": "符合条件退款的支付路径",
+        "version": "mt-terms-1.6-2026-04-23",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1?activeRule=1#section-9.4"
+      }
+    },
+    {
+      "caseId": "public-26",
+      "query": "团购券未消费怎么申请退款",
+      "expectedEvidenceId": "PB-MT-UNCONSUMED-REFUND",
+      "category": "refund eligibility",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "direct",
+      "directness": "indirect",
+      "sufficiency": "partial",
+      "contractClassification": "PARTIAL",
+      "reason": "Evidence defers the refund method to the order page; query asks how to apply.",
+      "requiredUnsupportedInference": true,
+      "auditEvidence": {
+        "id": "PB-MT-UNCONSUMED-REFUND",
+        "title": "未消费团购券退款机制",
+        "version": "mt-guarantee-2026-01-01",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/386003?activeRule=1#unconsumed-refund"
+      }
+    },
+    {
+      "caseId": "public-27",
+      "query": "没用过的团购券能随时退款吗",
+      "expectedEvidenceId": "PB-MT-UNCONSUMED-REFUND",
+      "category": "refund eligibility",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "direct",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-UNCONSUMED-REFUND",
+        "title": "未消费团购券退款机制",
+        "version": "mt-guarantee-2026-01-01",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/386003?activeRule=1#unconsumed-refund"
+      }
+    },
+    {
+      "caseId": "public-28",
+      "query": "未消费退款审核要多久",
+      "expectedEvidenceId": "PB-MT-UNCONSUMED-REFUND",
+      "category": "refund eligibility",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "customer-variant",
+      "directness": "indirect",
+      "sufficiency": "partial",
+      "contractClassification": "PARTIAL",
+      "reason": "Evidence states refund arrival after approval; query asks approval-processing duration.",
+      "requiredUnsupportedInference": true,
+      "auditEvidence": {
+        "id": "PB-MT-UNCONSUMED-REFUND",
+        "title": "未消费团购券退款机制",
+        "version": "mt-guarantee-2026-01-01",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/386003?activeRule=1#unconsumed-refund"
+      }
+    },
+    {
+      "caseId": "public-29",
+      "query": "没有核销的券如何退款",
+      "expectedEvidenceId": "PB-MT-UNCONSUMED-REFUND",
+      "category": "refund eligibility",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "customer-variant",
+      "directness": "indirect",
+      "sufficiency": "partial",
+      "contractClassification": "PARTIAL",
+      "reason": "Evidence defers the refund method to the order page; query asks how to apply.",
+      "requiredUnsupportedInference": true,
+      "auditEvidence": {
+        "id": "PB-MT-UNCONSUMED-REFUND",
+        "title": "未消费团购券退款机制",
+        "version": "mt-guarantee-2026-01-01",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/386003?activeRule=1#unconsumed-refund"
+      }
+    },
+    {
+      "caseId": "public-30",
+      "query": "团购券没使用退款多久到账",
+      "expectedEvidenceId": "PB-MT-UNCONSUMED-REFUND",
+      "category": "refund eligibility",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "customer-variant",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-UNCONSUMED-REFUND",
+        "title": "未消费团购券退款机制",
+        "version": "mt-guarantee-2026-01-01",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/386003?activeRule=1#unconsumed-refund"
+      }
+    },
+    {
+      "caseId": "public-31",
+      "query": "团购券过期没用会自动退款吗",
+      "expectedEvidenceId": "PB-MT-EXPIRED-AUTO-REFUND",
+      "category": "unconsumed voucher handling",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "direct",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-EXPIRED-AUTO-REFUND",
+        "title": "过期未消费团购券自动退款",
+        "version": "mt-guarantee-2026-01-01",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/386003?activeRule=1#expired-auto-refund"
+      }
+    },
+    {
+      "caseId": "public-32",
+      "query": "过期自动退要等几天",
+      "expectedEvidenceId": "PB-MT-EXPIRED-AUTO-REFUND",
+      "category": "unconsumed voucher handling",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "direct",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-EXPIRED-AUTO-REFUND",
+        "title": "过期未消费团购券自动退款",
+        "version": "mt-guarantee-2026-01-01",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/386003?activeRule=1#expired-auto-refund"
+      }
+    },
+    {
+      "caseId": "public-33",
+      "query": "未消费过期券七个工作日退款吗",
+      "expectedEvidenceId": "PB-MT-EXPIRED-AUTO-REFUND",
+      "category": "unconsumed voucher handling",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "customer-variant",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-EXPIRED-AUTO-REFUND",
+        "title": "过期未消费团购券自动退款",
+        "version": "mt-guarantee-2026-01-01",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/386003?activeRule=1#expired-auto-refund"
+      }
+    },
+    {
+      "caseId": "public-34",
+      "query": "什么订单支持过期自动退",
+      "expectedEvidenceId": "PB-MT-EXPIRED-AUTO-REFUND",
+      "category": "unconsumed voucher handling",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "customer-variant",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-EXPIRED-AUTO-REFUND",
+        "title": "过期未消费团购券自动退款",
+        "version": "mt-guarantee-2026-01-01",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/386003?activeRule=1#expired-auto-refund"
+      }
+    },
+    {
+      "caseId": "public-35",
+      "query": "券到期后自动退款条件是什么",
+      "expectedEvidenceId": "PB-MT-EXPIRED-AUTO-REFUND",
+      "category": "unconsumed voucher handling",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "customer-variant",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-EXPIRED-AUTO-REFUND",
+        "title": "过期未消费团购券自动退款",
+        "version": "mt-guarantee-2026-01-01",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/386003?activeRule=1#expired-auto-refund"
+      }
+    },
+    {
+      "caseId": "public-36",
+      "query": "预约满了商家不接待怎么办",
+      "expectedEvidenceId": "PB-MT-FULFILLMENT-RESERVATION",
+      "category": "appointment / reservation handling",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "direct",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-FULFILLMENT-RESERVATION",
+        "title": "预约结果与商户接待",
+        "version": "mt-fulfillment-2026-08-20",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1174?activeRule=1#reservation"
+      }
+    },
+    {
+      "caseId": "public-37",
+      "query": "商家不承认预约结果怎么办",
+      "expectedEvidenceId": "PB-MT-FULFILLMENT-RESERVATION",
+      "category": "appointment / reservation handling",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "direct",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-FULFILLMENT-RESERVATION",
+        "title": "预约结果与商户接待",
+        "version": "mt-fulfillment-2026-08-20",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1174?activeRule=1#reservation"
+      }
+    },
+    {
+      "caseId": "public-38",
+      "query": "预约到店后说不能提供服务",
+      "expectedEvidenceId": "PB-MT-FULFILLMENT-RESERVATION",
+      "category": "appointment / reservation handling",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "customer-variant",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-FULFILLMENT-RESERVATION",
+        "title": "预约结果与商户接待",
+        "version": "mt-fulfillment-2026-08-20",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1174?activeRule=1#reservation"
+      }
+    },
+    {
+      "caseId": "public-39",
+      "query": "预定成功却被拒绝接待",
+      "expectedEvidenceId": "PB-MT-FULFILLMENT-RESERVATION",
+      "category": "appointment / reservation handling",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "customer-variant",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-FULFILLMENT-RESERVATION",
+        "title": "预约结果与商户接待",
+        "version": "mt-fulfillment-2026-08-20",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1174?activeRule=1#reservation"
+      }
+    },
+    {
+      "caseId": "public-40",
+      "query": "预约团购券到店被拒怎么办",
+      "expectedEvidenceId": "PB-MT-FULFILLMENT-RESERVATION",
+      "category": "appointment / reservation handling",
+      "queryProvenance": "HUMAN_AUTHORED",
+      "difficulty": "customer-variant",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-FULFILLMENT-RESERVATION",
+        "title": "预约结果与商户接待",
+        "version": "mt-fulfillment-2026-08-20",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1174?activeRule=1#reservation"
+      }
+    },
+    {
+      "caseId": "public-41",
+      "query": "门店装修到店无法消费怎么办",
+      "expectedEvidenceId": "PB-MT-FULFILLMENT-CLOSURE",
+      "category": "merchant fulfillment after reservation",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "difficulty": "direct",
+      "directness": "indirect",
+      "sufficiency": "partial",
+      "contractClassification": "PARTIAL",
+      "reason": "Evidence identifies an unserved-arrival scenario but supplies no user remedy for the question.",
+      "requiredUnsupportedInference": true,
+      "auditEvidence": {
+        "id": "PB-MT-FULFILLMENT-CLOSURE",
+        "title": "商户装修歇业时的团购可用性告知",
+        "version": "mt-fulfillment-2026-08-20",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1174?activeRule=1#closure"
+      }
+    },
+    {
+      "caseId": "public-42",
+      "query": "商家歇业但团购券还能用吗",
+      "expectedEvidenceId": "PB-MT-FULFILLMENT-CLOSURE",
+      "category": "merchant fulfillment after reservation",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "difficulty": "direct",
+      "directness": "indirect",
+      "sufficiency": "partial",
+      "contractClassification": "PARTIAL",
+      "reason": "Evidence describes merchant notice duties, not whether this voucher remains usable now.",
+      "requiredUnsupportedInference": true,
+      "auditEvidence": {
+        "id": "PB-MT-FULFILLMENT-CLOSURE",
+        "title": "商户装修歇业时的团购可用性告知",
+        "version": "mt-fulfillment-2026-08-20",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1174?activeRule=1#closure"
+      }
+    },
+    {
+      "caseId": "public-43",
+      "query": "门店无法营业没有设置不可用时间",
+      "expectedEvidenceId": "PB-MT-FULFILLMENT-CLOSURE",
+      "category": "merchant fulfillment after reservation",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "difficulty": "customer-variant",
+      "directness": "indirect",
+      "sufficiency": "partial",
+      "contractClassification": "PARTIAL",
+      "reason": "Evidence identifies a merchant notice failure but does not answer the customer's next action.",
+      "requiredUnsupportedInference": true,
+      "auditEvidence": {
+        "id": "PB-MT-FULFILLMENT-CLOSURE",
+        "title": "商户装修歇业时的团购可用性告知",
+        "version": "mt-fulfillment-2026-08-20",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1174?activeRule=1#closure"
+      }
+    },
+    {
+      "caseId": "public-44",
+      "query": "到店才发现商家关门怎么办",
+      "expectedEvidenceId": "PB-MT-FULFILLMENT-CLOSURE",
+      "category": "merchant fulfillment after reservation",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "difficulty": "customer-variant",
+      "directness": "indirect",
+      "sufficiency": "partial",
+      "contractClassification": "PARTIAL",
+      "reason": "Evidence identifies an unserved-arrival scenario but supplies no user remedy for the question.",
+      "requiredUnsupportedInference": true,
+      "auditEvidence": {
+        "id": "PB-MT-FULFILLMENT-CLOSURE",
+        "title": "商户装修歇业时的团购可用性告知",
+        "version": "mt-fulfillment-2026-08-20",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1174?activeRule=1#closure"
+      }
+    },
+    {
+      "caseId": "public-45",
+      "query": "商户装修没有提前告知团购不可用",
+      "expectedEvidenceId": "PB-MT-FULFILLMENT-CLOSURE",
+      "category": "merchant fulfillment after reservation",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "difficulty": "customer-variant",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-FULFILLMENT-CLOSURE",
+        "title": "商户装修歇业时的团购可用性告知",
+        "version": "mt-fulfillment-2026-08-20",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1174?activeRule=1#closure"
+      }
+    },
+    {
+      "caseId": "public-46",
+      "query": "商家要替换团购项目我不认可",
+      "expectedEvidenceId": "PB-MT-FULFILLMENT-ALTERNATIVE",
+      "category": "ordinary customer-service escalation",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "difficulty": "direct",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-FULFILLMENT-ALTERNATIVE",
+        "title": "商户无法提供团购组成时的接待规则",
+        "version": "mt-fulfillment-2026-08-20",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1174?activeRule=1#alternative"
+      }
+    },
+    {
+      "caseId": "public-47",
+      "query": "经营调整换服务价值不能低于原来吗",
+      "expectedEvidenceId": "PB-MT-FULFILLMENT-ALTERNATIVE",
+      "category": "ordinary customer-service escalation",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "difficulty": "direct",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-FULFILLMENT-ALTERNATIVE",
+        "title": "商户无法提供团购组成时的接待规则",
+        "version": "mt-fulfillment-2026-08-20",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1174?activeRule=1#alternative"
+      }
+    },
+    {
+      "caseId": "public-48",
+      "query": "团购组成变了如何沟通",
+      "expectedEvidenceId": "PB-MT-FULFILLMENT-ALTERNATIVE",
+      "category": "ordinary customer-service escalation",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "difficulty": "customer-variant",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-FULFILLMENT-ALTERNATIVE",
+        "title": "商户无法提供团购组成时的接待规则",
+        "version": "mt-fulfillment-2026-08-20",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1174?activeRule=1#alternative"
+      }
+    },
+    {
+      "caseId": "public-49",
+      "query": "商家给替换方案但我不同意",
+      "expectedEvidenceId": "PB-MT-FULFILLMENT-ALTERNATIVE",
+      "category": "ordinary customer-service escalation",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "difficulty": "customer-variant",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-FULFILLMENT-ALTERNATIVE",
+        "title": "商户无法提供团购组成时的接待规则",
+        "version": "mt-fulfillment-2026-08-20",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1174?activeRule=1#alternative"
+      }
+    },
+    {
+      "caseId": "public-50",
+      "query": "原项目没有了商户应该怎么接待",
+      "expectedEvidenceId": "PB-MT-FULFILLMENT-ALTERNATIVE",
+      "category": "ordinary customer-service escalation",
+      "queryProvenance": "SYNTHETIC_QUERY",
+      "difficulty": "customer-variant",
+      "directness": "direct",
+      "sufficiency": "sufficient",
+      "contractClassification": "SUPPORTED",
+      "reason": "Evidence states the policy or fact needed to answer the query without a new business-policy fact.",
+      "requiredUnsupportedInference": false,
+      "auditEvidence": {
+        "id": "PB-MT-FULFILLMENT-ALTERNATIVE",
+        "title": "商户无法提供团购组成时的接待规则",
+        "version": "mt-fulfillment-2026-08-20",
+        "sourceRef": "https://rules-center.meituan.com/m/detail/guize/1174?activeRule=1#alternative"
+      }
+    }
+  ],
+  "summary": {
+    "supported": 41,
+    "partial": 9,
+    "unsupported": 0
+  }
+}

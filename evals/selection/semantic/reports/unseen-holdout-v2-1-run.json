@@ -1,0 +1,1185 @@
+{
+  "kind": "V2_3_TRUE_UNSEEN_HOLDOUT_V2_1_RUN",
+  "provider": "openai-codex",
+  "model": "gpt-5.6-sol",
+  "promptVersion": "v2.3.0",
+  "promptHash": "ac4831b003263bf8aea76dd13f535808f84a39306055402ac1f99725707acf4f",
+  "holdoutEvidenceSha256": "a818734e89760538bccbf93c91e4dc5a3043d382f9dcf939f2befe7f48e8fa60",
+  "holdoutCasesSha256": "842c1b53f114823dd4d52c59dfe3132ea60814b1d6917a509d47a555be56c3e6",
+  "holdoutFrozenCommit": "1c0ebd44128a32a98cc3ed1fca915fcd88a2e764",
+  "evaluationSourceCommit": "37ccec0954c04536362daf20a559473808abf6d6",
+  "executedAt": "2026-08-30T16:39:14.165Z",
+  "evaluationTimeoutMs": 15000,
+  "expectedSemanticCalls": 48,
+  "actualSemanticCalls": 48,
+  "journalPath": "unseen-holdout-v2-1-traces.jsonl",
+  "journalRecordCount": 48,
+  "journalIncompleteTrailingLine": false,
+  "journalSequenceRange": {
+    "first": 1,
+    "last": 48
+  },
+  "latency": {
+    "minMs": 2204,
+    "p50Ms": 2896,
+    "p95Ms": 5158,
+    "maxMs": 7214
+  },
+  "metrics": {
+    "primary": {
+      "positiveCorrect": 18,
+      "positiveWrong": 0,
+      "positiveAbstain": 0,
+      "abstainCorrect": 5,
+      "unsupportedSelection": 1
+    },
+    "reversed": {
+      "positiveCorrect": 18,
+      "positiveWrong": 0,
+      "positiveAbstain": 0,
+      "abstainCorrect": 5,
+      "unsupportedSelection": 1
+    },
+    "invalid": 0,
+    "providerError": 0,
+    "timeout": 0,
+    "orderInducedWrong": 0,
+    "orderInducedOutcomeDisagreement": 0
+  },
+  "traces": [
+    {
+      "caseId": "holdout-v2.1-01",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-APPT-CAPACITY"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-APPT-ARRIVAL-PRIORITY"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "HO2-MT-APPT-CAPACITY",
+      "expectedEvidenceId": "HO2-MT-APPT-CAPACITY",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 3346
+    },
+    {
+      "caseId": "holdout-v2.1-01",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-APPT-ARRIVAL-PRIORITY"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-APPT-CAPACITY"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "B",
+      "mappedEvidenceId": "HO2-MT-APPT-CAPACITY",
+      "expectedEvidenceId": "HO2-MT-APPT-CAPACITY",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "53d10566d19552a683542f141514df7031300bdff88fd2cd92bd17060732665c",
+      "rawOutputLength": 17,
+      "elapsedMs": 4634
+    },
+    {
+      "caseId": "holdout-v2.1-02",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-TRANSACTION-RESERVATION-CONTACT"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-APPT-OLD-SYSTEM-REVIEW"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "HO2-MT-TRANSACTION-RESERVATION-CONTACT",
+      "expectedEvidenceId": "HO2-MT-TRANSACTION-RESERVATION-CONTACT",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 3762
+    },
+    {
+      "caseId": "holdout-v2.1-02",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-APPT-OLD-SYSTEM-REVIEW"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-TRANSACTION-RESERVATION-CONTACT"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "B",
+      "mappedEvidenceId": "HO2-MT-TRANSACTION-RESERVATION-CONTACT",
+      "expectedEvidenceId": "HO2-MT-TRANSACTION-RESERVATION-CONTACT",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "53d10566d19552a683542f141514df7031300bdff88fd2cd92bd17060732665c",
+      "rawOutputLength": 17,
+      "elapsedMs": 2339
+    },
+    {
+      "caseId": "holdout-v2.1-03",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-APPT-OLD-SYSTEM-REVIEW"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-APPT-CAPACITY"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "HO2-MT-APPT-OLD-SYSTEM-REVIEW",
+      "expectedEvidenceId": "HO2-MT-APPT-OLD-SYSTEM-REVIEW",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 2794
+    },
+    {
+      "caseId": "holdout-v2.1-03",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-APPT-CAPACITY"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-APPT-OLD-SYSTEM-REVIEW"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "B",
+      "mappedEvidenceId": "HO2-MT-APPT-OLD-SYSTEM-REVIEW",
+      "expectedEvidenceId": "HO2-MT-APPT-OLD-SYSTEM-REVIEW",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "53d10566d19552a683542f141514df7031300bdff88fd2cd92bd17060732665c",
+      "rawOutputLength": 17,
+      "elapsedMs": 3708
+    },
+    {
+      "caseId": "holdout-v2.1-04",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-APPT-USER-CHANGE-COOPERATE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-APPT-ARRIVAL-PRIORITY"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "HO2-MT-APPT-USER-CHANGE-COOPERATE",
+      "expectedEvidenceId": "HO2-MT-APPT-USER-CHANGE-COOPERATE",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 2992
+    },
+    {
+      "caseId": "holdout-v2.1-04",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-APPT-ARRIVAL-PRIORITY"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-APPT-USER-CHANGE-COOPERATE"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "B",
+      "mappedEvidenceId": "HO2-MT-APPT-USER-CHANGE-COOPERATE",
+      "expectedEvidenceId": "HO2-MT-APPT-USER-CHANGE-COOPERATE",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "53d10566d19552a683542f141514df7031300bdff88fd2cd92bd17060732665c",
+      "rawOutputLength": 17,
+      "elapsedMs": 2852
+    },
+    {
+      "caseId": "holdout-v2.1-05",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-APPT-USER-CHANGE-COOPERATE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-APPT-CAPACITY"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "HO2-MT-APPT-USER-CHANGE-COOPERATE",
+      "expectedEvidenceId": "HO2-MT-APPT-USER-CHANGE-COOPERATE",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 2340
+    },
+    {
+      "caseId": "holdout-v2.1-05",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-APPT-CAPACITY"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-APPT-USER-CHANGE-COOPERATE"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "B",
+      "mappedEvidenceId": "HO2-MT-APPT-USER-CHANGE-COOPERATE",
+      "expectedEvidenceId": "HO2-MT-APPT-USER-CHANGE-COOPERATE",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "53d10566d19552a683542f141514df7031300bdff88fd2cd92bd17060732665c",
+      "rawOutputLength": 17,
+      "elapsedMs": 2650
+    },
+    {
+      "caseId": "holdout-v2.1-06",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-APPT-ARRIVAL-PRIORITY"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-APPT-CAPACITY"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "HO2-MT-APPT-ARRIVAL-PRIORITY",
+      "expectedEvidenceId": "HO2-MT-APPT-ARRIVAL-PRIORITY",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 2804
+    },
+    {
+      "caseId": "holdout-v2.1-06",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-APPT-CAPACITY"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-APPT-ARRIVAL-PRIORITY"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "B",
+      "mappedEvidenceId": "HO2-MT-APPT-ARRIVAL-PRIORITY",
+      "expectedEvidenceId": "HO2-MT-APPT-ARRIVAL-PRIORITY",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "53d10566d19552a683542f141514df7031300bdff88fd2cd92bd17060732665c",
+      "rawOutputLength": 17,
+      "elapsedMs": 2676
+    },
+    {
+      "caseId": "holdout-v2.1-07",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-FULFILL-CONTACTABILITY"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-TRANSACTION-RESERVATION-CONTACT"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "HO2-MT-FULFILL-CONTACTABILITY",
+      "expectedEvidenceId": "HO2-MT-FULFILL-CONTACTABILITY",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 2204
+    },
+    {
+      "caseId": "holdout-v2.1-07",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-TRANSACTION-RESERVATION-CONTACT"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-FULFILL-CONTACTABILITY"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "B",
+      "mappedEvidenceId": "HO2-MT-FULFILL-CONTACTABILITY",
+      "expectedEvidenceId": "HO2-MT-FULFILL-CONTACTABILITY",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "53d10566d19552a683542f141514df7031300bdff88fd2cd92bd17060732665c",
+      "rawOutputLength": 17,
+      "elapsedMs": 2731
+    },
+    {
+      "caseId": "holdout-v2.1-08",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-FULFILL-EQUAL-TREATMENT"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-FULFILL-UNPUBLISHED-CONDITIONS"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "HO2-MT-FULFILL-EQUAL-TREATMENT",
+      "expectedEvidenceId": "HO2-MT-FULFILL-EQUAL-TREATMENT",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 3609
+    },
+    {
+      "caseId": "holdout-v2.1-08",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-FULFILL-UNPUBLISHED-CONDITIONS"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-FULFILL-EQUAL-TREATMENT"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "B",
+      "mappedEvidenceId": "HO2-MT-FULFILL-EQUAL-TREATMENT",
+      "expectedEvidenceId": "HO2-MT-FULFILL-EQUAL-TREATMENT",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "53d10566d19552a683542f141514df7031300bdff88fd2cd92bd17060732665c",
+      "rawOutputLength": 17,
+      "elapsedMs": 2284
+    },
+    {
+      "caseId": "holdout-v2.1-09",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-FULFILL-EQUAL-TREATMENT"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-FULFILL-UNPUBLISHED-SURCHARGE"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "HO2-MT-FULFILL-EQUAL-TREATMENT",
+      "expectedEvidenceId": "HO2-MT-FULFILL-EQUAL-TREATMENT",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 2745
+    },
+    {
+      "caseId": "holdout-v2.1-09",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-FULFILL-UNPUBLISHED-SURCHARGE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-FULFILL-EQUAL-TREATMENT"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "B",
+      "mappedEvidenceId": "HO2-MT-FULFILL-EQUAL-TREATMENT",
+      "expectedEvidenceId": "HO2-MT-FULFILL-EQUAL-TREATMENT",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "53d10566d19552a683542f141514df7031300bdff88fd2cd92bd17060732665c",
+      "rawOutputLength": 17,
+      "elapsedMs": 3639
+    },
+    {
+      "caseId": "holdout-v2.1-10",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-FULFILL-BATCH-RETURN"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-MGMT-VALID-COUPON"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "HO2-MT-FULFILL-BATCH-RETURN",
+      "expectedEvidenceId": "HO2-MT-FULFILL-BATCH-RETURN",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 2896
+    },
+    {
+      "caseId": "holdout-v2.1-10",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-MGMT-VALID-COUPON"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-FULFILL-BATCH-RETURN"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "B",
+      "mappedEvidenceId": "HO2-MT-FULFILL-BATCH-RETURN",
+      "expectedEvidenceId": "HO2-MT-FULFILL-BATCH-RETURN",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "53d10566d19552a683542f141514df7031300bdff88fd2cd92bd17060732665c",
+      "rawOutputLength": 17,
+      "elapsedMs": 3999
+    },
+    {
+      "caseId": "holdout-v2.1-11",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-FULFILL-UNPUBLISHED-SURCHARGE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-MGMT-FEE-DISCLOSURE"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "HO2-MT-FULFILL-UNPUBLISHED-SURCHARGE",
+      "expectedEvidenceId": "HO2-MT-FULFILL-UNPUBLISHED-SURCHARGE",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 3449
+    },
+    {
+      "caseId": "holdout-v2.1-11",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-MGMT-FEE-DISCLOSURE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-FULFILL-UNPUBLISHED-SURCHARGE"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "B",
+      "mappedEvidenceId": "HO2-MT-FULFILL-UNPUBLISHED-SURCHARGE",
+      "expectedEvidenceId": "HO2-MT-FULFILL-UNPUBLISHED-SURCHARGE",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "53d10566d19552a683542f141514df7031300bdff88fd2cd92bd17060732665c",
+      "rawOutputLength": 17,
+      "elapsedMs": 5158
+    },
+    {
+      "caseId": "holdout-v2.1-12",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO21-MT-FULFILL-PREMATURE-VERIFICATION"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-APPT-ARRIVAL-PRIORITY"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "HO21-MT-FULFILL-PREMATURE-VERIFICATION",
+      "expectedEvidenceId": "HO21-MT-FULFILL-PREMATURE-VERIFICATION",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 3765
+    },
+    {
+      "caseId": "holdout-v2.1-12",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-APPT-ARRIVAL-PRIORITY"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO21-MT-FULFILL-PREMATURE-VERIFICATION"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "B",
+      "mappedEvidenceId": "HO21-MT-FULFILL-PREMATURE-VERIFICATION",
+      "expectedEvidenceId": "HO21-MT-FULFILL-PREMATURE-VERIFICATION",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "53d10566d19552a683542f141514df7031300bdff88fd2cd92bd17060732665c",
+      "rawOutputLength": 17,
+      "elapsedMs": 2295
+    },
+    {
+      "caseId": "holdout-v2.1-13",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-FULFILL-UNPUBLISHED-CONDITIONS"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-FULFILL-UNPUBLISHED-SURCHARGE"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "HO2-MT-FULFILL-UNPUBLISHED-CONDITIONS",
+      "expectedEvidenceId": "HO2-MT-FULFILL-UNPUBLISHED-CONDITIONS",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 3334
+    },
+    {
+      "caseId": "holdout-v2.1-13",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-FULFILL-UNPUBLISHED-SURCHARGE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-FULFILL-UNPUBLISHED-CONDITIONS"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "B",
+      "mappedEvidenceId": "HO2-MT-FULFILL-UNPUBLISHED-CONDITIONS",
+      "expectedEvidenceId": "HO2-MT-FULFILL-UNPUBLISHED-CONDITIONS",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "53d10566d19552a683542f141514df7031300bdff88fd2cd92bd17060732665c",
+      "rawOutputLength": 17,
+      "elapsedMs": 2662
+    },
+    {
+      "caseId": "holdout-v2.1-14",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO21-MT-FULFILL-UNDISCLOSED-USAGE-LIMIT"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-FULFILL-UNPUBLISHED-CONDITIONS"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "HO21-MT-FULFILL-UNDISCLOSED-USAGE-LIMIT",
+      "expectedEvidenceId": "HO21-MT-FULFILL-UNDISCLOSED-USAGE-LIMIT",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 2757
+    },
+    {
+      "caseId": "holdout-v2.1-14",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-FULFILL-UNPUBLISHED-CONDITIONS"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO21-MT-FULFILL-UNDISCLOSED-USAGE-LIMIT"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "B",
+      "mappedEvidenceId": "HO21-MT-FULFILL-UNDISCLOSED-USAGE-LIMIT",
+      "expectedEvidenceId": "HO21-MT-FULFILL-UNDISCLOSED-USAGE-LIMIT",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "53d10566d19552a683542f141514df7031300bdff88fd2cd92bd17060732665c",
+      "rawOutputLength": 17,
+      "elapsedMs": 2452
+    },
+    {
+      "caseId": "holdout-v2.1-15",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-MGMT-FEE-DISCLOSURE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-FULFILL-UNPUBLISHED-SURCHARGE"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "HO2-MT-MGMT-FEE-DISCLOSURE",
+      "expectedEvidenceId": "HO2-MT-MGMT-FEE-DISCLOSURE",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 2651
+    },
+    {
+      "caseId": "holdout-v2.1-15",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-FULFILL-UNPUBLISHED-SURCHARGE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-MGMT-FEE-DISCLOSURE"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "B",
+      "mappedEvidenceId": "HO2-MT-MGMT-FEE-DISCLOSURE",
+      "expectedEvidenceId": "HO2-MT-MGMT-FEE-DISCLOSURE",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "53d10566d19552a683542f141514df7031300bdff88fd2cd92bd17060732665c",
+      "rawOutputLength": 17,
+      "elapsedMs": 2482
+    },
+    {
+      "caseId": "holdout-v2.1-16",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-MGMT-FEE-DISCLOSURE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-FULFILL-UNPUBLISHED-CONDITIONS"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "HO2-MT-MGMT-FEE-DISCLOSURE",
+      "expectedEvidenceId": "HO2-MT-MGMT-FEE-DISCLOSURE",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 2247
+    },
+    {
+      "caseId": "holdout-v2.1-16",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-FULFILL-UNPUBLISHED-CONDITIONS"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-MGMT-FEE-DISCLOSURE"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "B",
+      "mappedEvidenceId": "HO2-MT-MGMT-FEE-DISCLOSURE",
+      "expectedEvidenceId": "HO2-MT-MGMT-FEE-DISCLOSURE",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "53d10566d19552a683542f141514df7031300bdff88fd2cd92bd17060732665c",
+      "rawOutputLength": 17,
+      "elapsedMs": 2455
+    },
+    {
+      "caseId": "holdout-v2.1-17",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-MGMT-VALID-COUPON"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-FULFILL-BATCH-RETURN"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "HO2-MT-MGMT-VALID-COUPON",
+      "expectedEvidenceId": "HO2-MT-MGMT-VALID-COUPON",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 2720
+    },
+    {
+      "caseId": "holdout-v2.1-17",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-FULFILL-BATCH-RETURN"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-MGMT-VALID-COUPON"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "B",
+      "mappedEvidenceId": "HO2-MT-MGMT-VALID-COUPON",
+      "expectedEvidenceId": "HO2-MT-MGMT-VALID-COUPON",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "53d10566d19552a683542f141514df7031300bdff88fd2cd92bd17060732665c",
+      "rawOutputLength": 17,
+      "elapsedMs": 2664
+    },
+    {
+      "caseId": "holdout-v2.1-18",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-TRANSACTION-RESERVATION-CONTACT"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-APPT-ARRIVAL-PRIORITY"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "HO2-MT-TRANSACTION-RESERVATION-CONTACT",
+      "expectedEvidenceId": "HO2-MT-TRANSACTION-RESERVATION-CONTACT",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 3220
+    },
+    {
+      "caseId": "holdout-v2.1-18",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-APPT-ARRIVAL-PRIORITY"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-TRANSACTION-RESERVATION-CONTACT"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "B",
+      "mappedEvidenceId": "HO2-MT-TRANSACTION-RESERVATION-CONTACT",
+      "expectedEvidenceId": "HO2-MT-TRANSACTION-RESERVATION-CONTACT",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "53d10566d19552a683542f141514df7031300bdff88fd2cd92bd17060732665c",
+      "rawOutputLength": 17,
+      "elapsedMs": 2313
+    },
+    {
+      "caseId": "holdout-v2.1-19",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-APPT-OLD-SYSTEM-REVIEW"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-APPT-CAPACITY"
+        }
+      ],
+      "outcome": "abstained",
+      "expectedEvidenceId": "ABSTAIN",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "127ea4c48fc0d5640602f1fc85a1043eb371a5e4ef3a7294166bb47424a86a49",
+      "rawOutputLength": 23,
+      "elapsedMs": 3192
+    },
+    {
+      "caseId": "holdout-v2.1-19",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-APPT-CAPACITY"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-APPT-OLD-SYSTEM-REVIEW"
+        }
+      ],
+      "outcome": "abstained",
+      "expectedEvidenceId": "ABSTAIN",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "127ea4c48fc0d5640602f1fc85a1043eb371a5e4ef3a7294166bb47424a86a49",
+      "rawOutputLength": 23,
+      "elapsedMs": 3367
+    },
+    {
+      "caseId": "holdout-v2.1-20",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-FULFILL-CONTACTABILITY"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-FULFILL-EQUAL-TREATMENT"
+        }
+      ],
+      "outcome": "abstained",
+      "expectedEvidenceId": "ABSTAIN",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "127ea4c48fc0d5640602f1fc85a1043eb371a5e4ef3a7294166bb47424a86a49",
+      "rawOutputLength": 23,
+      "elapsedMs": 3106
+    },
+    {
+      "caseId": "holdout-v2.1-20",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-FULFILL-EQUAL-TREATMENT"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-FULFILL-CONTACTABILITY"
+        }
+      ],
+      "outcome": "abstained",
+      "expectedEvidenceId": "ABSTAIN",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "127ea4c48fc0d5640602f1fc85a1043eb371a5e4ef3a7294166bb47424a86a49",
+      "rawOutputLength": 23,
+      "elapsedMs": 3307
+    },
+    {
+      "caseId": "holdout-v2.1-21",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-FULFILL-UNPUBLISHED-SURCHARGE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-MGMT-FEE-DISCLOSURE"
+        }
+      ],
+      "outcome": "abstained",
+      "expectedEvidenceId": "ABSTAIN",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "127ea4c48fc0d5640602f1fc85a1043eb371a5e4ef3a7294166bb47424a86a49",
+      "rawOutputLength": 23,
+      "elapsedMs": 3538
+    },
+    {
+      "caseId": "holdout-v2.1-21",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-MGMT-FEE-DISCLOSURE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-FULFILL-UNPUBLISHED-SURCHARGE"
+        }
+      ],
+      "outcome": "abstained",
+      "expectedEvidenceId": "ABSTAIN",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "127ea4c48fc0d5640602f1fc85a1043eb371a5e4ef3a7294166bb47424a86a49",
+      "rawOutputLength": 23,
+      "elapsedMs": 2684
+    },
+    {
+      "caseId": "holdout-v2.1-22",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-APPT-ARRIVAL-PRIORITY"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-FULFILL-EQUAL-TREATMENT"
+        }
+      ],
+      "outcome": "abstained",
+      "expectedEvidenceId": "ABSTAIN",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "127ea4c48fc0d5640602f1fc85a1043eb371a5e4ef3a7294166bb47424a86a49",
+      "rawOutputLength": 23,
+      "elapsedMs": 3574
+    },
+    {
+      "caseId": "holdout-v2.1-22",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-FULFILL-EQUAL-TREATMENT"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-APPT-ARRIVAL-PRIORITY"
+        }
+      ],
+      "outcome": "abstained",
+      "expectedEvidenceId": "ABSTAIN",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "127ea4c48fc0d5640602f1fc85a1043eb371a5e4ef3a7294166bb47424a86a49",
+      "rawOutputLength": 23,
+      "elapsedMs": 3901
+    },
+    {
+      "caseId": "holdout-v2.1-23",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-MGMT-VALID-COUPON"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-FULFILL-BATCH-RETURN"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "A",
+      "mappedEvidenceId": "HO2-MT-MGMT-VALID-COUPON",
+      "expectedEvidenceId": "ABSTAIN",
+      "classification": "wrong",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "a40644dee0172830ed6d3851c2a1b8a9a866fba5624268513e19d9a006ff972b",
+      "rawOutputLength": 17,
+      "elapsedMs": 5158
+    },
+    {
+      "caseId": "holdout-v2.1-23",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-FULFILL-BATCH-RETURN"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-MGMT-VALID-COUPON"
+        }
+      ],
+      "outcome": "selected",
+      "selection": "B",
+      "mappedEvidenceId": "HO2-MT-MGMT-VALID-COUPON",
+      "expectedEvidenceId": "ABSTAIN",
+      "classification": "wrong",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "53d10566d19552a683542f141514df7031300bdff88fd2cd92bd17060732665c",
+      "rawOutputLength": 17,
+      "elapsedMs": 4551
+    },
+    {
+      "caseId": "holdout-v2.1-24",
+      "order": "primary",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-APPT-USER-CHANGE-COOPERATE"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-APPT-OLD-SYSTEM-REVIEW"
+        }
+      ],
+      "outcome": "abstained",
+      "expectedEvidenceId": "ABSTAIN",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "127ea4c48fc0d5640602f1fc85a1043eb371a5e4ef3a7294166bb47424a86a49",
+      "rawOutputLength": 23,
+      "elapsedMs": 3220
+    },
+    {
+      "caseId": "holdout-v2.1-24",
+      "order": "reversed",
+      "candidateCount": 2,
+      "candidates": [
+        {
+          "label": "A",
+          "evidenceId": "HO2-MT-APPT-OLD-SYSTEM-REVIEW"
+        },
+        {
+          "label": "B",
+          "evidenceId": "HO2-MT-APPT-USER-CHANGE-COOPERATE"
+        }
+      ],
+      "outcome": "abstained",
+      "expectedEvidenceId": "ABSTAIN",
+      "classification": "correct",
+      "rawOutputShape": "exact_json",
+      "rawOutputSha256": "127ea4c48fc0d5640602f1fc85a1043eb371a5e4ef3a7294166bb47424a86a49",
+      "rawOutputLength": 23,
+      "elapsedMs": 7214
+    }
+  ],
+  "gateStatus": "failed",
+  "gatePassed": false
+}

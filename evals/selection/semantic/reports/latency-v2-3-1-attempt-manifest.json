@@ -1,0 +1,14 @@
+{
+  "kind": "V2_3_1_LATENCY_CHARACTERIZATION_ATTEMPT",
+  "attemptId": "v2.3.1-latency-characterization",
+  "createdAt": "2026-08-31T07:49:54.896Z",
+  "status": "running",
+  "provider": "openai-codex",
+  "model": "gpt-5.6-sol",
+  "promptVersion": "v2.3.1",
+  "promptHash": "fabf617ce6ecd9cc4f91cd68e42c789f1c0be629297e046a3c782fe6bfe29869",
+  "latencyPopulationSha256": "12ecb05c89d7a75a078ae16047e5fbca07635a8720f31705681eb85ee01362c4",
+  "evaluationSourceCommit": "aed4b29179deeb439d28d767bc00ceb3e367274b",
+  "observationTimeoutMs": 30000,
+  "expectedSemanticCalls": 30
+}

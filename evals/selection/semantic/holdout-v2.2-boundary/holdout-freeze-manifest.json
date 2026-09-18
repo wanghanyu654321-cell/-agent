@@ -1,0 +1,24 @@
+{
+  "holdoutVersion": "v2.2-sufficiency-boundary",
+  "authoringBaseCommit": "8e63d7e67eff579a5f9e9026bca0e7a995be83ac",
+  "evidenceCount": 12,
+  "primaryCaseCount": 12,
+  "answerableNonUniquenessCount": 4,
+  "trueInsufficiencyCount": 8,
+  "evidencePackSha256": "33cab975a04c66e3bfb357dbc92ff88e39ff131b57bac198983fc93c4c44eda5",
+  "casesSha256": "0a65ee1111722e367c7ca5ab4105b89b0a1b0a2b20c0b4537db9ff357c5aa71a",
+  "promptVersion": "v2.3.0",
+  "promptHash": "ac4831b003263bf8aea76dd13f535808f84a39306055402ac1f99725707acf4f",
+  "futurePrimaryCalls": 12,
+  "futureReversedCalls": 12,
+  "futureTotalCalls": 24,
+  "integerPassRequirements": {
+    "answerablePrimary": { "correct": 4, "wrong": 0, "abstain": 0 },
+    "trueInsufficiencyPrimary": { "correct": 8, "unsupportedSelection": 0 },
+    "answerableReversed": { "correct": 4, "wrong": 0, "abstain": 0 },
+    "trueInsufficiencyReversed": { "correct": 8, "unsupportedSelection": 0 },
+    "allCalls": { "wrong": 0, "invalid": 0, "providerError": 0, "timeout": 0 },
+    "orderRobustness": { "orderInducedWrong": 0, "orderInducedOutcomeDisagreement": 0 }
+  },
+  "createdAt": "2026-08-31T00:00:00.000Z"
+}

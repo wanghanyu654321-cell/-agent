@@ -1,0 +1,23 @@
+{
+  "kind": "V2_2_SELECTION_FIRST_BASELINE",
+  "sourceCommit": "3e379a66a239285798bde7d02e51485b3f50792d",
+  "description": "Frozen V2.1.1 behavior before any selector: every admissible ranked candidate participates in general-business grounding.",
+  "answerableCases": 50,
+  "candidateRetrieval": {
+    "top1HitRate": 0.96,
+    "recallAt3": 1,
+    "candidateEvidencePrecision": 0.6172839506172839,
+    "candidateExtraneousEvidenceRate": 0.3827160493827161,
+    "meanReturnedEvidenceCount": 1.62
+  },
+  "allCandidateGrounding": {
+    "evidenceRecordsUsed": 81,
+    "casesContainingExpectedGold": 50,
+    "casesContainingAtLeastOneNonGold": 22,
+    "evidencePrecision": 0.6172839506172839,
+    "extraneousEvidenceRate": 0.3827160493827161,
+    "meanEvidenceCount": 1.62,
+    "unselectedEvidenceModelExposureRate": null,
+    "unselectedEvidenceCustomerExposureRate": null
+  }
+}

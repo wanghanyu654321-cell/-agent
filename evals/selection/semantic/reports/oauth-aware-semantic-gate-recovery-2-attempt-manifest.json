@@ -1,0 +1,15 @@
+{
+  "kind": "V2_3_OAUTH_AWARE_SEMANTIC_GATE_RECOVERY_ATTEMPT",
+  "attemptId": "v2.3-oauth-aware-semantic-gate-recovery-2",
+  "createdAt": "2026-08-30T12:20:00.564Z",
+  "status": "running",
+  "provider": "openai-codex",
+  "model": "gpt-5.6-sol",
+  "promptVersion": "v2.3.0",
+  "promptHash": "ac4831b003263bf8aea76dd13f535808f84a39306055402ac1f99725707acf4f",
+  "benchmarkHash": "af35c7c5467fc4d293626044e4a42edc18e068c07ffb95010192bb6b21651137",
+  "corpusHash": "1aecf6ea0270ad48ce111737c6b6acb57a59006ff69f59257cb1c0f7f3e723af",
+  "sourceCommit": "edb70e6c9d7e5b48defd5e42708e591d337bae4d",
+  "evaluationTimeoutMs": 15000,
+  "expectedSemanticCalls": 44
+}
