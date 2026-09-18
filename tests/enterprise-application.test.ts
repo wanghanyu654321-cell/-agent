@@ -17,7 +17,27 @@ describe("enterprise application configuration", () => {
 				DATABASE_URL: "postgres://application-test",
 				PORT: "4312",
 			}),
-		).toEqual({ databaseUrl: "postgres://application-test", host: "127.0.0.1", port: 4312 });
+		).toEqual({
+			databaseUrl: "postgres://application-test",
+			host: "127.0.0.1",
+			port: 4312,
+			secureCookies: false,
+		});
+	});
+
+	it("enables Secure session cookies only through an explicit valid deployment flag", () => {
+		expect(
+			enterpriseApplicationConfigFromEnv({
+				DATABASE_URL: "postgres://application-test",
+				ENTERPRISE_SECURE_COOKIES: "true",
+			}),
+		).toMatchObject({ secureCookies: true });
+		expect(() =>
+			enterpriseApplicationConfigFromEnv({
+				DATABASE_URL: "postgres://application-test",
+				ENTERPRISE_SECURE_COOKIES: "yes",
+			}),
+		).toThrow("ENTERPRISE_SECURE_COOKIES must be true or false");
 	});
 
 	it("creates the complete expected synthetic portfolio identity graph on an empty repository", async () => {
