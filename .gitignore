@@ -4,3 +4,8 @@ dist/
 knowledge/private/
 evals/retrieval/private/
 .firecrawl/
+
+# Host-local deployment environments / secrets
+.env
+.env.*
+!.env.production.example
