@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Agent, type AgentEvent, type AgentTool, type StreamFn } from "@earendil-works/pi-agent-core";
@@ -9,6 +10,14 @@ import {
 	SessionManager,
 } from "@earendil-works/pi-coding-agent";
 import { type Static, Type } from "typebox";
+import {
+	type AgentProfile,
+	AgentProfileValidationError,
+	type AgentToolName,
+	DEFAULT_AGENT_PROFILE,
+	type ResolvedAgentProfile,
+	resolveAgentProfile,
+} from "./enterprise/agent-profile.ts";
 import {
 	type GroundingReference,
 	groundingReference,
@@ -30,6 +39,7 @@ export interface SupportRequest {
 	storeId: string;
 	customerId: string;
 	text: string;
+	requestId?: string;
 	permissions?: string[];
 	mayEscalate?: boolean;
 	requiresEscalation?: boolean;
@@ -128,6 +138,9 @@ export interface SupportSessionMapping {
 	customerId: string;
 	piSessionId: string;
 	sessionFile?: string;
+	agentProfileId?: string;
+	agentProfileVersion?: string;
+	agentProfileHash?: string;
 }
 
 type StoredSession = SupportSessionMapping & {
@@ -245,6 +258,7 @@ export interface SupportAgentRuntimeOptions {
 	skillsDirectory?: string;
 	allowSyntheticTestKnowledge?: boolean;
 	limits?: Partial<SupportAgentLimits>;
+	agentProfile?: AgentProfile;
 }
 
 export interface SupportResult {
@@ -272,6 +286,15 @@ const DEFAULT_LIMITS: SupportAgentLimits = {
 	overallTurnTimeoutMs: 10_000,
 	perToolTimeoutMs: 2_000,
 };
+
+const DEFAULT_RUNTIME_PROMPT = "You are a customer-support agent. Use only the provided support tools.";
+
+export class AgentProfileSessionMismatchError extends Error {
+	constructor() {
+		super("Active agent profile does not match the existing support session.");
+		this.name = "AgentProfileSessionMismatchError";
+	}
+}
 
 const querySchema = Type.Object({ query: Type.String({ minLength: 1 }) }, { additionalProperties: false });
 const ticketSchema = Type.Object(
@@ -340,10 +363,12 @@ function createTimedOutAssistantMessage(
 export class SupportAgentRuntime {
 	private readonly limits: SupportAgentLimits;
 	private readonly options: SupportAgentRuntimeOptions;
+	private readonly agentProfile: ResolvedAgentProfile;
 
 	constructor(options: SupportAgentRuntimeOptions) {
 		this.options = options;
 		this.limits = { ...DEFAULT_LIMITS, ...options.limits };
+		this.agentProfile = resolveAgentProfile(options.agentProfile ?? DEFAULT_AGENT_PROFILE);
 	}
 
 	getMappedSessionId(conversationId: string): string | undefined {
@@ -356,6 +381,9 @@ export class SupportAgentRuntime {
 
 	async run(request: SupportRequest): Promise<SupportResult> {
 		this.validateRequest(request);
+		const systemPrompt = this.buildSystemPrompt(request.text);
+		const requestId = request.requestId ?? randomUUID();
+		const runtimeStartedAt = Date.now();
 		const sessionManager = this.getOrCreateSession(request);
 		const sessionEvents: AgentEvent[] = [];
 		const toolsCalled: string[] = [];
@@ -459,7 +487,7 @@ export class SupportAgentRuntime {
 				safetyEvidence = evidence.flatMap((item) => (item.safety ? [item.safety] : []));
 			},
 			abortController.signal,
-		);
+		).filter((tool) => this.agentProfile.allowedTools.includes(tool.name as AgentToolName));
 		const knowledgeTool = tools.find((tool) => tool.name === "search_knowledge")!;
 		const rawKnowledgeExecute = knowledgeTool.execute;
 		const completedChecks = new Map<
@@ -528,7 +556,6 @@ export class SupportAgentRuntime {
 				await Promise.race([precheck, overallDeadline]);
 			}
 		}
-		const systemPrompt = this.buildSystemPrompt(request.text);
 		const restoredMessages = sessionManager.buildSessionContext().messages;
 		agent = new Agent({
 			initialState: {
@@ -698,7 +725,15 @@ export class SupportAgentRuntime {
 				this.options.store.releaseHandoffReservation(request.conversationId);
 			}
 			const routingAudit = knowledgeRouting;
+			const elapsedRuntimeMs = Date.now() - runtimeStartedAt;
+			const runtimeDurationMs = Number.isFinite(elapsedRuntimeMs) ? Math.max(0, elapsedRuntimeMs) : 0;
 			const auditPayload: Record<string, unknown> = {
+				schemaVersion: "support-agent-audit-v1",
+				requestId,
+				runtimeDurationMs,
+				agentProfileId: this.agentProfile.id,
+				agentProfileVersion: this.agentProfile.version,
+				agentProfileHash: this.agentProfile.profileHash,
 				conversationId: request.conversationId,
 				outcome: result.type,
 				toolsCalled,
@@ -746,6 +781,9 @@ export class SupportAgentRuntime {
 				customerId: request.customerId,
 				piSessionId,
 				sessionFile: sessionManager.getSessionFile(),
+				agentProfileId: this.agentProfile.id,
+				agentProfileVersion: this.agentProfile.version,
+				agentProfileHash: this.agentProfile.profileHash,
 				sessionManager,
 			});
 			if (this.options.businessStore) {
@@ -930,6 +968,13 @@ export class SupportAgentRuntime {
 			) {
 				throw new Error("Conversation identity does not match the existing support session.");
 			}
+			if (
+				existing.agentProfileId !== this.agentProfile.id ||
+				existing.agentProfileVersion !== this.agentProfile.version ||
+				existing.agentProfileHash !== this.agentProfile.profileHash
+			) {
+				throw new AgentProfileSessionMismatchError();
+			}
 			if (existing.sessionManager) return existing.sessionManager;
 			if (!existing.sessionFile || !this.options.sessionDirectory) {
 				throw new Error("Persistent support session mapping cannot be restored without a session directory.");
@@ -951,6 +996,9 @@ export class SupportAgentRuntime {
 			customerId: request.customerId,
 			piSessionId: sessionManager.getSessionId(),
 			sessionFile: sessionManager.getSessionFile(),
+			agentProfileId: this.agentProfile.id,
+			agentProfileVersion: this.agentProfile.version,
+			agentProfileHash: this.agentProfile.profileHash,
 			sessionManager,
 		});
 		return sessionManager;
@@ -1212,6 +1260,12 @@ export class SupportAgentRuntime {
 	private buildSystemPrompt(text: string): string {
 		const skillsDirectory = this.options.skillsDirectory ?? join(process.cwd(), "skills");
 		const loaded = loadSkillsFromDir({ dir: skillsDirectory, source: "project" });
+		const loadedSkillNames = new Set(loaded.skills.map((skill) => skill.name));
+		if (this.agentProfile.allowedSkills.some((skill) => !loadedSkillNames.has(skill))) {
+			throw new AgentProfileValidationError("Agent profile references unavailable Skills.");
+		}
+		const allowedSkills = new Set(this.agentProfile.allowedSkills);
+		const profileSkills = loaded.skills.filter((skill) => allowedSkills.has(skill.name));
 		const normalizedText = text.toLowerCase();
 		const matchingSkillNames = new Set<string>();
 		if (normalizedText.includes("预约")) matchingSkillNames.add("appointment");
@@ -1220,12 +1274,15 @@ export class SupportAgentRuntime {
 		if (normalizedText.includes("人工") || normalizedText.includes("升级")) matchingSkillNames.add("escalation");
 		if (normalizedText.includes("你好") || normalizedText.includes("您好")) matchingSkillNames.add("greeting");
 		if (detectSafetyRisk(text)) matchingSkillNames.add("safety-escalation");
-		const matchingInstructions = loaded.skills
+		const matchingInstructions = profileSkills
 			.filter((skill) => matchingSkillNames.has(skill.name))
 			.map((skill) => readFileSync(skill.filePath, "utf8"));
 		return [
-			"You are a customer-support agent. Use only the provided support tools.",
-			formatSkillsForPrompt(loaded.skills),
+			this.agentProfile.identityPrompt === DEFAULT_AGENT_PROFILE.identityPrompt &&
+			this.agentProfile.workPolicy === DEFAULT_AGENT_PROFILE.workPolicy
+				? DEFAULT_RUNTIME_PROMPT
+				: [DEFAULT_RUNTIME_PROMPT, this.agentProfile.identityPrompt, this.agentProfile.workPolicy].join("\n\n"),
+			formatSkillsForPrompt(profileSkills),
 			...matchingInstructions,
 		]
 			.filter((part) => part.length > 0)

@@ -28,7 +28,7 @@
 		"smoke:real-source-runtime": "node --no-warnings --experimental-transform-types scripts/real-source-runtime-smoke.ts",
 		"test:postgres-identity": "node -e \"if (!process.env.POSTGRES_TEST_URL) { throw new Error('POSTGRES_TEST_URL is required for the PostgreSQL identity gate.') }\" && vitest --run tests/postgres-identity.integration.test.ts",
 		"test:postgres-business": "node -e \"if (!process.env.POSTGRES_TEST_URL) { throw new Error('POSTGRES_TEST_URL is required for the PostgreSQL business gate.') }\" && vitest --run tests/postgres-business.integration.test.ts",
-		"test:postgres-application": "node -e \"if (!process.env.POSTGRES_TEST_URL) { throw new Error('POSTGRES_TEST_URL is required for the PostgreSQL application gate.') }\" && vitest --run tests/enterprise-application.integration.test.ts",
+		"test:postgres-application": "node -e \"if (!process.env.POSTGRES_TEST_URL) { throw new Error('POSTGRES_TEST_URL is required for the PostgreSQL application gate.') }\" && vitest --run tests/enterprise-application.integration.test.ts tests/harness/acceptance.test.ts",
 		"test": "vitest --run",
 		"test:job-ready": "vitest --run tests/job-ready-core-a tests/job-ready-rag tests/job-ready-integration tests/web-storeops evals/job-ready-rag",
 		"test:postgres-core-a": "node -e \"if (!process.env.POSTGRES_TEST_URL) throw new Error('POSTGRES_TEST_URL required')\" && vitest --run tests/job-ready-core-a/storeops-postgres.integration.test.ts tests/job-ready-core-a/wecom-postgres.integration.test.ts",

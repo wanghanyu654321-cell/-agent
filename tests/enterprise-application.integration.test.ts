@@ -2,6 +2,7 @@ import type { AddressInfo } from "node:net";
 import { fauxAssistantMessage, registerFauxProvider, streamSimple } from "@earendil-works/pi-ai/compat";
 import { Pool } from "pg";
 import { afterEach, describe, expect, it } from "vitest";
+import { DEFAULT_AGENT_PROFILE, resolveAgentProfile } from "../src/enterprise/agent-profile.ts";
 import {
 	createEnterpriseApplication,
 	type EnterpriseApplication,
@@ -190,7 +191,15 @@ describePostgres("enterprise application composition root", () => {
 		expect((await fetch(`${origin}/api/v1/audit-events`, { headers: { cookie: alice } })).status).toBe(403);
 		expect((await fetch(`${origin}/api/v1/audit-events`, { headers: { cookie: susan } })).status).toBe(403);
 
-		await support(origin, alice, "audit-a", "customer-a", "帮我记录一个退款售后工单");
+		const auditAResponse = await supportResponse(origin, alice, "audit-a", "customer-a", "帮我记录一个退款售后工单", {
+			agentProfileId: "client-spoofed-profile",
+			agentProfileVersion: "v999",
+			agentProfileHash: "b".repeat(64),
+		});
+		expect(auditAResponse.status).toBe(200);
+		const auditARequestId = auditAResponse.headers.get("x-request-id");
+		expect(auditARequestId).toEqual(expect.any(String));
+		expect((await auditAResponse.json()) as PublicSupportResult).toMatchObject({ type: "answer" });
 		await support(origin, bob, "audit-b", "customer-b", "帮我记录一个退款售后工单");
 		const events = (await readJson(origin, "/api/v1/audit-events", ava)) as Array<Record<string, unknown>>;
 		expect(events).toEqual(
@@ -200,20 +209,58 @@ describePostgres("enterprise application composition root", () => {
 					eventType: "support-agent.audit",
 					outcome: "answer",
 					toolsCalled: ["search_knowledge", "create_ticket"],
+					requestId: auditARequestId,
+					runtimeDurationMs: expect.any(Number),
+					agentProfileId: DEFAULT_AGENT_PROFILE.id,
+					agentProfileVersion: DEFAULT_AGENT_PROFILE.version,
+					agentProfileHash: resolveAgentProfile(DEFAULT_AGENT_PROFILE).profileHash,
 				}),
 			]),
 		);
+		const auditAEvent = events.find((event) => event.conversationId === "audit-a");
+		expect(auditAEvent?.runtimeDurationMs).toBeGreaterThanOrEqual(0);
 		expect(events).not.toEqual(expect.arrayContaining([expect.objectContaining({ conversationId: "audit-b" })]));
-		expect(Object.keys(events.find((event) => event.conversationId === "audit-a") ?? {}).sort()).toEqual([
+		expect(Object.keys(auditAEvent ?? {}).sort()).toEqual([
+			"agentProfileHash",
+			"agentProfileId",
+			"agentProfileVersion",
 			"conversationId",
 			"createdAt",
 			"eventType",
 			"id",
 			"outcome",
+			"requestId",
+			"runtimeDurationMs",
 			"storeId",
 			"tenantId",
 			"toolsCalled",
 		]);
+		const persisted = await first.pool.query<{
+			schemaVersion: string;
+			requestId: string;
+			runtimeDurationMs: number;
+			agentProfileId: string;
+			agentProfileVersion: string;
+			agentProfileHash: string;
+		}>(
+			"SELECT payload->>'schemaVersion' AS \"schemaVersion\", payload->>'requestId' AS \"requestId\", (payload->>'runtimeDurationMs')::double precision AS \"runtimeDurationMs\", payload->>'agentProfileId' AS \"agentProfileId\", payload->>'agentProfileVersion' AS \"agentProfileVersion\", payload->>'agentProfileHash' AS \"agentProfileHash\" FROM audit_events WHERE tenant_id = $1 AND store_id = $2 AND conversation_id = $3 AND event_type = 'support-agent.audit'",
+			["demo-tenant-a", "demo-store-a1", "audit-a"],
+		);
+		expect(persisted.rows).toEqual([
+			expect.objectContaining({
+				schemaVersion: "support-agent-audit-v1",
+				requestId: auditARequestId,
+				runtimeDurationMs: expect.any(Number),
+				agentProfileId: DEFAULT_AGENT_PROFILE.id,
+				agentProfileVersion: DEFAULT_AGENT_PROFILE.version,
+				agentProfileHash: resolveAgentProfile(DEFAULT_AGENT_PROFILE).profileHash,
+			}),
+		]);
+		expect(persisted.rows[0]?.agentProfileId).toBe(auditAEvent?.agentProfileId);
+		expect(persisted.rows[0]?.agentProfileVersion).toBe(auditAEvent?.agentProfileVersion);
+		expect(persisted.rows[0]?.agentProfileHash).toBe(auditAEvent?.agentProfileHash);
+		expect(Number.isFinite(persisted.rows[0]?.runtimeDurationMs)).toBe(true);
+		expect(persisted.rows[0]?.runtimeDurationMs).toBeGreaterThanOrEqual(0);
 		expect(JSON.stringify(events)).not.toContain("payload");
 		expect(JSON.stringify(events)).not.toContain("knowledgeRouting");
 
@@ -386,13 +433,24 @@ async function support(
 	customerId: string,
 	text: string,
 ): Promise<PublicSupportResult> {
-	const response = await fetch(`${origin}/api/v1/support/respond`, {
-		method: "POST",
-		headers: { "content-type": "application/json", cookie },
-		body: JSON.stringify({ conversationId, customerId, text }),
-	});
+	const response = await supportResponse(origin, cookie, conversationId, customerId, text);
 	expect(response.status).toBe(200);
 	return (await response.json()) as PublicSupportResult;
+}
+
+async function supportResponse(
+	origin: string,
+	cookie: string,
+	conversationId: string,
+	customerId: string,
+	text: string,
+	extra: Record<string, unknown> = {},
+): Promise<Response> {
+	return fetch(`${origin}/api/v1/support/respond`, {
+		method: "POST",
+		headers: { "content-type": "application/json", cookie },
+		body: JSON.stringify({ conversationId, customerId, text, ...extra }),
+	});
 }
 
 type PublicSupportResult = {

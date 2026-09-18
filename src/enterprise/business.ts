@@ -129,6 +129,7 @@ export function runtimeRequest(
 ): SupportRequest {
 	const capabilities = new Set<Capability>(context.actor.capabilities);
 	return {
+		requestId: context.request.requestId,
 		conversationId: input.conversationId,
 		customerId: input.customerId,
 		text: input.text,

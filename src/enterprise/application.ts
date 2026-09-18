@@ -19,6 +19,7 @@ import { loadPrivateKnowledgeCorpus } from "../private-corpus.ts";
 import { PostgresRagRegistry } from "../retrieval/fastapi.ts";
 import { StoreOpsError } from "../storeops/contracts.ts";
 import { PostgresStoreOpsRepository, StoreOpsService } from "../storeops/postgres.ts";
+import type { AgentProfile } from "./agent-profile.ts";
 import { EnterpriseAuthService } from "./auth.ts";
 import { type EnterpriseBusinessRepository, EnterpriseSupportService } from "./business.ts";
 import { type PortfolioEnterpriseDemoData, seedPortfolioEnterpriseDemoData } from "./demo-data.ts";
@@ -55,6 +56,7 @@ export interface EnterpriseRuntimeResource {
 export type EnterpriseRuntimeFactory = (
 	businessStore: EnterpriseBusinessRepository,
 	retrieval?: RetrievalService,
+	agentProfile?: AgentProfile,
 ) => EnterpriseRuntimeResource;
 
 export interface EnterpriseApplicationOptions {
@@ -66,6 +68,7 @@ export interface EnterpriseApplicationOptions {
 	staticRoot?: string;
 	retrieval?: RetrievalService;
 	retrievalFactory?: (pool: Pool) => RetrievalService;
+	agentProfile?: AgentProfile;
 	knowledgeEntries?: KnowledgeEntry[];
 	storeTimeZone?: (scope: { tenantId: string; storeId: string }) => string | undefined;
 }
@@ -170,6 +173,7 @@ export async function createEnterpriseApplication(
 		runtimeResource = (options.runtimeFactory ?? createDeterministicEnterpriseRuntime)(
 			businessRepository,
 			options.retrieval ?? options.retrievalFactory?.(pool),
+			options.agentProfile,
 		);
 		const storeOpsService = new StoreOpsService(
 			new PostgresStoreOpsRepository(pool),
@@ -272,6 +276,7 @@ export async function startEnterpriseApplicationFromEnv(
 export function createDeterministicEnterpriseRuntime(
 	businessStore: SupportBusinessStore,
 	retrieval?: RetrievalService,
+	agentProfile?: AgentProfile,
 ): EnterpriseRuntimeResource {
 	const faux = registerFauxProvider();
 	const runtime = new SupportAgentRuntime({
@@ -286,6 +291,7 @@ export function createDeterministicEnterpriseRuntime(
 		businessStore,
 		faq: portfolioDemoFaq,
 		allowSyntheticTestKnowledge: true,
+		agentProfile,
 	});
 	const serializedRuntime = new SerializedEnterpriseDemoRuntime(runtime, faux);
 	return {

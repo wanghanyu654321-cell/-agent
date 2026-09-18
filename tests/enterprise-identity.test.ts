@@ -153,12 +153,18 @@ describe("enterprise identity and tenancy foundation", () => {
 				storeId: demo.stores.b1.id,
 				role: "admin",
 				permissions: ["audit:read", "handoff:create"],
+				requestId: "client-controlled-id",
 			}),
 		});
 
 		expect(support.status).toBe(200);
+		const requestId = support.headers.get("x-request-id");
+		expect(requestId).toEqual(expect.any(String));
+		expect(requestId?.trim()).not.toBe("");
+		expect(requestId).not.toBe("client-controlled-id");
 		expect(captured).toEqual([
 			{
+				requestId,
 				conversationId: "enterprise-spoof-1",
 				customerId: "customer-1",
 				text: "请问营业时间？",

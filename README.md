@@ -1,11 +1,11 @@
-# 数字前台 Agent · Job-Ready Integrated Baseline
+# 数字前台 Agent · Pre-ICP Frozen Integrated Baseline
 
 > **面向小型门店 / 服务型商家的线上第一接待 Agent 工程。**  
 > 从“能聊天”继续推进到 **Evidence 可追溯、Tool 有权限边界、业务动作可持久化、异常可转人工、版本可评测、系统可复现交付**。
 
-**Integrated baseline：Agent Runtime + Safety / Eval + Governed Knowledge + PostgreSQL + React + Docker + FastAPI / pgvector**  
-**Final Job-Search Sprint clean-runner：PASS**  
-**不声称：Production Ready / 真实客户部署 / Hosted Embedding PASS / Retrieval Quality Acceptance**
+**Integrated baseline：Agent Runtime + server-derived Authority + AgentProfile + Durable Acceptance + Governed Knowledge + PostgreSQL + React + Docker + FastAPI / pgvector + Eval Governance**  
+**Pre-ICP frozen source：`55182eb11e801b49a5c5564d05acc72207b249f1` · clean-runner `35238937264` PASS**  
+**不声称：Production Ready / 真实客户部署 / Hosted Embedding PASS / Retrieval Quality Acceptance / Live WeCom**
 
 ---
 
@@ -35,26 +35,35 @@
 
 ## 当前主干收口范围
 
-这次主干收口采用已经关闭并冻结的 **Job-Search Sprint V1** 作为稳定集成基线，而不是把所有历史 / 实验分支逐条强行合并。
+当前主干收敛到已经独立验证的 **Pre-ICP frozen engineering baseline**。实现语义以冻结源
+`55182eb11e801b49a5c5564d05acc72207b249f1` 为准；历史 / 实验分支继续保留为 provenance，
+不再形成第二个“当前事实中心”。
 
 主干集成后覆盖：
 
 - **Agent Runtime**：Pi-owned Agent loop；产品侧控制 Tools、Evidence、Safety、Session / Audit。
+- **Request Debugging**：server-side `requestId` 贯穿 HTTP → execution context → Runtime → audit，便于精确关联一次请求。
+- **AgentProfile**：服务端版本化 profile 约束 Skills / Tools / identity/work policy；profile identity/hash 进入执行与审计边界。
 - **Safety / Eval**：Safety vertical slice、100-case robustness、60-case blind holdout，以及历史 Knowledge / Retrieval evaluation。
 - **Knowledge Governance**：FAQ / Knowledge 的 approval、version、source reference 与 tenant/store scope admission。
 - **Authority / Persistence**：server-derived identity / capability / scope；PostgreSQL durable Ticket / Handoff / Audit。
+- **Durable Acceptance**：Harness 区分模型/Tool 声称与权威业务结果，使用 scoped durable read-back 验证 Ticket / Handoff 最终状态。
+- **Evaluation Governance**：descriptive governance manifest、thin regression matrix、report-only MRR / difficulty breakdown；既有 evaluator 仍是唯一 PASS/FAIL authority。
 - **Product Surface**：同源 React shell / StoreOps views。
 - **Delivery**：Docker / Compose 的本地可复现交付与 restart-persistence proof。
 - **RAG Integration**：private Python / FastAPI retrieval service + PostgreSQL 16 / pgvector + Node canonical reconciliation 的 deterministic integration proof。
 - **CI / Gate**：PostgreSQL、Python、Node、React、Docker、cross-language E2E 与 Eval suites 的 clean-runner evidence。
 
-仍然保留在独立分支、不作为本次 main 收口内容的包括：
+仍然明确不在当前主干闭环中的包括：
 
-- Semantic Selector 的真实模型实验与 latency characterization；
-- Harness / Acceptance 的 successor extension；
+- public HTTPS / ICP 后的公网部署；
+- live WeCom wire integration；
+- production Data Flywheel；
+- thin MCP；
+- Semantic Selector 的历史真实模型实验与 latency characterization；
 - 其他 failed / blocked / exploratory checkpoints。
 
-这样可以让 **main 表示“已经集成并有稳定 Gate 的能力”**，而历史分支继续保留“为什么这么做 / 哪些方案没有通过”的工程证据。
+这样让 **main 表示当前唯一的 Pre-ICP engineering baseline**；历史分支只保留演进、实验、失败与阶段性证据。
 
 ---
 
@@ -94,10 +103,12 @@ flowchart LR
 | 能力 | 可验证工程证据 |
 | --- | --- |
 | **Agent Runtime** | 真实 Pi Agent loop、4 个受控业务 Tool、turn / tool budget、timeout / cancellation |
+| **Request Traceability** | server-derived `requestId` 跨 HTTP / execution / Runtime / audit 关联，不接受客户端自声明 authority |
+| **AgentProfile Governance** | 版本化 profile + canonical hash；Skills / Tools 只能收窄 operator authority，profile mismatch fail closed |
 | **Evidence-first** | Governed FAQ / Knowledge admission；0 / 1 / 2+ answerability；没有合法 Evidence 时 fail closed |
 | **Tool / Authority** | server-derived identity、membership、capability、tenant/store scope；LLM 不直接拥有写权限 |
-| **Durable Business State** | PostgreSQL Ticket / Handoff / Audit；幂等、隔离、scoped read-back |
-| **Eval / Quality Gate** | Runtime regression、Safety 100-case、60-case blind holdout、Knowledge / Retrieval suites、CI Gates |
+| **Durable Acceptance** | Tool/model claim 不等于业务成功；Ticket / Handoff 要通过 PostgreSQL scoped durable observation 才能验收 |
+| **Eval Governance** | 现有 Safety / Knowledge / Retrieval / Harness 结果由 governance manifest 描述、regression matrix 聚合；无 blended Agent score |
 | **Delivery / Integration** | React + Node + PostgreSQL + Docker；private FastAPI / pgvector deterministic cross-language integration |
 | **Engineering Trade-off** | Semantic Selector 因质量 / 时延 / contract 问题未被硬塞进主路径，失败证据保留在历史分支 |
 
@@ -171,11 +182,39 @@ Runtime 保留明确预算：
 
 **Case / Config → Runtime → Evaluation → Report → Gate → Version Decision**
 
-并保留 Safety、blind holdout、Knowledge、Retrieval 与完整 regression evidence。
+现有 evaluator 的 PASS / FAIL 语义保持权威；Pre-ICP consolidation 只增加：
+- descriptive governance manifest；
+- thin unified regression matrix；
+- report-only MRR / difficulty breakdown；
+- Architecture Expansion / Ablation governance。
+
+它们用于提高可解释性和回归可见性，不创建新的生产质量声明，也不制造单一 blended Agent score。
 
 ---
 
-## Job-Search Sprint V1 · 当前稳定证据
+## Pre-ICP 冻结证据
+
+当前实现语义的冻结源：
+
+- Source commit：`55182eb11e801b49a5c5564d05acc72207b249f1`
+- Source tree：`68499338168aed05353247ce5196503b7118bcf7`
+- Clean-runner：`35238937264`
+- Job：`105262039153`
+- Conclusion：**success**
+
+该 frozen source 在 Job-Search Sprint V1 之上进一步关闭：
+
+- Request Debugging；
+- Durable Acceptance；
+- Thin Digital Employee / AgentProfile；
+- Pre-ICP Evaluation Governance Consolidation V1。
+
+这仍然是工程 / 集成证据，不等于公网部署、真实 WeCom 流量、production Data Flywheel、
+production-calibrated retrieval quality 或 Production Ready。
+
+---
+
+## Job-Search Sprint V1 · 历史稳定证据
 
 冻结的 Sprint closure 记录：
 
@@ -248,7 +287,7 @@ src/
 web/                          # React product surface
 ai-service/                   # private FastAPI Candidate Evidence service
 migrations/                   # PostgreSQL schema / ledger / RAG profile
-evals/                        # Safety / Knowledge / Retrieval evaluation
+evals/                        # Safety / Knowledge / Retrieval + governance / regression aggregation
 skills/                       # product-owned business Skills
 tests/                        # runtime / enterprise / PostgreSQL / integration tests
 scripts/                      # Docker / Gate / delivery verification
@@ -305,6 +344,8 @@ compose.yaml
 - [Job-Search Sprint V1](https://github.com/wanghanyu654321-cell/-agent/tree/job-search/sprint-v1)
 - [FastAPI / RAG Core B](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/core-b-fastapi-rag-v1)
 - [Integration V1](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/integration-v1)
+- [Request Debugging closure](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/request-debugging-closure-v1)
 - [Harness / Acceptance successor](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/harness-acceptance-extension-v1)
+- [Thin Digital Employee / Pre-ICP frozen source](https://github.com/wanghanyu654321-cell/-agent/tree/job-ready/thin-digital-employee-v1)
 
-> **Main 用来展示“已集成且有稳定 Gate 的能力”；分支用来保留演进、实验、失败与后续能力证据。**
+> **Main 是当前唯一的 Pre-ICP authoritative engineering baseline；分支保留 provenance、阶段性 closure、实验与失败证据。**
