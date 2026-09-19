@@ -2,10 +2,7 @@ import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import {
-	PostgresWeComCustomerRepository,
-	type VerifiedWeComCustomerText,
-} from "../../src/channels/wecom/customer.ts";
+import { PostgresWeComCustomerRepository, type VerifiedWeComCustomerText } from "../../src/channels/wecom/customer.ts";
 import { seedPortfolioEnterpriseDemoData } from "../../src/enterprise/demo-data.ts";
 import { PostgresIdentityRepository } from "../../src/enterprise/postgres.ts";
 

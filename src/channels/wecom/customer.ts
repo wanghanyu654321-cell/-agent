@@ -19,10 +19,7 @@ export interface WeComCustomerRoute {
 	context: SupportExecutionContext;
 }
 
-export type WeComCustomerClaim =
-	| { status: "claimed"; id: string }
-	| { status: "duplicate" }
-	| { status: "conflict" };
+export type WeComCustomerClaim = { status: "claimed"; id: string } | { status: "duplicate" } | { status: "conflict" };
 
 export function weComCustomerPayloadHash(message: VerifiedWeComCustomerText): string {
 	return createHash("sha256")
