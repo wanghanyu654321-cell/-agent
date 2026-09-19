@@ -141,9 +141,7 @@ function encryptedXmlValue(body: string): string {
 	if (body.length === 0 || body.length > 64 * 1024 || body.includes("\0") || !body.isWellFormed()) {
 		throw new Error("invalid_request");
 	}
-	const matches = [
-		...body.matchAll(/<Encrypt>\s*(?:<!\[CDATA\[([\s\S]*?)\]\]>|([^<]*))\s*<\/Encrypt>/g),
-	];
+	const matches = [...body.matchAll(/<Encrypt>\s*(?:<!\[CDATA\[([\s\S]*?)\]\]>|([^<]*))\s*<\/Encrypt>/g)];
 	if (matches.length !== 1) throw new Error("invalid_request");
 	const encrypted = (matches[0]?.[1] ?? matches[0]?.[2] ?? "").trim();
 	if (!encrypted || encrypted.length > MAX_ECHOSTR_CHARS || encrypted.length % 4 !== 0)
@@ -200,10 +198,7 @@ function parseKfMessageEvent(xml: string, corpId: string): WeComKfMessageEvent {
 }
 
 function xmlField(xml: string, field: string, maxLength: number): string {
-	const pattern = new RegExp(
-		`<${field}>\\s*(?:<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>|([^<]*))\\s*</${field}>`,
-		"g",
-	);
+	const pattern = new RegExp(`<${field}>\\s*(?:<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>|([^<]*))\\s*</${field}>`, "g");
 	const matches = [...xml.matchAll(pattern)];
 	if (matches.length !== 1) throw new Error("invalid_request");
 	const value = (matches[0]?.[1] ?? matches[0]?.[2] ?? "").trim();
