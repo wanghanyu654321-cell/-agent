@@ -9,7 +9,7 @@ export interface WeComSyncedText {
 	openKfId: string;
 	externalUserId: string;
 	sentAtUnix: number;
-	origin?: number;
+	origin: 3;
 	text: string;
 }
 
@@ -115,18 +115,19 @@ function parseSyncResult(body: Record<string, unknown>, expectedOpenKfId: string
 		const message = item as Record<string, unknown>;
 		if (message.msgtype !== "text" || message.open_kfid !== expectedOpenKfId) continue;
 		if (!message.text || typeof message.text !== "object" || Array.isArray(message.text)) continue;
+		const origin = optionalPositiveInteger(message.origin, 100);
+		if (origin !== 3) continue;
 		const externalUserId = optionalBoundedString(message.external_userid, 256);
 		const messageId = optionalBoundedString(message.msgid, 256);
 		const text = optionalBoundedString((message.text as Record<string, unknown>).content, 4000);
 		const sentAtUnix = optionalPositiveInteger(message.send_time, Number.MAX_SAFE_INTEGER);
 		if (!externalUserId || !messageId || !text || sentAtUnix === undefined) continue;
-		const origin = optionalPositiveInteger(message.origin, 100);
 		textMessages.push({
 			messageId,
 			openKfId: expectedOpenKfId,
 			externalUserId,
 			sentAtUnix,
-			...(origin === undefined ? {} : { origin }),
+			origin,
 			text,
 		});
 	}

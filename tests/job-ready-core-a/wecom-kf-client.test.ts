@@ -30,6 +30,15 @@ describe("WeChat Customer Service API client", () => {
 							msgtype: "text",
 							text: { content: "请问门店营业时间？" },
 						},
+						{
+							msgid: "message-agent-reply",
+							open_kfid: "wk0123456789abcdef",
+							external_userid: "wm-customer-1",
+							send_time: 1_726_700_001,
+							origin: 5,
+							msgtype: "text",
+							text: { content: "operator reply must not enter the agent runtime" },
+						},
 					],
 				});
 			},
@@ -42,7 +51,7 @@ describe("WeChat Customer Service API client", () => {
 		});
 
 		expect(result).toEqual({
-			messageCount: 1,
+			messageCount: 2,
 			textMessages: [
 				{
 					messageId: "message-1",
