@@ -5,8 +5,15 @@ const DEFAULT_MAX_CLOCK_SKEW_SECONDS = 5 * 60;
 const MAX_ECHOSTR_CHARS = 8192;
 const MAX_NONCE_CHARS = 128;
 
+export interface WeComKfMessageEvent {
+	token: string;
+	openKfId: string;
+	createdAtUnix: number;
+}
+
 export interface WeComCallbackVerifier {
 	verifyUrl(url: URL): string;
+	verifyEvent(url: URL, encryptedBody: string): WeComKfMessageEvent;
 }
 
 export interface WeComCallbackVerifierOptions {
@@ -43,8 +50,15 @@ export function createWeComCallbackVerifier(options: WeComCallbackVerifierOption
 		verifyUrl(url: URL): string {
 			const query = parseVerificationQuery(url);
 			validateTimestamp(query.timestamp, now(), maxClockSkewSeconds);
-			verifySignature(token, query);
-			return decryptEcho(query.echostr, aesKey, corpId);
+			verifySignature(token, query.timestamp, query.nonce, query.echostr, query.msgSignature);
+			return decryptMessage(query.echostr, aesKey, corpId);
+		},
+		verifyEvent(url: URL, encryptedBody: string): WeComKfMessageEvent {
+			const query = parseEventQuery(url);
+			validateTimestamp(query.timestamp, now(), maxClockSkewSeconds);
+			const encrypted = encryptedXmlValue(encryptedBody);
+			verifySignature(token, query.timestamp, query.nonce, encrypted, query.msgSignature);
+			return parseKfMessageEvent(decryptMessage(encrypted, aesKey, corpId), corpId);
 		},
 	};
 }
@@ -75,6 +89,27 @@ function parseVerificationQuery(url: URL): {
 	return { msgSignature, timestamp, nonce, echostr };
 }
 
+function parseEventQuery(url: URL): {
+	msgSignature: string;
+	timestamp: string;
+	nonce: string;
+} {
+	const fields = CALLBACK_FIELDS.slice(0, 3);
+	const keys = [...url.searchParams.keys()];
+	if (keys.length !== fields.length || keys.some((key) => !fields.includes(key as (typeof fields)[number]))) {
+		throw new Error("invalid_request");
+	}
+	for (const field of fields) {
+		if (url.searchParams.getAll(field).length !== 1) throw new Error("invalid_request");
+	}
+	const msgSignature = boundedQueryValue(url, "msg_signature", 40);
+	if (!/^[a-fA-F0-9]{40}$/.test(msgSignature)) throw new Error("invalid_request");
+	const timestamp = boundedQueryValue(url, "timestamp", 20);
+	if (!/^\d{1,20}$/.test(timestamp)) throw new Error("invalid_request");
+	const nonce = boundedQueryValue(url, "nonce", MAX_NONCE_CHARS);
+	return { msgSignature, timestamp, nonce };
+}
+
 function boundedQueryValue(url: URL, field: (typeof CALLBACK_FIELDS)[number], maxLength: number): string {
 	const value = url.searchParams.get(field);
 	if (!value || value.length > maxLength || value.includes("\0") || !value.isWellFormed())
@@ -92,16 +127,31 @@ function validateTimestamp(timestamp: string, now: Date, maxClockSkewSeconds: nu
 
 function verifySignature(
 	token: string,
-	query: { msgSignature: string; timestamp: string; nonce: string; echostr: string },
+	timestamp: string,
+	nonce: string,
+	encrypted: string,
+	msgSignature: string,
 ): void {
-	const expected = createHash("sha1")
-		.update([token, query.timestamp, query.nonce, query.echostr].sort().join(""))
-		.digest();
-	const actual = Buffer.from(query.msgSignature, "hex");
+	const expected = createHash("sha1").update([token, timestamp, nonce, encrypted].sort().join("")).digest();
+	const actual = Buffer.from(msgSignature, "hex");
 	if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) throw new Error("invalid_request");
 }
 
-function decryptEcho(encrypted: string, aesKey: Buffer, corpId: string): string {
+function encryptedXmlValue(body: string): string {
+	if (body.length === 0 || body.length > 64 * 1024 || body.includes("\0") || !body.isWellFormed()) {
+		throw new Error("invalid_request");
+	}
+	const matches = [
+		...body.matchAll(/<Encrypt>\s*(?:<!\[CDATA\[([\s\S]*?)\]\]>|([^<]*))\s*<\/Encrypt>/g),
+	];
+	if (matches.length !== 1) throw new Error("invalid_request");
+	const encrypted = (matches[0]?.[1] ?? matches[0]?.[2] ?? "").trim();
+	if (!encrypted || encrypted.length > MAX_ECHOSTR_CHARS || encrypted.length % 4 !== 0) throw new Error("invalid_request");
+	if (!/^[A-Za-z0-9+/]+={0,2}$/.test(encrypted)) throw new Error("invalid_request");
+	return encrypted;
+}
+
+function decryptMessage(encrypted: string, aesKey: Buffer, corpId: string): string {
 	const ciphertext = Buffer.from(encrypted, "base64");
 	if (ciphertext.length === 0 || ciphertext.length % 16 !== 0) throw new Error("invalid_request");
 	let padded: Buffer;
@@ -128,6 +178,38 @@ function decryptEcho(encrypted: string, aesKey: Buffer, corpId: string): string 
 	} catch {
 		throw new Error("invalid_request");
 	}
+}
+
+function parseKfMessageEvent(xml: string, corpId: string): WeComKfMessageEvent {
+	const toUserName = xmlField(xml, "ToUserName", 128);
+	if (toUserName !== corpId) throw new Error("invalid_request");
+	if (xmlField(xml, "MsgType", 32) !== "event") throw new Error("invalid_request");
+	if (xmlField(xml, "Event", 64) !== "kf_msg_or_event") throw new Error("invalid_request");
+
+	const createdAtText = xmlField(xml, "CreateTime", 20);
+	if (!/^\d{1,20}$/.test(createdAtText)) throw new Error("invalid_request");
+	const createdAtBigInt = BigInt(createdAtText);
+	if (createdAtBigInt > BigInt(Number.MAX_SAFE_INTEGER)) throw new Error("invalid_request");
+
+	const token = xmlField(xml, "Token", 2048);
+	const openKfId = xmlField(xml, "OpenKfId", 128);
+	if (!token || !openKfId) throw new Error("invalid_request");
+
+	return { token, openKfId, createdAtUnix: Number(createdAtBigInt) };
+}
+
+function xmlField(xml: string, field: string, maxLength: number): string {
+	const pattern = new RegExp(
+		`<${field}>\\s*(?:<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>|([^<]*))\\s*</${field}>`,
+		"g",
+	);
+	const matches = [...xml.matchAll(pattern)];
+	if (matches.length !== 1) throw new Error("invalid_request");
+	const value = (matches[0]?.[1] ?? matches[0]?.[2] ?? "").trim();
+	if (!value || value.length > maxLength || value.includes("\0") || !value.isWellFormed()) {
+		throw new Error("invalid_request");
+	}
+	return value;
 }
 
 function stripPkcs7Padding(value: Buffer): Buffer {

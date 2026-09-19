@@ -70,10 +70,11 @@ async function handleRequest(
 	const url = new URL(request.url ?? "/", "http://localhost");
 	const path = url.pathname;
 	try {
-		if (path === "/api/v1/channels/wecom/callback")
-			return request.method === "GET"
-				? weComCallbackVerification(response, options, url)
-				: methodNotAllowed(response, "GET");
+		if (path === "/api/v1/channels/wecom/callback") {
+			if (request.method === "GET") return weComCallbackVerification(response, options, url);
+			if (request.method === "POST") return await weComCallbackEvent(request, response, options, url);
+			return sendJson(response, 405, { error: "method_not_allowed" }, { Allow: "GET, POST" });
+		}
 		if (path === "/api/v1/storeops" || path.startsWith("/api/v1/storeops/"))
 			return await storeOps(request, response, options, url);
 		if (path === "/healthz")
@@ -162,6 +163,34 @@ function weComCallbackVerification(response: ServerResponse, options: Enterprise
 	} catch {
 		sendJson(response, 400, { error: "invalid_request" });
 	}
+}
+
+async function weComCallbackEvent(
+	request: IncomingMessage,
+	response: ServerResponse,
+	options: EnterpriseHttpServerOptions,
+	url: URL,
+): Promise<void> {
+	const verifier = options.wecomCallbackVerifier;
+	if (!verifier) return sendJson(response, 503, { error: "dependency_unavailable" });
+	try {
+		verifier.verifyEvent(url, await readTextBody(request));
+		sendText(response, 200, "success");
+	} catch {
+		sendJson(response, 400, { error: "invalid_request" });
+	}
+}
+
+async function readTextBody(request: IncomingMessage): Promise<string> {
+	const chunks: Buffer[] = [];
+	let size = 0;
+	for await (const chunk of request) {
+		const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+		size += buffer.byteLength;
+		if (size > BODY_LIMIT_BYTES) throw new Error("Request body too large.");
+		chunks.push(buffer);
+	}
+	return new TextDecoder("utf-8", { fatal: true }).decode(Buffer.concat(chunks));
 }
 
 async function storeOps(

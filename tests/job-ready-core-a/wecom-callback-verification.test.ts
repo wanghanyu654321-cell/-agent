@@ -61,6 +61,20 @@ describe("WeChat Customer Service callback URL verification", () => {
 		expect(() => verifier.verifyUrl(duplicate)).toThrow("invalid_request");
 	});
 
+	it("verifies and decrypts the kf_msg_or_event POST envelope without exposing the sync token", () => {
+		const verifier = verifierFixture();
+		const request = eventFixture();
+		expect(verifier.verifyEvent(request.url, request.body)).toEqual({
+			token: "syncToken123",
+			openKfId: "wk0123456789abcdef",
+			createdAtUnix: Math.floor(NOW.getTime() / 1000),
+		});
+
+		const tampered = new URL(request.url);
+		tampered.searchParams.set("msg_signature", "0".repeat(40));
+		expect(() => verifier.verifyEvent(tampered, request.body)).toThrow("invalid_request");
+	});
+
 	it("loads callback secrets only as one complete host-side configuration set", () => {
 		expect(weComCallbackVerifierFromEnv({})).toBeUndefined();
 		expect(() => weComCallbackVerifierFromEnv({ WECOM_CORP_ID: CORP_ID })).toThrow("must be configured together");
@@ -105,9 +119,18 @@ describe("WeChat Customer Service callback URL verification", () => {
 		expect(rejectedBody).toContain("invalid_request");
 		expect(rejectedBody).not.toContain(request.echostr);
 
-		const post = await fetch(`${origin}${request.url.pathname}`, { method: "POST" });
-		expect(post.status).toBe(405);
-		expect(post.headers.get("allow")).toBe("GET");
+		const event = eventFixture();
+		const post = await fetch(`${origin}${event.url.pathname}?${event.url.searchParams.toString()}`, {
+			method: "POST",
+			headers: { "content-type": "text/xml; charset=utf-8" },
+			body: event.body,
+		});
+		expect(post.status).toBe(200);
+		expect(await post.text()).toBe("success");
+
+		const put = await fetch(`${origin}${request.url.pathname}`, { method: "PUT" });
+		expect(put.status).toBe(405);
+		expect(put.headers.get("allow")).toBe("GET, POST");
 	});
 });
 
@@ -135,6 +158,34 @@ function callbackFixture(
 	url.searchParams.set("nonce", nonce);
 	url.searchParams.set("echostr", echostr);
 	return { url, echostr };
+}
+
+function eventFixture(
+	overrides: { receiveId?: string; timestamp?: string; nonce?: string; token?: string; openKfId?: string } = {},
+): { url: URL; body: string } {
+	const receiveId = overrides.receiveId ?? CORP_ID;
+	const timestamp = overrides.timestamp ?? String(Math.floor(NOW.getTime() / 1000));
+	const nonce = overrides.nonce ?? NONCE;
+	const token = overrides.token ?? "syncToken123";
+	const openKfId = overrides.openKfId ?? "wk0123456789abcdef";
+	const payload = [
+		"<xml>",
+		`<ToUserName><![CDATA[${CORP_ID}]]></ToUserName>`,
+		`<CreateTime>${timestamp}</CreateTime>`,
+		"<MsgType><![CDATA[event]]></MsgType>",
+		"<Event><![CDATA[kf_msg_or_event]]></Event>",
+		`<Token><![CDATA[${token}]]></Token>`,
+		`<OpenKfId><![CDATA[${openKfId}]]></OpenKfId>`,
+		"</xml>",
+	].join("");
+	const encrypted = encrypt(payload, receiveId);
+	const msgSignature = createHash("sha1").update([TOKEN, timestamp, nonce, encrypted].sort().join("")).digest("hex");
+	const url = new URL("https://frontagent.cn/api/v1/channels/wecom/callback");
+	url.searchParams.set("msg_signature", msgSignature);
+	url.searchParams.set("timestamp", timestamp);
+	url.searchParams.set("nonce", nonce);
+	const body = `<xml><Encrypt><![CDATA[${encrypted}]]></Encrypt></xml>`;
+	return { url, body };
 }
 
 function encrypt(message: string, receiveId: string): string {
