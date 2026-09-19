@@ -4,12 +4,12 @@ import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { WeComKfClient } from "../../src/channels/wecom/client.ts";
-import type { WeComCustomerRouter } from "../../src/channels/wecom/customer.ts";
 import {
 	createWeComCallbackVerifier,
 	type WeComCallbackVerifier,
 	weComCallbackVerifierFromEnv,
 } from "../../src/channels/wecom/crypto.ts";
+import type { WeComCustomerRouter } from "../../src/channels/wecom/customer.ts";
 import { EnterpriseAuthService } from "../../src/enterprise/auth.ts";
 import { createEnterpriseHttpServer } from "../../src/enterprise/http-api.ts";
 import { createSupportExecutionContext, InMemoryIdentityRepository } from "../../src/enterprise/identity.ts";
@@ -210,7 +210,6 @@ describe("WeChat Customer Service callback URL verification", () => {
 		expect(logs).not.toContain(customerText.externalUserId);
 		expect(logs).not.toContain(customerText.text);
 	});
-
 });
 
 function verifierFixture(): WeComCallbackVerifier {

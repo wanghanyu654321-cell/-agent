@@ -5,8 +5,8 @@ import { fileURLToPath } from "node:url";
 import { fauxAssistantMessage, registerFauxProvider, streamSimple } from "@earendil-works/pi-ai/compat";
 import { Pool } from "pg";
 import { type WeComKfClient, weComKfClientFromEnv } from "../channels/wecom/client.ts";
-import { PostgresWeComCustomerRepository } from "../channels/wecom/customer.ts";
 import { type WeComCallbackVerifier, weComCallbackVerifierFromEnv } from "../channels/wecom/crypto.ts";
+import { PostgresWeComCustomerRepository } from "../channels/wecom/customer.ts";
 import type { SupportRuntimePort } from "../http-api.ts";
 import {
 	InMemorySupportStore,

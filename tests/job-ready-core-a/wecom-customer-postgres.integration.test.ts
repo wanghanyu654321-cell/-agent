@@ -119,5 +119,4 @@ describePostgres("WeChat Customer Service customer identity and durable routing"
 		expect(row).toMatchObject({ state: "failed", error_category: "unbound_channel" });
 		expect(JSON.stringify(row)).not.toContain(input.text);
 	});
-
 });
