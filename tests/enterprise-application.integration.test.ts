@@ -42,6 +42,7 @@ describePostgres("enterprise application composition root", () => {
 			{ id: "003_job_ready_storeops" },
 			{ id: "004_job_ready_rag" },
 			{ id: "005_job_ready_rag_profiles" },
+			{ id: "006_wecom_customer_identity" },
 		]);
 	});
 
