@@ -185,10 +185,12 @@ async function weComCallbackEvent(
 	}
 	const client = options.wecomKfClient;
 	const customerRouter = options.wecomCustomerRouter;
-	if (!client || !customerRouter) return sendJson(response, 503, { error: "dependency_unavailable" });
+	const supportService = options.supportService;
+	if (!client || !customerRouter || !supportService)
+		return sendJson(response, 503, { error: "dependency_unavailable" });
 	try {
 		const synced = await client.syncMessages(event);
-		const routed = await routeWeComCustomerTexts(customerRouter, synced.textMessages);
+		const routed = await routeWeComCustomerTexts(customerRouter, supportService, synced.textMessages);
 		console.info(
 			JSON.stringify({
 				event: "wecom_kf_sync",
@@ -206,23 +208,30 @@ async function weComCallbackEvent(
 
 async function routeWeComCustomerTexts(
 	customerRouter: WeComCustomerRouter,
+	supportService: Pick<EnterpriseSupportPort, "respond">,
 	messages: readonly VerifiedWeComCustomerText[],
 ): Promise<{
 	claimed: number;
 	duplicates: number;
 	conflicts: number;
 	routed: number;
+	completed: number;
 	unbound: number;
 	routeAttachFailed: number;
 	routingErrors: number;
+	executionErrors: number;
+	completionPersistFailed: number;
 }> {
 	let claimed = 0;
 	let duplicates = 0;
 	let conflicts = 0;
 	let routed = 0;
+	let completed = 0;
 	let unbound = 0;
 	let routeAttachFailed = 0;
 	let routingErrors = 0;
+	let executionErrors = 0;
+	let completionPersistFailed = 0;
 	for (const message of messages) {
 		const requestId = randomUUID();
 		const claim = await customerRouter.claim(message, requestId);
@@ -235,8 +244,9 @@ async function routeWeComCustomerTexts(
 			continue;
 		}
 		claimed += 1;
+		let route;
 		try {
-			const route = await customerRouter.resolveRoute(message, requestId);
+			route = await customerRouter.resolveRoute(message, requestId);
 			if (!route) {
 				await customerRouter.markFailed(claim.id, "unbound_channel");
 				unbound += 1;
@@ -251,9 +261,44 @@ async function routeWeComCustomerTexts(
 		} catch {
 			await customerRouter.markFailed(claim.id, "routing_error").catch(() => false);
 			routingErrors += 1;
+			continue;
+		}
+		let result: SupportResult;
+		try {
+			result = await supportService.respond(route.context, {
+				conversationId: route.conversationId,
+				customerId: route.customerId,
+				text: message.text,
+			});
+		} catch {
+			await customerRouter.markFailed(claim.id, "agent_execution_error").catch(() => false);
+			executionErrors += 1;
+			continue;
+		}
+		try {
+			if (!(await customerRouter.complete(claim.id, result.type))) {
+				await customerRouter.markFailed(claim.id, "completion_persist_failed").catch(() => false);
+				completionPersistFailed += 1;
+				continue;
+			}
+			completed += 1;
+		} catch {
+			await customerRouter.markFailed(claim.id, "completion_persist_failed").catch(() => false);
+			completionPersistFailed += 1;
 		}
 	}
-	return { claimed, duplicates, conflicts, routed, unbound, routeAttachFailed, routingErrors };
+	return {
+		claimed,
+		duplicates,
+		conflicts,
+		routed,
+		completed,
+		unbound,
+		routeAttachFailed,
+		routingErrors,
+		executionErrors,
+		completionPersistFailed,
+	};
 }
 
 async function readTextBody(request: IncomingMessage): Promise<string> {

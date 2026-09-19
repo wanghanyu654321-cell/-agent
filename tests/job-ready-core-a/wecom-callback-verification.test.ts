@@ -11,6 +11,7 @@ import {
 } from "../../src/channels/wecom/crypto.ts";
 import type { WeComCustomerRouter } from "../../src/channels/wecom/customer.ts";
 import { EnterpriseAuthService } from "../../src/enterprise/auth.ts";
+import type { EnterpriseSupportPort } from "../../src/enterprise/business.ts";
 import { createEnterpriseHttpServer } from "../../src/enterprise/http-api.ts";
 import { createSupportExecutionContext, InMemoryIdentityRepository } from "../../src/enterprise/identity.ts";
 
@@ -135,10 +136,12 @@ describe("WeChat Customer Service callback URL verification", () => {
 		expect(put.status).toBe(405);
 		expect(put.headers.get("allow")).toBe("GET, POST");
 	});
-	it("claims and routes synced customer text only once across callback replay without logging identifiers or text", async () => {
+	it("claims, executes and completes synced customer text only once across callback replay without logging contents", async () => {
 		const verifier = verifierFixture();
 		let alreadyClaimed = false;
 		let attached = 0;
+		let completed = 0;
+		let executed = 0;
 		const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
 		const customerText = {
 			corpId: CORP_ID,
@@ -178,6 +181,11 @@ describe("WeChat Customer Service callback URL verification", () => {
 				attached += 1;
 				return true;
 			},
+			async complete(_claimId, resultType) {
+				completed += 1;
+				expect(resultType).toBe("answer");
+				return true;
+			},
 			async markFailed() {
 				throw new Error("markFailed must not run for the routed fixture");
 			},
@@ -189,6 +197,23 @@ describe("WeChat Customer Service callback URL verification", () => {
 				},
 			},
 			wecomCustomerRouter: customerRouter,
+			supportService: supportServiceFixture(async (context, input) => {
+				executed += 1;
+				expect(context.scope).toEqual({ tenantId: "demo-tenant-a", storeId: "demo-store-a1" });
+				expect(input).toEqual({
+					conversationId: "conversation-a",
+					customerId: "customer-a",
+					text: customerText.text,
+				});
+				return {
+					type: "answer",
+					text: "private answer must not be logged",
+					piSessionId: "session-a",
+					toolsCalled: [],
+					sessionEvents: [],
+					evidence: [],
+				};
+			}),
 		});
 		const event = eventFixture();
 
@@ -203,12 +228,16 @@ describe("WeChat Customer Service callback URL verification", () => {
 		}
 
 		expect(attached).toBe(1);
+		expect(executed).toBe(1);
+		expect(completed).toBe(1);
 		const logs = info.mock.calls.flat().join("\n");
 		expect(logs).toContain('"routed":1');
+		expect(logs).toContain('"completed":1');
 		expect(logs).toContain('"duplicates":1');
 		expect(logs).not.toContain(customerText.messageId);
 		expect(logs).not.toContain(customerText.externalUserId);
 		expect(logs).not.toContain(customerText.text);
+		expect(logs).not.toContain("private answer must not be logged");
 	});
 });
 
@@ -279,9 +308,35 @@ function encrypt(message: string, receiveId: string): string {
 	return Buffer.concat([cipher.update(padded), cipher.final()]).toString("base64");
 }
 
+function supportServiceFixture(
+	respond: EnterpriseSupportPort["respond"] = async () => {
+		throw new Error("unexpected customer message");
+	},
+): EnterpriseSupportPort {
+	return {
+		respond,
+		async listConversations() {
+			return [];
+		},
+		async listTickets() {
+			return [];
+		},
+		async listHandoffs() {
+			return [];
+		},
+		async listAuditEvents() {
+			return [];
+		},
+	};
+}
+
 async function startServer(
 	verifier: WeComCallbackVerifier,
-	dependencies: { wecomKfClient?: WeComKfClient; wecomCustomerRouter?: WeComCustomerRouter } = {},
+	dependencies: {
+		wecomKfClient?: WeComKfClient;
+		wecomCustomerRouter?: WeComCustomerRouter;
+		supportService?: EnterpriseSupportPort;
+	} = {},
 ): Promise<string> {
 	const defaultCustomerRouter: WeComCustomerRouter = {
 		async claim() {
@@ -291,6 +346,9 @@ async function startServer(
 			throw new Error("unexpected customer message");
 		},
 		async attachRoute() {
+			throw new Error("unexpected customer message");
+		},
+		async complete() {
 			throw new Error("unexpected customer message");
 		},
 		async markFailed() {
@@ -308,6 +366,7 @@ async function startServer(
 				},
 			} satisfies WeComKfClient),
 		wecomCustomerRouter: dependencies.wecomCustomerRouter ?? defaultCustomerRouter,
+		supportService: dependencies.supportService ?? supportServiceFixture(),
 	});
 	server.listen(0, "127.0.0.1");
 	await once(server, "listening");
