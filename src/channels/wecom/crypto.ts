@@ -146,7 +146,8 @@ function encryptedXmlValue(body: string): string {
 	];
 	if (matches.length !== 1) throw new Error("invalid_request");
 	const encrypted = (matches[0]?.[1] ?? matches[0]?.[2] ?? "").trim();
-	if (!encrypted || encrypted.length > MAX_ECHOSTR_CHARS || encrypted.length % 4 !== 0) throw new Error("invalid_request");
+	if (!encrypted || encrypted.length > MAX_ECHOSTR_CHARS || encrypted.length % 4 !== 0)
+		throw new Error("invalid_request");
 	if (!/^[A-Za-z0-9+/]+={0,2}$/.test(encrypted)) throw new Error("invalid_request");
 	return encrypted;
 }
