@@ -4,7 +4,11 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { extname, resolve, sep } from "node:path";
 import type { WeComKfClient } from "../channels/wecom/client.ts";
 import type { WeComCallbackVerifier, WeComKfMessageEvent } from "../channels/wecom/crypto.ts";
-import type { VerifiedWeComCustomerText, WeComCustomerRouter } from "../channels/wecom/customer.ts";
+import type {
+	VerifiedWeComCustomerText,
+	WeComCustomerRoute,
+	WeComCustomerRouter,
+} from "../channels/wecom/customer.ts";
 import type { SupportRuntimePort } from "../http-api.ts";
 import type { SupportResult } from "../index.ts";
 import {
@@ -244,7 +248,7 @@ async function routeWeComCustomerTexts(
 			continue;
 		}
 		claimed += 1;
-		let route;
+		let route: WeComCustomerRoute | undefined;
 		try {
 			route = await customerRouter.resolveRoute(message, requestId);
 			if (!route) {
