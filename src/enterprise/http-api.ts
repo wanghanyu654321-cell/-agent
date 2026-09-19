@@ -151,17 +151,16 @@ async function handleRequest(
 	}
 }
 
-function weComCallbackVerification(
-	response: ServerResponse,
-	options: EnterpriseHttpServerOptions,
-	url: URL,
-): void {
+function weComCallbackVerification(response: ServerResponse, options: EnterpriseHttpServerOptions, url: URL): void {
 	const verifier = options.wecomCallbackVerifier;
-	if (!verifier) return sendJson(response, 503, { error: "dependency_unavailable" });
+	if (!verifier) {
+		sendJson(response, 503, { error: "dependency_unavailable" });
+		return;
+	}
 	try {
-		return sendText(response, 200, verifier.verifyUrl(url));
+		sendText(response, 200, verifier.verifyUrl(url));
 	} catch {
-		return sendJson(response, 400, { error: "invalid_request" });
+		sendJson(response, 400, { error: "invalid_request" });
 	}
 }
 

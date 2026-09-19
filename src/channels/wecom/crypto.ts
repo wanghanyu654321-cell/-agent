@@ -77,7 +77,8 @@ function parseVerificationQuery(url: URL): {
 
 function boundedQueryValue(url: URL, field: (typeof CALLBACK_FIELDS)[number], maxLength: number): string {
 	const value = url.searchParams.get(field);
-	if (!value || value.length > maxLength || value.includes("\0") || !value.isWellFormed()) throw new Error("invalid_request");
+	if (!value || value.length > maxLength || value.includes("\0") || !value.isWellFormed())
+		throw new Error("invalid_request");
 	return value;
 }
 
@@ -119,10 +120,7 @@ function decryptEcho(encrypted: string, aesKey: Buffer, corpId: string): string 
 	if (messageLength < 1 || messageEnd > plaintext.length) throw new Error("invalid_request");
 	const receiveId = plaintext.subarray(messageEnd);
 	const expectedReceiveId = Buffer.from(corpId, "utf8");
-	if (
-		receiveId.length !== expectedReceiveId.length ||
-		!timingSafeEqual(receiveId, expectedReceiveId)
-	) {
+	if (receiveId.length !== expectedReceiveId.length || !timingSafeEqual(receiveId, expectedReceiveId)) {
 		throw new Error("invalid_request");
 	}
 	try {
@@ -143,7 +141,13 @@ function stripPkcs7Padding(value: Buffer): Buffer {
 }
 
 function validateCorpId(value: string): string {
-	if (value !== value.trim() || value.length < 3 || value.length > 128 || !value.startsWith("ww") || /[\s\0]/.test(value)) {
+	if (
+		value !== value.trim() ||
+		value.length < 3 ||
+		value.length > 128 ||
+		!value.startsWith("ww") ||
+		/[\s\0]/.test(value)
+	) {
 		throw new Error("WECOM_CORP_ID is invalid.");
 	}
 	return value;

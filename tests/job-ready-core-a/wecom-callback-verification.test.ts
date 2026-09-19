@@ -22,12 +22,12 @@ const servers: Server[] = [];
 
 afterEach(async () => {
 	await Promise.all(
-		servers.splice(0).map(
-			(server) =>
-				new Promise<void>((resolve, reject) =>
-					server.close((error) => (error ? reject(error) : resolve())),
-				),
-		),
+		servers
+			.splice(0)
+			.map(
+				(server) =>
+					new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve()))),
+			),
 	);
 });
 
@@ -63,9 +63,7 @@ describe("WeChat Customer Service callback URL verification", () => {
 
 	it("loads callback secrets only as one complete host-side configuration set", () => {
 		expect(weComCallbackVerifierFromEnv({})).toBeUndefined();
-		expect(() => weComCallbackVerifierFromEnv({ WECOM_CORP_ID: CORP_ID })).toThrow(
-			"must be configured together",
-		);
+		expect(() => weComCallbackVerifierFromEnv({ WECOM_CORP_ID: CORP_ID })).toThrow("must be configured together");
 		expect(() =>
 			weComCallbackVerifierFromEnv({
 				WECOM_CORP_ID: CORP_ID,
@@ -123,9 +121,7 @@ function callbackFixture(
 	const timestamp = overrides.timestamp ?? String(Math.floor(NOW.getTime() / 1000));
 	const nonce = overrides.nonce ?? NONCE;
 	const echostr = encrypt(message, receiveId);
-	const msgSignature = createHash("sha1")
-		.update([TOKEN, timestamp, nonce, echostr].sort().join(""))
-		.digest("hex");
+	const msgSignature = createHash("sha1").update([TOKEN, timestamp, nonce, echostr].sort().join("")).digest("hex");
 	const url = new URL("https://frontagent.cn/api/v1/channels/wecom/callback");
 	url.searchParams.set("msg_signature", msgSignature);
 	url.searchParams.set("timestamp", timestamp);
