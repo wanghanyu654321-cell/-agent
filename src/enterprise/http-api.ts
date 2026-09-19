@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { readFile, stat } from "node:fs/promises";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { extname, resolve, sep } from "node:path";
+import type { WeComKfClient } from "../channels/wecom/client.ts";
 import type { WeComCallbackVerifier } from "../channels/wecom/crypto.ts";
 import type { SupportRuntimePort } from "../http-api.ts";
 import type { SupportResult } from "../index.ts";
@@ -30,6 +31,7 @@ const SESSION_COOKIE = "support_session";
 export interface EnterpriseHttpServerOptions {
 	auth: EnterpriseAuthService;
 	wecomCallbackVerifier?: WeComCallbackVerifier;
+	wecomKfClient?: WeComKfClient;
 	runtime?: SupportRuntimePort;
 	supportService?: EnterpriseSupportPort;
 	storeOpsService?: Pick<
@@ -173,11 +175,27 @@ async function weComCallbackEvent(
 ): Promise<void> {
 	const verifier = options.wecomCallbackVerifier;
 	if (!verifier) return sendJson(response, 503, { error: "dependency_unavailable" });
+	let event;
 	try {
-		verifier.verifyEvent(url, await readTextBody(request));
-		sendText(response, 200, "success");
+		event = verifier.verifyEvent(url, await readTextBody(request));
 	} catch {
-		sendJson(response, 400, { error: "invalid_request" });
+		return sendJson(response, 400, { error: "invalid_request" });
+	}
+	const client = options.wecomKfClient;
+	if (!client) return sendJson(response, 503, { error: "dependency_unavailable" });
+	try {
+		const synced = await client.syncMessages(event);
+		console.info(
+			JSON.stringify({
+				event: "wecom_kf_sync",
+				messageCount: synced.messageCount,
+				textCount: synced.textMessages.length,
+				hasMore: synced.hasMore,
+			}),
+		);
+		return sendText(response, 200, "success");
+	} catch {
+		return sendJson(response, 502, { error: "dependency_unavailable" });
 	}
 }
 

@@ -205,6 +205,11 @@ async function startServer(verifier: WeComCallbackVerifier): Promise<string> {
 	const server = createEnterpriseHttpServer({
 		auth: new EnterpriseAuthService(new InMemoryIdentityRepository()),
 		wecomCallbackVerifier: verifier,
+		wecomKfClient: {
+			async syncMessages() {
+				return { messageCount: 1, textMessages: [], hasMore: false };
+			},
+		},
 	});
 	server.listen(0, "127.0.0.1");
 	await once(server, "listening");
