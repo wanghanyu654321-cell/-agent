@@ -24,6 +24,12 @@ ENTERPRISE_KNOWLEDGE_MODE=portfolio
 ENTERPRISE_RETRIEVAL_MODE=lexical
 ENTERPRISE_SECURE_COOKIES=true
 
+# WeChat Customer Service callback URL verification. Generate Token and EncodingAESKey
+# in kf.weixin.qq.com; keep them host-local and never paste them into Git/logs/issues.
+WECOM_CORP_ID=<WECHAT_CUSTOMER_SERVICE_CORP_ID>
+WECOM_CALLBACK_TOKEN=<GENERATED_CALLBACK_TOKEN>
+WECOM_CALLBACK_AES_KEY=<GENERATED_43_CHAR_ENCODING_AES_KEY>
+
 # Private FastAPI service. It is never published to the host.
 RAG_SERVICE_CREDENTIAL=<RANDOM_PRIVATE_SERVICE_CREDENTIAL>
 RAG_DATABASE_URL=postgresql://customer_support_agent:<STRONG_URL_SAFE_PASSWORD>@postgres:5432/customer_support_agent

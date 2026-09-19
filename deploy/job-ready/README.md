@@ -26,9 +26,9 @@ AgentProfile and business semantics are not redesigned here.
   Redis, Kafka, service mesh or public database port is introduced.
 - **BLOCKED, not PASS.** Health/smoke helpers report `BLOCKED` on any missing
   environment; dependency failure is never a successful no-answer.
-- **Gap discipline.** WeCom callback wiring (GAP-01/02) and vector profile
-  selection (GAP-03/04) are intentionally left undefined; Integration completes
-  them after independent approval.
+- **Gap discipline.** The selected WeChat Customer Service protocol now implements only GET URL verification
+  (signature, AES decryption, CorpID/receiveId check). POST events, `sync_msg`/`send_msg` and external-customer
+  authority remain blocked follow-up work; vector profile selection (GAP-03/04) is unchanged.
 
 ## Related support scripts
 

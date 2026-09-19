@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { readFile, stat } from "node:fs/promises";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { extname, resolve, sep } from "node:path";
+import type { WeComCallbackVerifier } from "../channels/wecom/crypto.ts";
 import type { SupportRuntimePort } from "../http-api.ts";
 import type { SupportResult } from "../index.ts";
 import {
@@ -28,6 +29,7 @@ const SESSION_COOKIE = "support_session";
 
 export interface EnterpriseHttpServerOptions {
 	auth: EnterpriseAuthService;
+	wecomCallbackVerifier?: WeComCallbackVerifier;
 	runtime?: SupportRuntimePort;
 	supportService?: EnterpriseSupportPort;
 	storeOpsService?: Pick<
@@ -68,6 +70,10 @@ async function handleRequest(
 	const url = new URL(request.url ?? "/", "http://localhost");
 	const path = url.pathname;
 	try {
+		if (path === "/api/v1/channels/wecom/callback")
+			return request.method === "GET"
+				? weComCallbackVerification(response, options, url)
+				: methodNotAllowed(response, "GET");
 		if (path === "/api/v1/storeops" || path.startsWith("/api/v1/storeops/"))
 			return await storeOps(request, response, options, url);
 		if (path === "/healthz")
@@ -142,6 +148,20 @@ async function handleRequest(
 		if (error instanceof EnterpriseConversationConflictError)
 			return sendJson(response, 409, { error: "conversation_conflict" });
 		return sendJson(response, 500, { error: "internal_error" });
+	}
+}
+
+function weComCallbackVerification(
+	response: ServerResponse,
+	options: EnterpriseHttpServerOptions,
+	url: URL,
+): void {
+	const verifier = options.wecomCallbackVerifier;
+	if (!verifier) return sendJson(response, 503, { error: "dependency_unavailable" });
+	try {
+		return sendText(response, 200, verifier.verifyUrl(url));
+	} catch {
+		return sendJson(response, 400, { error: "invalid_request" });
 	}
 }
 
@@ -505,6 +525,16 @@ function staticContentType(filePath: string): string {
 		default:
 			return "application/octet-stream";
 	}
+}
+
+function sendText(response: ServerResponse, status: number, body: string): void {
+	const encoded = Buffer.from(body, "utf8");
+	response.writeHead(status, {
+		"content-type": "text/plain; charset=utf-8",
+		"content-length": String(encoded.byteLength),
+		"cache-control": "no-store",
+	});
+	response.end(encoded);
 }
 
 function sendJson(response: ServerResponse, status: number, body: unknown, headers: Record<string, string> = {}): void {

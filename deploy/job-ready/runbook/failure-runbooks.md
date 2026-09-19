@@ -78,17 +78,19 @@ Ground rules for every runbook:
 
 ## 5. WeCom callback blocked
 
-- **Symptoms:** Inbound channel events do not arrive or are not acknowledged.
-- **Safe diagnosis:** This area is gated by **CONTRACT GAP-01** (official WeCom
-  API family / wire callback / ack / egress) and **GAP-02** (employee vs
-  external-customer mapping). Do not guess a wire contract or provision real
-  channel bindings.
-- **Bounded mitigation:** Confirm network/allow-list reachability only; defer
-  protocol behavior to Integration after the gaps are independently approved.
-- **Safe error category:** channel ingress failure; successful dedupe of a
-  replayed event is **not** a second execution.
-- **Escalation & evidence:** Record that the callback path is GAP-blocked; no
-  live adapter claim.
+- **Symptoms:** URL verification fails, or later inbound customer-service events do
+  not arrive or are not acknowledged.
+- **Safe diagnosis:** GET URL verification is now bounded to the selected WeChat
+  Customer Service contract: exact query shape, timestamp bound, SHA1 signature,
+  AES-CBC decryption and CorpID/receiveId validation. POST event handling,
+  `sync_msg`/`send_msg` and external-customer authority remain unimplemented.
+- **Bounded mitigation:** Verify only the host-local callback configuration and
+  public HTTPS reachability for the GET closure. Do not treat a successful URL
+  save as live message-wire closure or provision customer bindings yet.
+- **Safe error category:** invalid verification is `invalid_request`; missing
+  host callback configuration is `dependency_unavailable`.
+- **Escalation & evidence:** Record GET verification separately. No live
+  customer-message, Agent-dispatch or outbound-send claim follows from it.
 
 ## 6. Runtime timeout
 

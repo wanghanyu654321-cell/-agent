@@ -4,6 +4,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { fauxAssistantMessage, registerFauxProvider, streamSimple } from "@earendil-works/pi-ai/compat";
 import { Pool } from "pg";
+import { type WeComCallbackVerifier, weComCallbackVerifierFromEnv } from "../channels/wecom/crypto.ts";
 import type { SupportRuntimePort } from "../http-api.ts";
 import {
 	InMemorySupportStore,
@@ -67,6 +68,7 @@ export interface EnterpriseApplicationOptions {
 	secureCookies?: boolean;
 	runtimeFactory?: EnterpriseRuntimeFactory;
 	staticRoot?: string;
+	wecomCallbackVerifier?: WeComCallbackVerifier;
 	retrieval?: RetrievalService;
 	retrievalFactory?: (pool: Pool) => RetrievalService;
 	agentProfile?: AgentProfile;
@@ -196,6 +198,7 @@ export async function createEnterpriseApplication(
 		});
 		const server = createEnterpriseHttpServer({
 			auth,
+			wecomCallbackVerifier: options.wecomCallbackVerifier,
 			runtime: runtimeResource.runtime,
 			supportService,
 			storeOpsService,
@@ -268,12 +271,14 @@ export async function startEnterpriseApplicationFromEnv(
 	env: NodeJS.ProcessEnv = process.env,
 ): Promise<EnterpriseApplication> {
 	const config = enterpriseApplicationConfigFromEnv(env);
+	const wecomCallbackVerifier = weComCallbackVerifierFromEnv(env);
 	const retrievalFactory = enterpriseVectorRetrievalFactoryFromEnv(env);
 	const runtimeFactory = await enterpriseRuntimeFactoryFromEnv(env);
 	const knowledgeEntries =
 		enterpriseKnowledgeModeFromEnv(env).mode === "private" ? loadPrivateKnowledgeCorpus(env) : undefined;
 	const application = await createEnterpriseApplication({
 		...config,
+		wecomCallbackVerifier,
 		retrievalFactory,
 		runtimeFactory,
 		knowledgeEntries,
