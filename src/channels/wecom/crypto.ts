@@ -161,8 +161,6 @@ function validateToken(value: string): string {
 function decodeEncodingAesKey(value: string): Buffer {
 	if (!/^[A-Za-z0-9+/]{43}$/.test(value)) throw new Error("WECOM_CALLBACK_AES_KEY is invalid.");
 	const decoded = Buffer.from(`${value}=`, "base64");
-	if (decoded.length !== 32 || decoded.toString("base64").slice(0, -1) !== value) {
-		throw new Error("WECOM_CALLBACK_AES_KEY is invalid.");
-	}
+	if (decoded.length !== 32) throw new Error("WECOM_CALLBACK_AES_KEY is invalid.");
 	return decoded;
 }

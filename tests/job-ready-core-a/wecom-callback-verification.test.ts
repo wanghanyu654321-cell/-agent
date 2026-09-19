@@ -78,6 +78,13 @@ describe("WeChat Customer Service callback URL verification", () => {
 				WECOM_CALLBACK_AES_KEY: ENCODING_AES_KEY,
 			}),
 		).toBeDefined();
+		expect(
+			weComCallbackVerifierFromEnv({
+				WECOM_CORP_ID: CORP_ID,
+				WECOM_CALLBACK_TOKEN: TOKEN,
+				WECOM_CALLBACK_AES_KEY: `${"A".repeat(42)}B`,
+			}),
+		).toBeDefined();
 	});
 
 	it("mounts the unauthenticated GET callback route with exact plaintext success and bounded failures", async () => {
