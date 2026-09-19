@@ -3,7 +3,7 @@ import { readFile, stat } from "node:fs/promises";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { extname, resolve, sep } from "node:path";
 import type { WeComKfClient } from "../channels/wecom/client.ts";
-import type { WeComCallbackVerifier } from "../channels/wecom/crypto.ts";
+import type { WeComCallbackVerifier, WeComKfMessageEvent } from "../channels/wecom/crypto.ts";
 import type { SupportRuntimePort } from "../http-api.ts";
 import type { SupportResult } from "../index.ts";
 import {
@@ -175,7 +175,7 @@ async function weComCallbackEvent(
 ): Promise<void> {
 	const verifier = options.wecomCallbackVerifier;
 	if (!verifier) return sendJson(response, 503, { error: "dependency_unavailable" });
-	let event;
+	let event: WeComKfMessageEvent;
 	try {
 		event = verifier.verifyEvent(url, await readTextBody(request));
 	} catch {

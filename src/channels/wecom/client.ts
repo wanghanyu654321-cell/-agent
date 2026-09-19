@@ -100,9 +100,9 @@ export function createWeComKfClient(options: WeComKfClientOptions): WeComKfClien
 
 	return {
 		syncMessages(event: WeComKfMessageEvent): Promise<WeComSyncResult> {
-		validateCredential("wecom_event_token", event.token, 2048);
-		validateCredential("wecom_open_kfid", event.openKfId, 128);
-		return syncOnce(event, false);
+			validateCredential("wecom_event_token", event.token, 2048);
+			validateCredential("wecom_open_kfid", event.openKfId, 128);
+			return syncOnce(event, false);
 		},
 	};
 }
