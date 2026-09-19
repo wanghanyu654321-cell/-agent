@@ -105,4 +105,19 @@ describePostgres("WeChat Customer Service customer identity and durable routing"
 		});
 		expect(JSON.stringify(row)).not.toContain(input.text);
 	});
+	it("marks an unroutable claimed message failed without persisting its raw body", async () => {
+		const input = message({ messageId: randomUUID(), text: "raw body must stay out of operational metadata" });
+		const claim = await repository.claim(input, randomUUID());
+		if (claim.status !== "claimed") throw new Error("fixture must claim once");
+		expect(await repository.markFailed(claim.id, "unbound_channel")).toBe(true);
+		const row = (
+			await pool.query(
+				"SELECT state,error_category,payload_hash FROM wecom_customer_inbound_messages WHERE message_id=$1",
+				[input.messageId],
+			)
+		).rows[0];
+		expect(row).toMatchObject({ state: "failed", error_category: "unbound_channel" });
+		expect(JSON.stringify(row)).not.toContain(input.text);
+	});
+
 });

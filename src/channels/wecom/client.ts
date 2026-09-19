@@ -5,6 +5,7 @@ const DEFAULT_TIMEOUT_MS = 4000;
 const ACCESS_TOKEN_SAFETY_WINDOW_MS = 5 * 60 * 1000;
 
 export interface WeComSyncedText {
+	corpId: string;
 	messageId: string;
 	openKfId: string;
 	externalUserId: string;
@@ -95,7 +96,7 @@ export function createWeComKfClient(options: WeComKfClientOptions): WeComKfClien
 			return syncOnce(event, true);
 		}
 		if (body.errcode !== 0) throw new Error("wecom_sync_unavailable");
-		return parseSyncResult(body, event.openKfId);
+		return parseSyncResult(body, corpId, event.openKfId);
 	}
 
 	return {
@@ -107,7 +108,7 @@ export function createWeComKfClient(options: WeComKfClientOptions): WeComKfClien
 	};
 }
 
-function parseSyncResult(body: Record<string, unknown>, expectedOpenKfId: string): WeComSyncResult {
+function parseSyncResult(body: Record<string, unknown>, corpId: string, expectedOpenKfId: string): WeComSyncResult {
 	if (!Array.isArray(body.msg_list)) throw new Error("wecom_sync_unavailable");
 	const textMessages: WeComSyncedText[] = [];
 	for (const item of body.msg_list) {
@@ -123,6 +124,7 @@ function parseSyncResult(body: Record<string, unknown>, expectedOpenKfId: string
 		const sentAtUnix = optionalPositiveInteger(message.send_time, Number.MAX_SAFE_INTEGER);
 		if (!externalUserId || !messageId || !text || sentAtUnix === undefined) continue;
 		textMessages.push({
+			corpId,
 			messageId,
 			openKfId: expectedOpenKfId,
 			externalUserId,

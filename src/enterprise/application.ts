@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { fauxAssistantMessage, registerFauxProvider, streamSimple } from "@earendil-works/pi-ai/compat";
 import { Pool } from "pg";
 import { type WeComKfClient, weComKfClientFromEnv } from "../channels/wecom/client.ts";
+import { PostgresWeComCustomerRepository } from "../channels/wecom/customer.ts";
 import { type WeComCallbackVerifier, weComCallbackVerifierFromEnv } from "../channels/wecom/crypto.ts";
 import type { SupportRuntimePort } from "../http-api.ts";
 import {
@@ -175,6 +176,7 @@ export async function createEnterpriseApplication(
 		await applyJobReadyMigrations(pool);
 		const identityRepository = new PostgresIdentityRepository(pool);
 		const businessRepository = new PostgresEnterpriseBusinessRepository(pool);
+		const wecomCustomerRepository = new PostgresWeComCustomerRepository(pool);
 		const demo = await seedPortfolioEnterpriseDemoData(identityRepository);
 		if (options.knowledgeEntries?.length) {
 			const entry = options.knowledgeEntries[0];
@@ -202,6 +204,7 @@ export async function createEnterpriseApplication(
 			auth,
 			wecomCallbackVerifier: options.wecomCallbackVerifier,
 			wecomKfClient: options.wecomKfClient,
+			wecomCustomerRouter: wecomCustomerRepository,
 			runtime: runtimeResource.runtime,
 			supportService,
 			storeOpsService,

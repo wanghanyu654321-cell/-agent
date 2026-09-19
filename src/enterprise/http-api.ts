@@ -3,6 +3,7 @@ import { readFile, stat } from "node:fs/promises";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { extname, resolve, sep } from "node:path";
 import type { WeComKfClient } from "../channels/wecom/client.ts";
+import type { VerifiedWeComCustomerText, WeComCustomerRouter } from "../channels/wecom/customer.ts";
 import type { WeComCallbackVerifier, WeComKfMessageEvent } from "../channels/wecom/crypto.ts";
 import type { SupportRuntimePort } from "../http-api.ts";
 import type { SupportResult } from "../index.ts";
@@ -32,6 +33,7 @@ export interface EnterpriseHttpServerOptions {
 	auth: EnterpriseAuthService;
 	wecomCallbackVerifier?: WeComCallbackVerifier;
 	wecomKfClient?: WeComKfClient;
+	wecomCustomerRouter?: WeComCustomerRouter;
 	runtime?: SupportRuntimePort;
 	supportService?: EnterpriseSupportPort;
 	storeOpsService?: Pick<
@@ -182,21 +184,76 @@ async function weComCallbackEvent(
 		return sendJson(response, 400, { error: "invalid_request" });
 	}
 	const client = options.wecomKfClient;
-	if (!client) return sendJson(response, 503, { error: "dependency_unavailable" });
+	const customerRouter = options.wecomCustomerRouter;
+	if (!client || !customerRouter) return sendJson(response, 503, { error: "dependency_unavailable" });
 	try {
 		const synced = await client.syncMessages(event);
+		const routed = await routeWeComCustomerTexts(customerRouter, synced.textMessages);
 		console.info(
 			JSON.stringify({
 				event: "wecom_kf_sync",
 				messageCount: synced.messageCount,
 				textCount: synced.textMessages.length,
 				hasMore: synced.hasMore,
+				...routed,
 			}),
 		);
 		return sendText(response, 200, "success");
 	} catch {
 		return sendJson(response, 502, { error: "dependency_unavailable" });
 	}
+}
+
+async function routeWeComCustomerTexts(
+	customerRouter: WeComCustomerRouter,
+	messages: readonly VerifiedWeComCustomerText[],
+): Promise<{
+	claimed: number;
+	duplicates: number;
+	conflicts: number;
+	routed: number;
+	unbound: number;
+	routeAttachFailed: number;
+	routingErrors: number;
+}> {
+	let claimed = 0;
+	let duplicates = 0;
+	let conflicts = 0;
+	let routed = 0;
+	let unbound = 0;
+	let routeAttachFailed = 0;
+	let routingErrors = 0;
+	for (const message of messages) {
+		const requestId = randomUUID();
+		const claim = await customerRouter.claim(message, requestId);
+		if (claim.status === "duplicate") {
+			duplicates += 1;
+			continue;
+		}
+		if (claim.status === "conflict") {
+			conflicts += 1;
+			continue;
+		}
+		claimed += 1;
+		try {
+			const route = await customerRouter.resolveRoute(message, requestId);
+			if (!route) {
+				await customerRouter.markFailed(claim.id, "unbound_channel");
+				unbound += 1;
+				continue;
+			}
+			if (!(await customerRouter.attachRoute(claim.id, route))) {
+				await customerRouter.markFailed(claim.id, "route_attach_failed");
+				routeAttachFailed += 1;
+				continue;
+			}
+			routed += 1;
+		} catch {
+			await customerRouter.markFailed(claim.id, "routing_error").catch(() => false);
+			routingErrors += 1;
+		}
+	}
+	return { claimed, duplicates, conflicts, routed, unbound, routeAttachFailed, routingErrors };
 }
 
 async function readTextBody(request: IncomingMessage): Promise<string> {

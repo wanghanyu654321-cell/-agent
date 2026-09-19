@@ -21,6 +21,15 @@ export interface WeComCustomerRoute {
 
 export type WeComCustomerClaim = { status: "claimed"; id: string } | { status: "duplicate" } | { status: "conflict" };
 
+export type WeComCustomerRoutingErrorCategory = "unbound_channel" | "route_attach_failed" | "routing_error";
+
+export interface WeComCustomerRouter {
+	claim(message: VerifiedWeComCustomerText, requestId: string): Promise<WeComCustomerClaim>;
+	resolveRoute(message: VerifiedWeComCustomerText, requestId: string): Promise<WeComCustomerRoute | undefined>;
+	attachRoute(claimId: string, route: WeComCustomerRoute): Promise<boolean>;
+	markFailed(claimId: string, errorCategory: WeComCustomerRoutingErrorCategory): Promise<boolean>;
+}
+
 export function weComCustomerPayloadHash(message: VerifiedWeComCustomerText): string {
 	return createHash("sha256")
 		.update(
@@ -36,7 +45,7 @@ export function weComCustomerPayloadHash(message: VerifiedWeComCustomerText): st
 		.digest("hex");
 }
 
-export class PostgresWeComCustomerRepository {
+export class PostgresWeComCustomerRepository implements WeComCustomerRouter {
 	constructor(private readonly pool: Pool) {}
 
 	async claim(message: VerifiedWeComCustomerText, requestId: string): Promise<WeComCustomerClaim> {
@@ -146,6 +155,14 @@ export class PostgresWeComCustomerRepository {
 				route.context.scope.storeId,
 				route.conversationId,
 			],
+		);
+		return result.rowCount === 1;
+	}
+
+	async markFailed(claimId: string, errorCategory: WeComCustomerRoutingErrorCategory): Promise<boolean> {
+		const result = await this.pool.query(
+			"UPDATE wecom_customer_inbound_messages SET state='failed',error_category=$2,updated_at=NOW() WHERE id=$1 AND state='processing'",
+			[claimId, errorCategory],
 		);
 		return result.rowCount === 1;
 	}

@@ -2,7 +2,9 @@ import { createCipheriv, createHash } from "node:crypto";
 import { once } from "node:events";
 import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import type { WeComKfClient } from "../../src/channels/wecom/client.ts";
+import type { WeComCustomerRouter } from "../../src/channels/wecom/customer.ts";
 import {
 	createWeComCallbackVerifier,
 	type WeComCallbackVerifier,
@@ -10,7 +12,7 @@ import {
 } from "../../src/channels/wecom/crypto.ts";
 import { EnterpriseAuthService } from "../../src/enterprise/auth.ts";
 import { createEnterpriseHttpServer } from "../../src/enterprise/http-api.ts";
-import { InMemoryIdentityRepository } from "../../src/enterprise/identity.ts";
+import { createSupportExecutionContext, InMemoryIdentityRepository } from "../../src/enterprise/identity.ts";
 
 const CORP_ID = "ww0123456789abcdef";
 const TOKEN = "callbackToken123";
@@ -29,6 +31,7 @@ afterEach(async () => {
 					new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve()))),
 			),
 	);
+	vi.restoreAllMocks();
 });
 
 describe("WeChat Customer Service callback URL verification", () => {
@@ -132,6 +135,82 @@ describe("WeChat Customer Service callback URL verification", () => {
 		expect(put.status).toBe(405);
 		expect(put.headers.get("allow")).toBe("GET, POST");
 	});
+	it("claims and routes synced customer text only once across callback replay without logging identifiers or text", async () => {
+		const verifier = verifierFixture();
+		let alreadyClaimed = false;
+		let attached = 0;
+		const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+		const customerText = {
+			corpId: CORP_ID,
+			messageId: "message-private-1",
+			openKfId: "wk0123456789abcdef",
+			externalUserId: "wm-private-customer",
+			sentAtUnix: Math.floor(NOW.getTime() / 1000),
+			origin: 3 as const,
+			text: "private customer text",
+		};
+		const customerRouter: WeComCustomerRouter = {
+			async claim() {
+				if (alreadyClaimed) return { status: "duplicate" };
+				alreadyClaimed = true;
+				return { status: "claimed", id: "claim-1" };
+			},
+			async resolveRoute(_message, requestId) {
+				return {
+					channelBindingId: "channel-a",
+					customerBindingId: "customer-binding-a",
+					customerId: "customer-a",
+					conversationId: "conversation-a",
+					context: createSupportExecutionContext(
+						{
+							id: "demo-membership-alice-a1",
+							userId: "demo-user-alice-agent",
+							tenantId: "demo-tenant-a",
+							storeId: "demo-store-a1",
+							role: "agent",
+							createdAt: NOW,
+						},
+						requestId,
+					),
+				};
+			},
+			async attachRoute() {
+				attached += 1;
+				return true;
+			},
+			async markFailed() {
+				throw new Error("markFailed must not run for the routed fixture");
+			},
+		};
+		const origin = await startServer(verifier, {
+			wecomKfClient: {
+				async syncMessages() {
+					return { messageCount: 1, textMessages: [customerText], hasMore: false };
+				},
+			},
+			wecomCustomerRouter: customerRouter,
+		});
+		const event = eventFixture();
+
+		for (let attempt = 0; attempt < 2; attempt += 1) {
+			const response = await fetch(`${origin}${event.url.pathname}?${event.url.searchParams.toString()}`, {
+				method: "POST",
+				headers: { "content-type": "text/xml; charset=utf-8" },
+				body: event.body,
+			});
+			expect(response.status).toBe(200);
+			expect(await response.text()).toBe("success");
+		}
+
+		expect(attached).toBe(1);
+		const logs = info.mock.calls.flat().join("\n");
+		expect(logs).toContain('"routed":1');
+		expect(logs).toContain('"duplicates":1');
+		expect(logs).not.toContain(customerText.messageId);
+		expect(logs).not.toContain(customerText.externalUserId);
+		expect(logs).not.toContain(customerText.text);
+	});
+
 });
 
 function verifierFixture(): WeComCallbackVerifier {
@@ -201,15 +280,35 @@ function encrypt(message: string, receiveId: string): string {
 	return Buffer.concat([cipher.update(padded), cipher.final()]).toString("base64");
 }
 
-async function startServer(verifier: WeComCallbackVerifier): Promise<string> {
+async function startServer(
+	verifier: WeComCallbackVerifier,
+	dependencies: { wecomKfClient?: WeComKfClient; wecomCustomerRouter?: WeComCustomerRouter } = {},
+): Promise<string> {
+	const defaultCustomerRouter: WeComCustomerRouter = {
+		async claim() {
+			throw new Error("unexpected customer message");
+		},
+		async resolveRoute() {
+			throw new Error("unexpected customer message");
+		},
+		async attachRoute() {
+			throw new Error("unexpected customer message");
+		},
+		async markFailed() {
+			throw new Error("unexpected customer message");
+		},
+	};
 	const server = createEnterpriseHttpServer({
 		auth: new EnterpriseAuthService(new InMemoryIdentityRepository()),
 		wecomCallbackVerifier: verifier,
-		wecomKfClient: {
-			async syncMessages() {
-				return { messageCount: 1, textMessages: [], hasMore: false };
-			},
-		},
+		wecomKfClient:
+			dependencies.wecomKfClient ??
+			({
+				async syncMessages() {
+					return { messageCount: 1, textMessages: [], hasMore: false };
+				},
+			} satisfies WeComKfClient),
+		wecomCustomerRouter: dependencies.wecomCustomerRouter ?? defaultCustomerRouter,
 	});
 	server.listen(0, "127.0.0.1");
 	await once(server, "listening");

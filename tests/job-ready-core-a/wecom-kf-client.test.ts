@@ -54,6 +54,7 @@ describe("WeChat Customer Service API client", () => {
 			messageCount: 2,
 			textMessages: [
 				{
+					corpId: "ww0123456789abcdef",
 					messageId: "message-1",
 					openKfId: "wk0123456789abcdef",
 					externalUserId: "wm-customer-1",
