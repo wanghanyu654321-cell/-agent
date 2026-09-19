@@ -142,6 +142,7 @@ describe("WeChat Customer Service callback URL verification", () => {
 		let attached = 0;
 		let completed = 0;
 		let executed = 0;
+		let sent = 0;
 		const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
 		const customerText = {
 			corpId: CORP_ID,
@@ -189,11 +190,21 @@ describe("WeChat Customer Service callback URL verification", () => {
 			async markFailed() {
 				throw new Error("markFailed must not run for the routed fixture");
 			},
+			async markIndeterminate() {
+				throw new Error("markIndeterminate must not run for the routed fixture");
+			},
 		};
 		const origin = await startServer(verifier, {
 			wecomKfClient: {
 				async syncMessages() {
 					return { messageCount: 1, textMessages: [customerText], hasMore: false };
+				},
+				async sendTextMessage(message) {
+					sent += 1;
+					expect(message.openKfId).toBe(customerText.openKfId);
+					expect(message.externalUserId).toBe(customerText.externalUserId);
+					expect(message.messageId).toMatch(/^fa_[0-9a-f]{29}$/);
+					expect(message.text).toBe("private answer must not be logged");
 				},
 			},
 			wecomCustomerRouter: customerRouter,
@@ -229,10 +240,12 @@ describe("WeChat Customer Service callback URL verification", () => {
 
 		expect(attached).toBe(1);
 		expect(executed).toBe(1);
+		expect(sent).toBe(1);
 		expect(completed).toBe(1);
 		const logs = info.mock.calls.flat().join("\n");
 		expect(logs).toContain('"routed":1');
 		expect(logs).toContain('"completed":1');
+		expect(logs).toContain('"outboundAccepted":1');
 		expect(logs).toContain('"duplicates":1');
 		expect(logs).not.toContain(customerText.messageId);
 		expect(logs).not.toContain(customerText.externalUserId);
@@ -354,6 +367,9 @@ async function startServer(
 		async markFailed() {
 			throw new Error("unexpected customer message");
 		},
+		async markIndeterminate() {
+			throw new Error("unexpected customer message");
+		},
 	};
 	const server = createEnterpriseHttpServer({
 		auth: new EnterpriseAuthService(new InMemoryIdentityRepository()),
@@ -363,6 +379,9 @@ async function startServer(
 			({
 				async syncMessages() {
 					return { messageCount: 1, textMessages: [], hasMore: false };
+				},
+				async sendTextMessage() {
+					throw new Error("unexpected customer message");
 				},
 			} satisfies WeComKfClient),
 		wecomCustomerRouter: dependencies.wecomCustomerRouter ?? defaultCustomerRouter,

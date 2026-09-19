@@ -142,4 +142,26 @@ describePostgres("WeChat Customer Service customer identity and durable routing"
 		expect(row).toMatchObject({ state: "failed", error_category: "agent_execution_error", result_type: null });
 		expect(JSON.stringify(row)).not.toContain(input.text);
 	});
+
+	it("marks routed outbound transport uncertainty indeterminate without storing message content", async () => {
+		const input = message({ messageId: randomUUID(), text: "uncertain outbound raw body must not persist" });
+		const claim = await repository.claim(input, randomUUID());
+		if (claim.status !== "claimed") throw new Error("fixture must claim once");
+		const route = await repository.resolveRoute(input, randomUUID());
+		if (!route) throw new Error("fixture route must resolve");
+		expect(await repository.attachRoute(claim.id, route)).toBe(true);
+		expect(await repository.markIndeterminate(claim.id, "outbound_send_indeterminate")).toBe(true);
+		const row = (
+			await pool.query(
+				"SELECT state,error_category,result_type FROM wecom_customer_inbound_messages WHERE message_id=$1",
+				[input.messageId],
+			)
+		).rows[0];
+		expect(row).toMatchObject({
+			state: "indeterminate",
+			error_category: "outbound_send_indeterminate",
+			result_type: null,
+		});
+		expect(JSON.stringify(row)).not.toContain(input.text);
+	});
 });

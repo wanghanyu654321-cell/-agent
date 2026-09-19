@@ -28,6 +28,8 @@ export type WeComCustomerProcessingErrorCategory =
 	| "route_attach_failed"
 	| "routing_error"
 	| "agent_execution_error"
+	| "outbound_send_failed"
+	| "outbound_send_indeterminate"
 	| "completion_persist_failed";
 
 export interface WeComCustomerRouter {
@@ -36,6 +38,7 @@ export interface WeComCustomerRouter {
 	attachRoute(claimId: string, route: WeComCustomerRoute): Promise<boolean>;
 	complete(claimId: string, resultType: WeComCustomerResultType): Promise<boolean>;
 	markFailed(claimId: string, errorCategory: WeComCustomerProcessingErrorCategory): Promise<boolean>;
+	markIndeterminate(claimId: string, errorCategory: WeComCustomerProcessingErrorCategory): Promise<boolean>;
 }
 
 export function weComCustomerPayloadHash(message: VerifiedWeComCustomerText): string {
@@ -178,6 +181,14 @@ export class PostgresWeComCustomerRepository implements WeComCustomerRouter {
 	async markFailed(claimId: string, errorCategory: WeComCustomerProcessingErrorCategory): Promise<boolean> {
 		const result = await this.pool.query(
 			"UPDATE wecom_customer_inbound_messages SET state='failed',error_category=$2,updated_at=NOW() WHERE id=$1 AND state IN ('processing','routed')",
+			[claimId, errorCategory],
+		);
+		return result.rowCount === 1;
+	}
+
+	async markIndeterminate(claimId: string, errorCategory: WeComCustomerProcessingErrorCategory): Promise<boolean> {
+		const result = await this.pool.query(
+			"UPDATE wecom_customer_inbound_messages SET state='indeterminate',error_category=$2,updated_at=NOW() WHERE id=$1 AND state='routed'",
 			[claimId, errorCategory],
 		);
 		return result.rowCount === 1;

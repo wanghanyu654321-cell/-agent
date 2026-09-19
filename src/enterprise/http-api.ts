@@ -1,8 +1,8 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { readFile, stat } from "node:fs/promises";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { extname, resolve, sep } from "node:path";
-import type { WeComKfClient } from "../channels/wecom/client.ts";
+import { type WeComKfClient, WeComKfSendIndeterminateError } from "../channels/wecom/client.ts";
 import type { WeComCallbackVerifier, WeComKfMessageEvent } from "../channels/wecom/crypto.ts";
 import type { VerifiedWeComCustomerText, WeComCustomerRoute, WeComCustomerRouter } from "../channels/wecom/customer.ts";
 import type { SupportRuntimePort } from "../http-api.ts";
@@ -190,7 +190,7 @@ async function weComCallbackEvent(
 		return sendJson(response, 503, { error: "dependency_unavailable" });
 	try {
 		const synced = await client.syncMessages(event);
-		const routed = await routeWeComCustomerTexts(customerRouter, supportService, synced.textMessages);
+		const routed = await routeWeComCustomerTexts(client, customerRouter, supportService, synced.textMessages);
 		console.info(
 			JSON.stringify({
 				event: "wecom_kf_sync",
@@ -207,6 +207,7 @@ async function weComCallbackEvent(
 }
 
 async function routeWeComCustomerTexts(
+	client: Pick<WeComKfClient, "sendTextMessage">,
 	customerRouter: WeComCustomerRouter,
 	supportService: Pick<EnterpriseSupportPort, "respond">,
 	messages: readonly VerifiedWeComCustomerText[],
@@ -220,6 +221,9 @@ async function routeWeComCustomerTexts(
 	routeAttachFailed: number;
 	routingErrors: number;
 	executionErrors: number;
+	outboundAccepted: number;
+	outboundRejected: number;
+	outboundIndeterminate: number;
 	completionPersistFailed: number;
 }> {
 	let claimed = 0;
@@ -231,6 +235,9 @@ async function routeWeComCustomerTexts(
 	let routeAttachFailed = 0;
 	let routingErrors = 0;
 	let executionErrors = 0;
+	let outboundAccepted = 0;
+	let outboundRejected = 0;
+	let outboundIndeterminate = 0;
 	let completionPersistFailed = 0;
 	for (const message of messages) {
 		const requestId = randomUUID();
@@ -276,14 +283,32 @@ async function routeWeComCustomerTexts(
 			continue;
 		}
 		try {
+			await client.sendTextMessage({
+				openKfId: message.openKfId,
+				externalUserId: message.externalUserId,
+				messageId: weComOutboundMessageId(claim.id),
+				text: result.text,
+			});
+			outboundAccepted += 1;
+		} catch (error) {
+			if (error instanceof WeComKfSendIndeterminateError) {
+				await customerRouter.markIndeterminate(claim.id, "outbound_send_indeterminate").catch(() => false);
+				outboundIndeterminate += 1;
+			} else {
+				await customerRouter.markFailed(claim.id, "outbound_send_failed").catch(() => false);
+				outboundRejected += 1;
+			}
+			continue;
+		}
+		try {
 			if (!(await customerRouter.complete(claim.id, result.type))) {
-				await customerRouter.markFailed(claim.id, "completion_persist_failed").catch(() => false);
+				await customerRouter.markIndeterminate(claim.id, "completion_persist_failed").catch(() => false);
 				completionPersistFailed += 1;
 				continue;
 			}
 			completed += 1;
 		} catch {
-			await customerRouter.markFailed(claim.id, "completion_persist_failed").catch(() => false);
+			await customerRouter.markIndeterminate(claim.id, "completion_persist_failed").catch(() => false);
 			completionPersistFailed += 1;
 		}
 	}
@@ -297,8 +322,15 @@ async function routeWeComCustomerTexts(
 		routeAttachFailed,
 		routingErrors,
 		executionErrors,
+		outboundAccepted,
+		outboundRejected,
+		outboundIndeterminate,
 		completionPersistFailed,
 	};
+}
+
+function weComOutboundMessageId(claimId: string): string {
+	return `fa_${createHash("sha256").update(claimId).digest("hex").slice(0, 29)}`;
 }
 
 async function readTextBody(request: IncomingMessage): Promise<string> {

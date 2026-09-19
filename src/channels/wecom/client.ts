@@ -21,8 +21,19 @@ export interface WeComSyncResult {
 	nextCursor?: string;
 }
 
+export interface WeComKfTextMessage {
+	openKfId: string;
+	externalUserId: string;
+	messageId: string;
+	text: string;
+}
+
+export class WeComKfSendRejectedError extends Error {}
+export class WeComKfSendIndeterminateError extends Error {}
+
 export interface WeComKfClient {
 	syncMessages(event: WeComKfMessageEvent): Promise<WeComSyncResult>;
+	sendTextMessage(message: WeComKfTextMessage): Promise<void>;
 }
 
 export interface WeComKfClientOptions {
@@ -99,11 +110,73 @@ export function createWeComKfClient(options: WeComKfClientOptions): WeComKfClien
 		return parseSyncResult(body, corpId, event.openKfId);
 	}
 
+	async function sendTextOnce(message: WeComKfTextMessage, refresh: boolean): Promise<void> {
+		let token: string;
+		try {
+			token = await accessToken(refresh);
+		} catch {
+			throw new WeComKfSendRejectedError("wecom_send_token_unavailable");
+		}
+		const url = new URL("/cgi-bin/kf/send_msg", WECOM_API_ORIGIN);
+		url.searchParams.set("access_token", token);
+		let response: Response;
+		try {
+			response = await fetchFn(url, {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({
+					touser: message.externalUserId,
+					open_kfid: message.openKfId,
+					msgid: message.messageId,
+					msgtype: "text",
+					text: { content: message.text },
+				}),
+				signal: AbortSignal.timeout(timeoutMs),
+			});
+		} catch {
+			throw new WeComKfSendIndeterminateError("wecom_send_transport_indeterminate");
+		}
+		if (!response.ok) throw new WeComKfSendIndeterminateError("wecom_send_transport_indeterminate");
+		let body: Record<string, unknown>;
+		try {
+			body = await readJson(response);
+		} catch {
+			throw new WeComKfSendIndeterminateError("wecom_send_response_indeterminate");
+		}
+		if (body.errcode === 40014 || body.errcode === 42001) {
+			if (refresh) throw new WeComKfSendRejectedError("wecom_send_rejected");
+			cachedAccessToken = undefined;
+			return sendTextOnce(message, true);
+		}
+		if (body.errcode !== 0) throw new WeComKfSendRejectedError("wecom_send_rejected");
+		if (boundedString(body.msgid, 32) !== message.messageId) {
+			throw new WeComKfSendIndeterminateError("wecom_send_response_indeterminate");
+		}
+	}
+
 	return {
 		syncMessages(event: WeComKfMessageEvent): Promise<WeComSyncResult> {
 			validateCredential("wecom_event_token", event.token, 2048);
 			validateCredential("wecom_open_kfid", event.openKfId, 128);
 			return syncOnce(event, false);
+		},
+		sendTextMessage(message: WeComKfTextMessage): Promise<void> {
+			try {
+				validateCredential("wecom_open_kfid", message.openKfId, 128);
+				validateCredential("wecom_external_userid", message.externalUserId, 256);
+				if (!/^[0-9A-Za-z_-]{1,32}$/.test(message.messageId)) throw new Error("invalid_message_id");
+				if (
+					message.text.length < 1 ||
+					message.text.includes("\0") ||
+					!message.text.isWellFormed() ||
+					Buffer.byteLength(message.text, "utf8") > 2048
+				) {
+					throw new Error("invalid_text");
+				}
+			} catch {
+				return Promise.reject(new WeComKfSendRejectedError("wecom_send_invalid"));
+			}
+			return sendTextOnce(message, false);
 		},
 	};
 }

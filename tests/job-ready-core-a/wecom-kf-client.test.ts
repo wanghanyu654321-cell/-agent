@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { createWeComKfClient, weComKfClientFromEnv } from "../../src/channels/wecom/client.ts";
+import {
+	createWeComKfClient,
+	WeComKfSendIndeterminateError,
+	weComKfClientFromEnv,
+} from "../../src/channels/wecom/client.ts";
 
 describe("WeChat Customer Service API client", () => {
 	it("uses the customer-service secret for access_token and normalizes the first sync_msg text page", async () => {
@@ -75,6 +79,52 @@ describe("WeChat Customer Service API client", () => {
 			voice_format: 0,
 			open_kfid: "wk0123456789abcdef",
 		});
+	});
+
+	it("sends text with an explicit bounded msgid and does not retry transport uncertainty", async () => {
+		const calls: Array<{ url: URL; init?: RequestInit }> = [];
+		let failTransport = false;
+		const client = createWeComKfClient({
+			corpId: "ww0123456789abcdef",
+			secret: "customerServiceSecret",
+			now: () => 1_000_000,
+			fetch: async (input, init) => {
+				const url = new URL(input.toString());
+				calls.push({ url, init });
+				if (url.pathname === "/cgi-bin/gettoken") {
+					return Response.json({ errcode: 0, errmsg: "ok", access_token: "access-token", expires_in: 7200 });
+				}
+				expect(url.pathname).toBe("/cgi-bin/kf/send_msg");
+				if (failTransport) throw new Error("socket reset after request write");
+				const request = JSON.parse(String(init?.body));
+				return Response.json({ errcode: 0, errmsg: "ok", msgid: request.msgid });
+			},
+		});
+
+		await client.sendTextMessage({
+			openKfId: "wk0123456789abcdef",
+			externalUserId: "wm-customer-1",
+			messageId: "fa_0123456789abcdef01234567890ab",
+			text: "营业时间答复",
+		});
+		expect(JSON.parse(String(calls[1]!.init?.body))).toEqual({
+			touser: "wm-customer-1",
+			open_kfid: "wk0123456789abcdef",
+			msgid: "fa_0123456789abcdef01234567890ab",
+			msgtype: "text",
+			text: { content: "营业时间答复" },
+		});
+
+		failTransport = true;
+		await expect(
+			client.sendTextMessage({
+				openKfId: "wk0123456789abcdef",
+				externalUserId: "wm-customer-1",
+				messageId: "fa_1123456789abcdef01234567890ab",
+				text: "第二条答复",
+			}),
+		).rejects.toBeInstanceOf(WeComKfSendIndeterminateError);
+		expect(calls.filter((call) => call.url.pathname === "/cgi-bin/kf/send_msg")).toHaveLength(2);
 	});
 
 	it("loads no client without WECOM_KF_SECRET and never requires exposing the secret to callback verification", () => {
