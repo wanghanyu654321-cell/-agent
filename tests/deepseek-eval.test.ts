@@ -2,6 +2,8 @@ import { expect, it } from "vitest";
 import { cases } from "../evals/deepseek/cases.ts";
 import { evaluateCase, evaluationStatus } from "../evals/deepseek/evaluate.ts";
 import type { SupportResult } from "../src/index.ts";
+import { GovernedKnowledgeRetrievalService } from "../src/knowledge.ts";
+import { portfolioDemoKnowledge } from "../src/portfolio-demo-data.ts";
 
 const result: SupportResult = {
 	type: "fallback",
@@ -12,6 +14,17 @@ const result: SupportResult = {
 	sessionEvents: [],
 	piSessionId: "synthetic",
 };
+it("keeps the real Knowledge fixture aligned with the governed synthetic retrieval contract", async () => {
+	const retrieval = new GovernedKnowledgeRetrievalService(portfolioDemoKnowledge.slice(0, 1), {
+		allowSyntheticTestFixtures: true,
+	});
+	const evidence = await retrieval.search(cases[1].text, new AbortController().signal, {
+		tenantId: "synthetic-tenant",
+		storeId: "synthetic-store",
+	});
+	expect(evidence).toHaveLength(1);
+	expect(evidence[0]?.id).toBe("demo-policy-refund-timing");
+});
 it("does not count a policy precheck as a model-selected tool or an unobserved invalid call as rejected", () => {
 	expect(evaluateCase(cases[1], result, [], { tenantId: "a", storeId: "b" }).tool_selection_correct).toBe(false);
 	expect(evaluateCase(cases[7], result, [], { tenantId: "a", storeId: "b" }).invalid_argument_rejected).toBe(

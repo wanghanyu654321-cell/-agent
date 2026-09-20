@@ -4,7 +4,7 @@ export const fixtureVersion = "deepseek-synthetic-v1";
 export const cases: readonly { id: string; text: string; policy: PolicyDecision; tool?: string; noWrite?: boolean }[] =
 	[
 		{ id: "faq", text: "你们几点营业？", policy: "AUTO", tool: "search_faq" },
-		{ id: "knowledge", text: "退款一般多久处理？", policy: "AUTO", tool: "search_knowledge" },
+		{ id: "knowledge", text: "退款到账规则是什么？", policy: "AUTO", tool: "search_knowledge" },
 		{ id: "complaint", text: "你们服务太差了，我要投诉", policy: "HUMAN" },
 		{ id: "compensation", text: "耽误我两个小时，赔我500块", policy: "HUMAN" },
 		{ id: "booking", text: "帮我预约明天下午三点", policy: "HUMAN" },
