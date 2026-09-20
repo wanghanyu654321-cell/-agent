@@ -14,6 +14,14 @@ Fresh clean-runner evidence, merge identity, deployed artifact and post-deployme
 receipt confirmation must be checked separately; none is asserted complete here.
 See [deployment runbook](../../deploy/job-ready/README.md).
 
+Claim-scope note: this repository is authoritative for its own engineering
+implementation/evidence only. Ordinary-WeChat end-to-end validation, current WeCom
+engineering implementation, and commercial customer/Pilot acceptance are separate
+claim categories. A business-use fact governed outside this repository must not be
+silently upgraded into commercial deployment or Production Ready here; conversely,
+this repository's conservative commercial-claim boundary does not by itself negate
+separately governed business-use facts.
+
 Public HTTPS and live Customer Service wiring supersede the historical waiting
 states below. Remaining gaps: pi-real production enablement, Booking Staff HITL,
 full WeCom pagination, cursor/replay/outbound-indeterminate reconciliation,
@@ -139,8 +147,11 @@ hosted-provider, or retrieval-quality claims.
   prerequisite unavailable).
 - S4 Hybrid/RRF and ablation benchmarks: NOT IMPLEMENTED / NOT CLAIMED.
 - S5 reranker: NOT JUSTIFIED.
-- Live WeCom wiring, public HTTPS/domain/Nginx hosting, MCP, full process-restart
-  session continuity: deferred.
+- Live WeCom text wiring and public HTTPS/live Customer Service wiring are part of
+  the current live-channel baseline above. Remaining channel gaps include full WeCom
+  pagination, cursor/replay/outbound-indeterminate reconciliation and fresh
+  deployed-artifact/post-deployment verification. MCP and full process-restart
+  session continuity remain deferred.
 - Production readiness, customer deployment, Pilot success: NOT claimed.
 - The local Windows environment cannot execute PostgreSQL/Docker paths; those paths
   are covered by the independent clean-runner evidence below.
