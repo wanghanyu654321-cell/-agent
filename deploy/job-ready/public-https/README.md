@@ -34,22 +34,30 @@ or 8000.
 
 ## 2. Clone the reviewed branch
 
-During Deployment Closure use the reviewed deployment branch. After merge, pin
-the exact approved main SHA.
+For the existing live host, use `/opt/customer-support-agent-public` and Compose
+project `customer-support-agent-public`. Do not clone over it or repeat initial
+Nginx/ACME/callback setup. After merge, pin the approved main SHA, retain a prior
+artifact/image reference, overlay the tracked artifact without host-local secrets,
+then build/recreate the app as needed with `compose.production.yaml`. Keep volumes.
+Record artifact checksum/version and health/live results; `.git` HEAD alone does
+not prove which artifact is running.
+
+The commands below describe first-time bootstrap only; substitute the exact
+approved main SHA for `<APPROVED_MAIN_SHA>` before running them on a new host.
 
 ```bash
-sudo mkdir -p /opt/customer-support-agent
-sudo chown "$USER":"$USER" /opt/customer-support-agent
-git clone https://github.com/wanghanyu654321-cell/-agent.git /opt/customer-support-agent
-cd /opt/customer-support-agent
-git checkout deploy/public-https-closure-v1
+sudo mkdir -p /opt/customer-support-agent-public
+sudo chown "$USER":"$USER" /opt/customer-support-agent-public
+git clone https://github.com/wanghanyu654321-cell/-agent.git /opt/customer-support-agent-public
+cd /opt/customer-support-agent-public
+git checkout <APPROVED_MAIN_SHA>
 ```
 
 Do not deploy uncommitted host edits.
 
 ## 3. Create the host-only environment
 
-Create `/opt/customer-support-agent/.env.production` from
+For a new host, create `/opt/customer-support-agent-public/.env.production` from
 `deploy/job-ready/runbook/environment-template.md`. Use strong random URL-safe
 credentials and then:
 
@@ -83,7 +91,7 @@ No certificate/private-key bytes belong in Git.
 ## 5. Start the private application stack
 
 ```bash
-cd /opt/customer-support-agent
+cd /opt/customer-support-agent-public
 docker compose --env-file .env.production -f compose.production.yaml up -d --build
 docker compose --env-file .env.production -f compose.production.yaml ps
 curl --fail http://127.0.0.1:3000/healthz
@@ -151,5 +159,12 @@ A successful run supports: real DNS, public HTTPS, host Nginx, loopback-only Nod
 publication, private FastAPI/PostgreSQL, durable PostgreSQL state across Compose
 recreation, and the existing application/eval boundaries.
 
-It does not support: Production Ready, real customer deployment, SLA/HA, live
-WeCom, production Data Flywheel, production-calibrated retrieval quality or MCP.
+HTTPS smoke alone does not establish live WeCom delivery. The owner reports a
+separate prior ordinary-WeChat E2E validation through the implemented Customer
+Service path (see `../README.md`). After updating the live app, request one fresh
+test message from the owner and record receipt confirmation plus sanitized
+processing evidence. Never automatically replay historical routed rows.
+
+Neither check establishes Production Ready, commercial customer deployment,
+SLA/HA, exactly-once delivery, production Data Flywheel, production-calibrated
+retrieval quality or MCP. Pagination and reconciliation hardening remain open.
