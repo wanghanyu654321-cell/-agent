@@ -9,6 +9,7 @@ on:
       - feat/v2.0-knowledge-grounding
       - fix/v2.0.1-faq-admission
       - feat/v2.1-real-knowledge-retrieval
+      - feature/wecom-live-wire-v1
       - fix/v2.1.1-eval-integrity
       - job-ready/integration-v1
       - job-ready/thin-digital-employee-v1
@@ -143,6 +144,10 @@ jobs:
           POSTGRES_PASSWORD: ci-url-safe-password
           DATABASE_URL: postgresql://customer_support_agent_ci:ci-url-safe-password@postgres:5432/customer_support_agent_ci
           STOREOPS_TIME_ZONE: Asia/Shanghai
+          WECOM_CORP_ID: wwci1234567890
+          WECOM_CALLBACK_TOKEN: ciCallbackToken123
+          WECOM_CALLBACK_AES_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY
+          WECOM_KF_SECRET: ciWeComKfSecret123
           RAG_SERVICE_CREDENTIAL: public-compose-ci-only
           RAG_DATABASE_URL: postgresql://customer_support_agent_ci:ci-url-safe-password@postgres:5432/customer_support_agent_ci
         run: docker compose -f compose.production.yaml config >/dev/null

@@ -14,7 +14,8 @@ class LivePostgresTest(unittest.IsolatedAsyncioTestCase):
             cursor = await connection.execute("SELECT id FROM enterprise_schema_migrations ORDER BY id")
             self.assertEqual([r["id"] for r in await cursor.fetchall()], [
                 "001_enterprise_identity", "002_support_business_persistence",
-                "003_job_ready_storeops", "004_job_ready_rag", "005_job_ready_rag_profiles"])
+                "003_job_ready_storeops", "004_job_ready_rag", "005_job_ready_rag_profiles",
+                "006_wecom_customer_identity"])
             cursor = await connection.execute("SELECT extversion FROM pg_extension WHERE extname='vector'")
             self.assertEqual((await cursor.fetchone())["extversion"], "0.8.0")
         self.assertTrue(connection.closed)

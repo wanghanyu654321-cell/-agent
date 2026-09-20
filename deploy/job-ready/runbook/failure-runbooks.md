@@ -76,19 +76,32 @@ Ground rules for every runbook:
   dependency failure and is **never** counted as a correct no-answer
   (`evals/job-ready-rag/metrics.ts`).
 
-## 5. WeCom callback blocked
+## 5. WeChat Customer Service live channel failures
 
-- **Symptoms:** Inbound channel events do not arrive or are not acknowledged.
-- **Safe diagnosis:** This area is gated by **CONTRACT GAP-01** (official WeCom
-  API family / wire callback / ack / egress) and **GAP-02** (employee vs
-  external-customer mapping). Do not guess a wire contract or provision real
-  channel bindings.
-- **Bounded mitigation:** Confirm network/allow-list reachability only; defer
-  protocol behavior to Integration after the gaps are independently approved.
-- **Safe error category:** channel ingress failure; successful dedupe of a
-  replayed event is **not** a second execution.
-- **Escalation & evidence:** Record that the callback path is GAP-blocked; no
-  live adapter claim.
+GET/POST verification, sync, durable claim, routing, governed execution and send
+are implemented. GET verification alone still does not prove message delivery.
+POST `200 success` acknowledges processing; inspect counters and durable state
+before claiming an individual reply completed.
+
+| Failure stage | Existing signal | Bounded diagnosis / action |
+| --- | --- | --- |
+| Callback verification | HTTP 400 `invalid_request`; missing dependencies HTTP 503 `dependency_unavailable` | Check host-local configuration presence, timestamp/signature/AES/receiveId and HTTPS reachability without printing inputs or secrets. Preserve the existing callback registration. |
+| `sync_msg` / token acquisition | HTTP 502 `dependency_unavailable`; claim-level failures can also reach this response | Check API/DB availability and required `WECOM_KF_SECRET` presence privately. Invalid/expired tokens already refresh once. Do not add retries or treat dependency failure as an empty inbox. |
+| Route / binding | `unbound`, `routeAttachFailed`, `routingErrors`; categories `unbound_channel`, `route_attach_failed`, `routing_error` | Inspect active `wecom_kf_channels` and membership scope/capability consistency. Never derive authority from `external_userid` alone or overwrite existing bindings to force success. |
+| Agent execution | `executionErrors`, `agent_execution_error` | Inspect sanitized audit/status evidence; preserve Safety and tool allowlist. A failed execution may already have durable business effects; do not replay blindly. |
+| Send rejected | `outboundRejected`, `outbound_send_failed` | Check safe configuration/API rejection evidence. Token refresh is bounded to once. Preserve failed state; no automatic replay/backfill is implemented. |
+| Send indeterminate | `outboundIndeterminate`, `outbound_send_indeterminate` | Transport failure or unknown response is not safe to retry. Preserve `indeterminate`; do not rerun the Agent or resend the message. |
+| Completion persistence | `completionPersistFailed`, `completion_persist_failed` | Send may already have succeeded. The handler attempts to mark `indeterminate`; if DB writes also fail the row can remain `routed`. Restore DB availability and investigate without replaying or deleting the claim. |
+
+The `wecom_kf_sync` operational record contains aggregate counts and `hasMore`,
+not customer text, external IDs, `open_kfid`, answers, tokens or API payloads.
+If processing exits before that record, its absence is not proof of no effects.
+Record only sanitized counters, state/category and relevant timing/version.
+
+Replay is deduplicated by the durable `(corp_id, open_kfid, message_id)` claim;
+a different payload hash is a conflict, never an overwrite. Do not delete claims
+to retry. Full `has_more` pagination, cursor reconciliation, historical routed
+replay/backfill and outbound indeterminate reconciliation are not implemented.
 
 ## 6. Runtime timeout
 

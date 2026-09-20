@@ -24,6 +24,15 @@ ENTERPRISE_KNOWLEDGE_MODE=portfolio
 ENTERPRISE_RETRIEVAL_MODE=lexical
 ENTERPRISE_SECURE_COOKIES=true
 
+# WeChat Customer Service live channel. All four values are required by production Compose.
+# Generate Token and EncodingAESKey
+# in kf.weixin.qq.com; keep them host-local and never paste them into Git/logs/issues.
+WECOM_CORP_ID=<WECHAT_CUSTOMER_SERVICE_CORP_ID>
+WECOM_CALLBACK_TOKEN=<GENERATED_CALLBACK_TOKEN>
+WECOM_CALLBACK_AES_KEY=<GENERATED_43_CHAR_ENCODING_AES_KEY>
+# Customer Service API secret for access-token acquisition, sync_msg and send_msg.
+WECOM_KF_SECRET=<WECHAT_CUSTOMER_SERVICE_API_SECRET>
+
 # Private FastAPI service. It is never published to the host.
 RAG_SERVICE_CREDENTIAL=<RANDOM_PRIVATE_SERVICE_CREDENTIAL>
 RAG_DATABASE_URL=postgresql://customer_support_agent:<STRONG_URL_SAFE_PASSWORD>@postgres:5432/customer_support_agent
@@ -73,6 +82,9 @@ With `JOB_READY_REQUIRE_HTTPS=true`, the smoke requires:
 ## Claim boundary
 
 This environment is a public HTTPS portfolio deployment using synthetic demo
-identity/data. It is not production IAM, real customer data, a production SLA,
-a live WeCom integration, production Data Flywheel, MCP, or retrieval-quality
-acceptance.
+identity/data. The live WeChat Customer Service path is implemented; the owner
+reports prior ordinary-WeChat E2E validation (see `../README.md`). A fresh
+post-merge live regression remains a separate deployment check. This does not
+establish production IAM, a production SLA, production Data Flywheel, MCP,
+retrieval-quality acceptance, exactly-once delivery or production-scale reliability.
+Pagination and reconciliation hardening remain future work.

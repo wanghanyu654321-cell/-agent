@@ -143,6 +143,10 @@ export async function applyJobReadyMigrations(pool: Pool): Promise<void> {
 			id: "005_job_ready_rag_profiles",
 			path: new URL("../../migrations/005_job_ready_rag_profiles.sql", import.meta.url),
 		},
+		{
+			id: "006_wecom_customer_identity",
+			path: new URL("../../migrations/006_wecom_customer_identity.sql", import.meta.url),
+		},
 	]);
 }
 

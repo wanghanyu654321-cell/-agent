@@ -4,7 +4,7 @@ import { enterpriseRetrievalModeFromEnv } from "../../src/enterprise/application
 import { applyJobReadyMigrations } from "../../src/enterprise/postgres.ts";
 
 describe("Job-Ready shared composition", () => {
-	it("registers exactly 001 through 005 once, preserving the existing transaction ledger", async () => {
+	it("registers exactly 001 through 006 once, preserving the existing transaction ledger", async () => {
 		const ledger = new Set<string>();
 		const statements: string[] = [];
 		const release = vi.fn();
@@ -26,10 +26,11 @@ describe("Job-Ready shared composition", () => {
 			"003_job_ready_storeops",
 			"004_job_ready_rag",
 			"005_job_ready_rag_profiles",
+			"006_wecom_customer_identity",
 		]);
 		expect(statements.filter((sql) => sql.includes("CREATE TABLE rag_documents"))).toHaveLength(1);
-		expect(statements.filter((sql) => sql === "BEGIN")).toHaveLength(10);
-		expect(statements.filter((sql) => sql === "COMMIT")).toHaveLength(10);
+		expect(statements.filter((sql) => sql === "BEGIN")).toHaveLength(12);
+		expect(statements.filter((sql) => sql === "COMMIT")).toHaveLength(12);
 		expect(release).toHaveBeenCalledTimes(2);
 	});
 	it("defaults to lexical and accepts only explicitly named retrieval modes", () => {

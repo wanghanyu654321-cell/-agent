@@ -3,9 +3,14 @@
 > **面向小型门店 / 服务型商家的线上第一接待 Agent。**  
 > 目标不是做一个“会聊天的 Bot”，而是把 **Knowledge / FAQ、预约意向、Ticket / Handoff、人工跟进** 放进一条可控、可验证、可交付的业务链。
 
-**Current state：Pre-ICP Engineering Baseline — CLOSED / FROZEN**  
+**Current state：WeCom Live Baseline — 有界实现与验证**
 **Main 已集成：Agent Runtime · Authority · Governed Knowledge · Durable State · Eval / Harness · React · PostgreSQL · FastAPI / pgvector · Docker**  
-**当前不声称：Production Ready · 真实客户部署 · Hosted Embedding PASS · Retrieval Quality Acceptance · Live WeCom**
+**当前不声称：Production Ready · 商业客户部署 / Pilot 验收 · Hosted Embedding PASS · Retrieval Quality Acceptance**
+
+Live feature 已实现 GET/POST 验证、sync_msg、durable claim、去重/冲突检测、
+服务端权限路由、受控 Agent 执行与 send_msg。项目所有者已报告普通微信端到端
+验证；本轮合并、部署 artifact 和新消息回归需分别核验，详见
+[部署说明](deploy/job-ready/README.md)。这不代表 exactly-once 或完整可靠性收口。
 
 ---
 
@@ -188,7 +193,7 @@ Semantic Evidence Selector 做过真实模型、unseen holdout、order robustnes
 
 ## 当前主干已经集成什么
 
-当前 `main` 是唯一的 **Pre-ICP Engineering Baseline**，不再只是早期 V0 Runtime。
+`main` 保留已冻结工程能力；本次将 Live WeCom feature 收敛为后续基线。
 
 已收口能力包括：
 
@@ -225,7 +230,7 @@ Vitest · Eval Harness · GitHub Actions · Docker / Compose
 
 ## 验证证据
 
-### 当前 Pre-ICP Frozen Source
+### 历史 Pre-ICP Frozen Source
 
 - Source commit：`55182eb11e801b49a5c5564d05acc72207b249f1`
 - Source tree：`68499338168aed05353247ce5196503b7118bcf7`
@@ -309,14 +314,17 @@ compose.yaml
 
 ## 当前边界 / 下一阶段
 
-已经完成的是 **Pre-ICP Engineering Baseline**。
+Pre-ICP 工程基线已经冻结，公共 HTTPS 与 Live WeCom 实现已在后续交付中推进。
+所有者已报告普通微信 E2E；本轮部署回归仍需独立确认。
 
 当前仍然明确不声称：
 
 - Production Ready
 - 真实客户部署 / Pilot 已验收
-- public HTTPS / ICP 后公网部署
-- Live WeCom protocol / identity wiring
+- pi-real 生产启用
+- Booking Staff HITL
+- WeCom 完整分页、cursor reconciliation、历史 routed replay/backfill、outbound indeterminate reconciliation
+- Douyin / Meituan 接入
 - Production Data Flywheel
 - Production SLA / 大规模真实流量
 - Hosted OpenAI Embedding PASS
@@ -328,7 +336,7 @@ compose.yaml
 
 当前工程状态对应的下一阶段是：
 
-**ICP / Public Deployment → Live Channel Integration → Real Customer POC → Real Traffic / Badcase → Production Evaluation Loop**
+**Live Baseline 收敛与部署回归 → 后续单独授权的可靠性 / 产品增量 → Real Customer POC → Real Traffic / Badcase**
 
 ---
 

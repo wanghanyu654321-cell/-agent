@@ -1,8 +1,29 @@
 # Job-Ready Current State
 
-Status: **PRE-ICP ENGINEERING BASELINE — CLOSED / FROZEN**
+Status: **WECOM LIVE BASELINE — BOUNDED IMPLEMENTATION / EVIDENCE**
 
-Current authoritative implementation source: `55182eb11e801b49a5c5564d05acc72207b249f1`
+## Current live-channel baseline
+
+Remote state verified for this convergence: `main`
+`890d44992daf5ca9b70539ae5eb79ae54d086289`; live feature
+`feature/wecom-live-wire-v1` at `264adbb3e73c41f8bef17a47fd41d57d28aadaef`.
+GET/POST verification, `kf/sync_msg`, durable claim, dedupe/conflict detection,
+server-side membership/scope routing, governed Agent execution and `kf/send_msg`
+are implemented. The owner reports prior ordinary-WeChat end-to-end validation.
+Fresh clean-runner evidence, merge identity, deployed artifact and post-deployment
+receipt confirmation must be checked separately; none is asserted complete here.
+See [deployment runbook](../../deploy/job-ready/README.md).
+
+Public HTTPS and live Customer Service wiring supersede the historical waiting
+states below. Remaining gaps: pi-real production enablement, Booking Staff HITL,
+full WeCom pagination, cursor/replay/outbound-indeterminate reconciliation,
+Douyin/Meituan, production Data Flywheel and MCP. Hosted embedding remains
+BLOCKED; retrieval-quality acceptance remains NOT CLAIMED. No exactly-once,
+production-scale, commercial deployment or production-readiness claim is made.
+
+## Historical Pre-ICP engineering checkpoint (preserved)
+
+Pre-ICP authoritative implementation source: `55182eb11e801b49a5c5564d05acc72207b249f1`
 (tree `68499338168aed05353247ce5196503b7118bcf7`) from
 `job-ready/thin-digital-employee-v1`. It closes Request Debugging (`e4a4c43`),
 Durable Acceptance (`1ebbd37`), Thin Digital Employee / AgentProfile (`48748ef`),
@@ -15,7 +36,7 @@ below remains immutable in meaning and continues to explain the predecessor base
 This Pre-ICP closure is not a production-readiness, hosted-provider,
 retrieval-quality-acceptance, live-WeCom, Data-Flywheel, or MCP claim.
 
-Current Pre-ICP closure state:
+Pre-ICP closure state at that checkpoint:
 
 - Request Debugging: CLOSED.
 - Durable Acceptance: CLOSED.

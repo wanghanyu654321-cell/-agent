@@ -1,7 +1,10 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { readFile, stat } from "node:fs/promises";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { extname, resolve, sep } from "node:path";
+import { type WeComKfClient, WeComKfSendIndeterminateError } from "../channels/wecom/client.ts";
+import type { WeComCallbackVerifier, WeComKfMessageEvent } from "../channels/wecom/crypto.ts";
+import type { VerifiedWeComCustomerText, WeComCustomerRoute, WeComCustomerRouter } from "../channels/wecom/customer.ts";
 import type { SupportRuntimePort } from "../http-api.ts";
 import type { SupportResult } from "../index.ts";
 import {
@@ -28,6 +31,9 @@ const SESSION_COOKIE = "support_session";
 
 export interface EnterpriseHttpServerOptions {
 	auth: EnterpriseAuthService;
+	wecomCallbackVerifier?: WeComCallbackVerifier;
+	wecomKfClient?: WeComKfClient;
+	wecomCustomerRouter?: WeComCustomerRouter;
 	runtime?: SupportRuntimePort;
 	supportService?: EnterpriseSupportPort;
 	storeOpsService?: Pick<
@@ -68,6 +74,11 @@ async function handleRequest(
 	const url = new URL(request.url ?? "/", "http://localhost");
 	const path = url.pathname;
 	try {
+		if (path === "/api/v1/channels/wecom/callback") {
+			if (request.method === "GET") return weComCallbackVerification(response, options, url);
+			if (request.method === "POST") return await weComCallbackEvent(request, response, options, url);
+			return sendJson(response, 405, { error: "method_not_allowed" }, { Allow: "GET, POST" });
+		}
 		if (path === "/api/v1/storeops" || path.startsWith("/api/v1/storeops/"))
 			return await storeOps(request, response, options, url);
 		if (path === "/healthz")
@@ -143,6 +154,195 @@ async function handleRequest(
 			return sendJson(response, 409, { error: "conversation_conflict" });
 		return sendJson(response, 500, { error: "internal_error" });
 	}
+}
+
+function weComCallbackVerification(response: ServerResponse, options: EnterpriseHttpServerOptions, url: URL): void {
+	const verifier = options.wecomCallbackVerifier;
+	if (!verifier) {
+		sendJson(response, 503, { error: "dependency_unavailable" });
+		return;
+	}
+	try {
+		sendText(response, 200, verifier.verifyUrl(url));
+	} catch {
+		sendJson(response, 400, { error: "invalid_request" });
+	}
+}
+
+async function weComCallbackEvent(
+	request: IncomingMessage,
+	response: ServerResponse,
+	options: EnterpriseHttpServerOptions,
+	url: URL,
+): Promise<void> {
+	const verifier = options.wecomCallbackVerifier;
+	if (!verifier) return sendJson(response, 503, { error: "dependency_unavailable" });
+	let event: WeComKfMessageEvent;
+	try {
+		event = verifier.verifyEvent(url, await readTextBody(request));
+	} catch {
+		return sendJson(response, 400, { error: "invalid_request" });
+	}
+	const client = options.wecomKfClient;
+	const customerRouter = options.wecomCustomerRouter;
+	const supportService = options.supportService;
+	if (!client || !customerRouter || !supportService)
+		return sendJson(response, 503, { error: "dependency_unavailable" });
+	try {
+		const synced = await client.syncMessages(event);
+		const routed = await routeWeComCustomerTexts(client, customerRouter, supportService, synced.textMessages);
+		console.info(
+			JSON.stringify({
+				event: "wecom_kf_sync",
+				messageCount: synced.messageCount,
+				textCount: synced.textMessages.length,
+				hasMore: synced.hasMore,
+				...routed,
+			}),
+		);
+		return sendText(response, 200, "success");
+	} catch {
+		return sendJson(response, 502, { error: "dependency_unavailable" });
+	}
+}
+
+async function routeWeComCustomerTexts(
+	client: Pick<WeComKfClient, "sendTextMessage">,
+	customerRouter: WeComCustomerRouter,
+	supportService: Pick<EnterpriseSupportPort, "respond">,
+	messages: readonly VerifiedWeComCustomerText[],
+): Promise<{
+	claimed: number;
+	duplicates: number;
+	conflicts: number;
+	routed: number;
+	completed: number;
+	unbound: number;
+	routeAttachFailed: number;
+	routingErrors: number;
+	executionErrors: number;
+	outboundAccepted: number;
+	outboundRejected: number;
+	outboundIndeterminate: number;
+	completionPersistFailed: number;
+}> {
+	let claimed = 0;
+	let duplicates = 0;
+	let conflicts = 0;
+	let routed = 0;
+	let completed = 0;
+	let unbound = 0;
+	let routeAttachFailed = 0;
+	let routingErrors = 0;
+	let executionErrors = 0;
+	let outboundAccepted = 0;
+	let outboundRejected = 0;
+	let outboundIndeterminate = 0;
+	let completionPersistFailed = 0;
+	for (const message of messages) {
+		const requestId = randomUUID();
+		const claim = await customerRouter.claim(message, requestId);
+		if (claim.status === "duplicate") {
+			duplicates += 1;
+			continue;
+		}
+		if (claim.status === "conflict") {
+			conflicts += 1;
+			continue;
+		}
+		claimed += 1;
+		let route: WeComCustomerRoute | undefined;
+		try {
+			route = await customerRouter.resolveRoute(message, requestId);
+			if (!route) {
+				await customerRouter.markFailed(claim.id, "unbound_channel");
+				unbound += 1;
+				continue;
+			}
+			if (!(await customerRouter.attachRoute(claim.id, route))) {
+				await customerRouter.markFailed(claim.id, "route_attach_failed");
+				routeAttachFailed += 1;
+				continue;
+			}
+			routed += 1;
+		} catch {
+			await customerRouter.markFailed(claim.id, "routing_error").catch(() => false);
+			routingErrors += 1;
+			continue;
+		}
+		let result: SupportResult;
+		try {
+			result = await supportService.respond(route.context, {
+				conversationId: route.conversationId,
+				customerId: route.customerId,
+				text: message.text,
+			});
+		} catch {
+			await customerRouter.markFailed(claim.id, "agent_execution_error").catch(() => false);
+			executionErrors += 1;
+			continue;
+		}
+		try {
+			await client.sendTextMessage({
+				openKfId: message.openKfId,
+				externalUserId: message.externalUserId,
+				messageId: weComOutboundMessageId(claim.id),
+				text: result.text,
+			});
+			outboundAccepted += 1;
+		} catch (error) {
+			if (error instanceof WeComKfSendIndeterminateError) {
+				await customerRouter.markIndeterminate(claim.id, "outbound_send_indeterminate").catch(() => false);
+				outboundIndeterminate += 1;
+			} else {
+				await customerRouter.markFailed(claim.id, "outbound_send_failed").catch(() => false);
+				outboundRejected += 1;
+			}
+			continue;
+		}
+		try {
+			if (!(await customerRouter.complete(claim.id, result.type))) {
+				await customerRouter.markIndeterminate(claim.id, "completion_persist_failed").catch(() => false);
+				completionPersistFailed += 1;
+				continue;
+			}
+			completed += 1;
+		} catch {
+			await customerRouter.markIndeterminate(claim.id, "completion_persist_failed").catch(() => false);
+			completionPersistFailed += 1;
+		}
+	}
+	return {
+		claimed,
+		duplicates,
+		conflicts,
+		routed,
+		completed,
+		unbound,
+		routeAttachFailed,
+		routingErrors,
+		executionErrors,
+		outboundAccepted,
+		outboundRejected,
+		outboundIndeterminate,
+		completionPersistFailed,
+	};
+}
+
+function weComOutboundMessageId(claimId: string): string {
+	return `fa_${createHash("sha256").update(claimId).digest("hex").slice(0, 29)}`;
+}
+
+async function readTextBody(request: IncomingMessage): Promise<string> {
+	const chunks: Buffer[] = [];
+	let size = 0;
+	for await (const chunk of request) {
+		const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+		size += buffer.byteLength;
+		if (size > BODY_LIMIT_BYTES) throw new Error("Request body too large.");
+		chunks.push(buffer);
+	}
+	return new TextDecoder("utf-8", { fatal: true }).decode(Buffer.concat(chunks));
 }
 
 async function storeOps(
@@ -505,6 +705,16 @@ function staticContentType(filePath: string): string {
 		default:
 			return "application/octet-stream";
 	}
+}
+
+function sendText(response: ServerResponse, status: number, body: string): void {
+	const encoded = Buffer.from(body, "utf8");
+	response.writeHead(status, {
+		"content-type": "text/plain; charset=utf-8",
+		"content-length": String(encoded.byteLength),
+		"cache-control": "no-store",
+	});
+	response.end(encoded);
 }
 
 function sendJson(response: ServerResponse, status: number, body: unknown, headers: Record<string, string> = {}): void {

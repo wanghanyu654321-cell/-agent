@@ -4,6 +4,9 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { fauxAssistantMessage, registerFauxProvider, streamSimple } from "@earendil-works/pi-ai/compat";
 import { Pool } from "pg";
+import { type WeComKfClient, weComKfClientFromEnv } from "../channels/wecom/client.ts";
+import { type WeComCallbackVerifier, weComCallbackVerifierFromEnv } from "../channels/wecom/crypto.ts";
+import { PostgresWeComCustomerRepository } from "../channels/wecom/customer.ts";
 import type { SupportRuntimePort } from "../http-api.ts";
 import {
 	InMemorySupportStore,
@@ -67,6 +70,8 @@ export interface EnterpriseApplicationOptions {
 	secureCookies?: boolean;
 	runtimeFactory?: EnterpriseRuntimeFactory;
 	staticRoot?: string;
+	wecomCallbackVerifier?: WeComCallbackVerifier;
+	wecomKfClient?: WeComKfClient;
 	retrieval?: RetrievalService;
 	retrievalFactory?: (pool: Pool) => RetrievalService;
 	agentProfile?: AgentProfile;
@@ -171,6 +176,7 @@ export async function createEnterpriseApplication(
 		await applyJobReadyMigrations(pool);
 		const identityRepository = new PostgresIdentityRepository(pool);
 		const businessRepository = new PostgresEnterpriseBusinessRepository(pool);
+		const wecomCustomerRepository = new PostgresWeComCustomerRepository(pool);
 		const demo = await seedPortfolioEnterpriseDemoData(identityRepository);
 		if (options.knowledgeEntries?.length) {
 			const entry = options.knowledgeEntries[0];
@@ -196,6 +202,9 @@ export async function createEnterpriseApplication(
 		});
 		const server = createEnterpriseHttpServer({
 			auth,
+			wecomCallbackVerifier: options.wecomCallbackVerifier,
+			wecomKfClient: options.wecomKfClient,
+			wecomCustomerRouter: wecomCustomerRepository,
 			runtime: runtimeResource.runtime,
 			supportService,
 			storeOpsService,
@@ -268,12 +277,16 @@ export async function startEnterpriseApplicationFromEnv(
 	env: NodeJS.ProcessEnv = process.env,
 ): Promise<EnterpriseApplication> {
 	const config = enterpriseApplicationConfigFromEnv(env);
+	const wecomCallbackVerifier = weComCallbackVerifierFromEnv(env);
+	const wecomKfClient = weComKfClientFromEnv(env);
 	const retrievalFactory = enterpriseVectorRetrievalFactoryFromEnv(env);
 	const runtimeFactory = await enterpriseRuntimeFactoryFromEnv(env);
 	const knowledgeEntries =
 		enterpriseKnowledgeModeFromEnv(env).mode === "private" ? loadPrivateKnowledgeCorpus(env) : undefined;
 	const application = await createEnterpriseApplication({
 		...config,
+		wecomCallbackVerifier,
+		wecomKfClient,
 		retrievalFactory,
 		runtimeFactory,
 		knowledgeEntries,

@@ -18,17 +18,42 @@ AgentProfile and business semantics are not redesigned here.
 
 ## Hard rules honored here
 
-- **No secrets.** Every credential, domain, connection string and certificate
-  path is a placeholder. Missing prerequisites are execution blockers, not
+- **No secrets.** Credentials and connection strings use placeholders; the public
+  domain and certificate paths describe the deployed topology. Missing prerequisites are execution blockers, not
   license to hard-code real values.
 - **No new infrastructure.** The topology stays host Nginx -> loopback-published
   Node -> internal Docker network (FastAPI + PostgreSQL/pgvector). No Kubernetes,
   Redis, Kafka, service mesh or public database port is introduced.
 - **BLOCKED, not PASS.** Health/smoke helpers report `BLOCKED` on any missing
   environment; dependency failure is never a successful no-answer.
-- **Gap discipline.** WeCom callback wiring (GAP-01/02) and vector profile
-  selection (GAP-03/04) are intentionally left undefined; Integration completes
-  them after independent approval.
+- **Gap discipline.** GET and POST callback verification, `kf/sync_msg`, durable
+  inbound claim, dedupe/conflict detection, server-side authority routing,
+  governed Agent execution and `kf/send_msg` are implemented. Routing uses
+  `wecom_kf_channels` and membership-derived tenant/store/capabilities, never
+  external customer identity alone.
+- Sync remains single-page (`limit=1000`); `has_more` and `next_cursor` are parsed.
+  Full pagination, cursor reconciliation, historical routed replay/backfill and
+  outbound indeterminate reconciliation remain future work. Invalid/expired
+  access tokens refresh once; unknown send results must not be blindly retried.
+
+## Live evidence and claim boundary
+
+The owner reports a real ordinary-WeChat E2E validation on the live feature:
+ordinary WeChat user -> WeChat Customer Service -> FrontAgent -> governed Agent
+execution -> `send_msg` -> ordinary WeChat user. This prior observation is
+separate from the fresh post-merge deployment regression, which must record
+the deployed artifact/version and the owner's receipt confirmation.
+
+This is not an exactly-once, full reliability, production-scale, commercial
+deployment or production-readiness claim. `pi-real` production enablement,
+Booking Staff HITL, Douyin/Meituan, hosted embedding acceptance and retrieval
+quality acceptance are not established by live channel wiring.
+
+The existing deployment is `/opt/customer-support-agent-public`, Compose project
+`customer-support-agent-public`, using `compose.production.yaml`. Preserve its
+host-local credentials, domain, Nginx, HTTPS and callback configuration. Record
+the previous artifact before overlay/recreation; never delete production volumes.
+Production `.git` HEAD alone is not deployed-version evidence.
 
 ## Related support scripts
 
