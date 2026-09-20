@@ -13,6 +13,7 @@ import { GovernedKnowledgeRetrievalService } from "../knowledge.ts";
 import { portfolioDemoFaq, portfolioDemoKnowledge } from "../portfolio-demo-data.ts";
 import { type AgentProfile, DEFAULT_AGENT_PROFILE } from "./agent-profile.ts";
 import type { EnterpriseRuntimeFactory, EnterpriseRuntimeResource } from "./application.ts";
+import { configureDeepSeek } from "./deepseek-provider.ts";
 
 export interface PiModelRuntimePublic {
 	checkAuth(providerId: string): Promise<unknown | undefined>;
@@ -54,7 +55,7 @@ export async function bootstrapPiEnterpriseRuntime(
 ): Promise<ResolvedPiEnterpriseRuntime> {
 	let runtime: PiModelRuntimePublic;
 	try {
-		runtime = await (options.createRuntime ?? createPiModelRuntime)();
+		runtime = await (options.createRuntime ?? (() => createPiModelRuntime(options.providerId, options.modelId)))();
 	} catch {
 		throw new PiEnterpriseRuntimeStartupError("Pi provider initialization failed.");
 	}
@@ -100,6 +101,7 @@ export function createPiEnterpriseRuntimeFactory(
 		agentProfile: AgentProfile = DEFAULT_AGENT_PROFILE,
 	): EnterpriseRuntimeResource => {
 		const runtime = new SupportAgentRuntime({
+			realPolicy: true,
 			model: resolved.model,
 			streamFn: resolved.streamFn,
 			retrieval:
@@ -126,6 +128,14 @@ function portfolioKnowledgeComposition(): PiEnterpriseKnowledgeComposition {
 	};
 }
 
-async function createPiModelRuntime(): Promise<PiModelRuntimePublic> {
-	return ModelRuntime.create({ refreshOnCreate: false });
+async function createPiModelRuntime(providerId: string, modelId: string): Promise<PiModelRuntimePublic> {
+	const runtime = await ModelRuntime.create({
+		refreshOnCreate: false,
+		...(providerId === "deepseek" ? { modelsPath: null } : {}),
+	});
+	if (providerId === "deepseek") {
+		if (modelId !== "deepseek-flash") throw new Error("Unsupported DeepSeek model.");
+		configureDeepSeek(runtime);
+	}
+	return runtime;
 }

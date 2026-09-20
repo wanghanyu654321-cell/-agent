@@ -25,6 +25,7 @@ import {
 	type KnowledgeEvidenceMetadata,
 	type KnowledgeStatus,
 } from "./knowledge.ts";
+import { applyRealPolicy, type PolicyDecision } from "./real-policy.ts";
 import {
 	decideSafety,
 	detectSafetyRisk,
@@ -247,6 +248,8 @@ export interface SupportAgentLimits {
 }
 
 export interface SupportAgentRuntimeOptions {
+	/** Enabled by the pi-real composition; deterministic production behavior stays unchanged. */
+	realPolicy?: boolean;
 	model: Model<string>;
 	fallbackModel?: Model<string>;
 	streamFn: StreamFn;
@@ -262,6 +265,7 @@ export interface SupportAgentRuntimeOptions {
 }
 
 export interface SupportResult {
+	policyDecision?: PolicyDecision;
 	type: "answer" | "fallback" | "escalation";
 	text: string;
 	piSessionId: string;
@@ -697,6 +701,29 @@ export class SupportAgentRuntime {
 			});
 		const finish = async (result: SupportResult): Promise<SupportResult> => {
 			sealed = true;
+			if (this.options.realPolicy) {
+				result = applyRealPolicy(result, {
+					requestText: request.text,
+					failed:
+						timedOut ||
+						limitReached ||
+						toolFailed ||
+						!lastAssistant ||
+						(lastAssistant.stopReason !== "toolUse" && !textFromMessage(lastAssistant)) ||
+						lastAssistant.stopReason === "length" ||
+						lastAssistant?.stopReason === "error" ||
+						lastAssistant?.stopReason === "aborted",
+					requiresEscalation: request.requiresEscalation === true,
+					safety: safetyDecision?.disposition,
+					durableTicket:
+						!!this.options.businessStore &&
+						[...reservedTicketKeys].some((key) => !!this.options.store.findTicket(request.tenantId, key)),
+					durableHandoff:
+						!!this.options.businessStore &&
+						reservedHandoff &&
+						!!this.options.store.findHandoff(request.conversationId),
+				});
+			}
 			if (!promptStarted) {
 				// Persist the actual policy stop, without fabricating any Pi execution events.
 				sessionManager.appendMessage({ role: "user", content: request.text, timestamp: Date.now() });
@@ -728,6 +755,9 @@ export class SupportAgentRuntime {
 			const elapsedRuntimeMs = Date.now() - runtimeStartedAt;
 			const runtimeDurationMs = Number.isFinite(elapsedRuntimeMs) ? Math.max(0, elapsedRuntimeMs) : 0;
 			const auditPayload: Record<string, unknown> = {
+				...(result.policyDecision
+					? { policyDecision: result.policyDecision, policyVersion: "real-policy-v1" }
+					: {}),
 				schemaVersion: "support-agent-audit-v1",
 				requestId,
 				runtimeDurationMs,

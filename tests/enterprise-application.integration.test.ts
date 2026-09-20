@@ -21,6 +21,35 @@ afterEach(async () => {
 });
 
 describePostgres("enterprise application composition root", () => {
+	it("persists real-policy decisions beside server-scoped PostgreSQL ticket and handoff outcomes", async () => {
+		await resetDatabase();
+		const application = await boot(runtimeFactory(true));
+		const origin = await start(application);
+		const susan = await login(origin, "susan.supervisor@demo.example", "SusanDemo!2026");
+		expect(await support(origin, susan, "real-policy-ticket", "synthetic", "请创建工单")).toMatchObject({
+			type: "answer",
+			text: "已创建客服工单，具体处理结果需由人工确认。",
+		});
+		expect(await support(origin, susan, "real-policy-handoff", "synthetic", "请普通转人工")).toMatchObject({
+			type: "escalation",
+			text: "已为您转交人工客服跟进。",
+		});
+		const writes = await application.pool.query(
+			"SELECT tenant_id, store_id, conversation_id FROM tickets WHERE conversation_id = 'real-policy-ticket' UNION ALL SELECT tenant_id, store_id, conversation_id FROM handoffs WHERE conversation_id = 'real-policy-handoff' ORDER BY conversation_id",
+		);
+		expect(writes.rows).toEqual([
+			{ tenant_id: "demo-tenant-a", store_id: "demo-store-a1", conversation_id: "real-policy-handoff" },
+			{ tenant_id: "demo-tenant-a", store_id: "demo-store-a1", conversation_id: "real-policy-ticket" },
+		]);
+		const audits = await application.pool.query(
+			"SELECT payload->>'policyDecision' AS decision, payload->>'policyVersion' AS version FROM audit_events WHERE conversation_id IN ('real-policy-ticket', 'real-policy-handoff') ORDER BY conversation_id",
+		);
+		expect(audits.rows).toEqual([
+			{ decision: "HUMAN", version: "real-policy-v1" },
+			{ decision: "WORKFLOW", version: "real-policy-v1" },
+		]);
+	});
+
 	it("boots an empty PostgreSQL database, applies migrations, seeds the demo, and exposes health", async () => {
 		await resetDatabase();
 		const application = await boot();
@@ -467,10 +496,11 @@ async function readJson(origin: string, path: string, cookie: string): Promise<u
 	return response.json();
 }
 
-function runtimeFactory(): EnterpriseRuntimeFactory {
+function runtimeFactory(realPolicy = false): EnterpriseRuntimeFactory {
 	return (businessStore) => {
 		const faux = registerFauxProvider();
 		const runtime = new SupportAgentRuntime({
+			realPolicy,
 			model: faux.getModel(),
 			streamFn: streamSimple,
 			retrieval: new InMemoryRetrievalService(),
