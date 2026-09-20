@@ -129,6 +129,7 @@ describe("Enterprise Pi real-provider runtime mode", () => {
 		expect(streamFn.mock.calls[0]?.[0]).toBe(model);
 		expect(result).toMatchObject({
 			type: "answer",
+			policyDecision: "AUTO",
 			toolsCalled: ["search_faq"],
 			evidence: [expect.objectContaining({ id: "demo-faq-business-hours" })],
 		});

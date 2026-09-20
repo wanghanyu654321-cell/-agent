@@ -44,6 +44,8 @@ RAG_INGEST_TIMEOUT_SECONDS=5
 # Leave unset/empty for the current deterministic + lexical public portfolio deployment.
 PI_PROVIDER=
 PI_MODEL=
+# Optional, only for the separately accepted pi-real DeepSeek rollout. Never publish a real value.
+DEEPSEEK_API_KEY=
 ```
 
 Use `chmod 600 .env.production`. Do not paste its contents into issues, logs,
