@@ -33,6 +33,7 @@ describe.skipIf(!url)("S2 fresh PostgreSQL + deterministic Python HTTP + Node re
 				"004_job_ready_rag",
 				"005_job_ready_rag_profiles",
 				"006_wecom_customer_identity",
+				"007_wecom_staff_booking",
 			]);
 			expect(
 				(

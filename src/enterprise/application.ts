@@ -7,6 +7,14 @@ import { Pool } from "pg";
 import { type WeComKfClient, weComKfClientFromEnv } from "../channels/wecom/client.ts";
 import { type WeComCallbackVerifier, weComCallbackVerifierFromEnv } from "../channels/wecom/crypto.ts";
 import { PostgresWeComCustomerRepository } from "../channels/wecom/customer.ts";
+import { WeComStaffService } from "../channels/wecom/staff.ts";
+import {
+	createStaffApi,
+	createStaffVerifier,
+	type StaffApi,
+	type StaffConfig,
+	staffConfigFromEnv,
+} from "../channels/wecom/staff-protocol.ts";
 import type { SupportRuntimePort } from "../http-api.ts";
 import {
 	InMemorySupportStore,
@@ -72,6 +80,8 @@ export interface EnterpriseApplicationOptions {
 	staticRoot?: string;
 	wecomCallbackVerifier?: WeComCallbackVerifier;
 	wecomKfClient?: WeComKfClient;
+	wecomStaffConfig?: StaffConfig;
+	wecomStaffApi?: StaffApi;
 	retrieval?: RetrievalService;
 	retrievalFactory?: (pool: Pool) => RetrievalService;
 	agentProfile?: AgentProfile;
@@ -205,6 +215,17 @@ export async function createEnterpriseApplication(
 			wecomCallbackVerifier: options.wecomCallbackVerifier,
 			wecomKfClient: options.wecomKfClient,
 			wecomCustomerRouter: wecomCustomerRepository,
+			wecomStaff: options.wecomStaffConfig
+				? {
+						verifier: createStaffVerifier(options.wecomStaffConfig),
+						service: new WeComStaffService(
+							pool,
+							options.wecomStaffConfig,
+							options.wecomStaffApi ?? createStaffApi(options.wecomStaffConfig),
+							options.wecomKfClient,
+						),
+					}
+				: undefined,
 			runtime: runtimeResource.runtime,
 			supportService,
 			storeOpsService,
@@ -279,6 +300,7 @@ export async function startEnterpriseApplicationFromEnv(
 	const config = enterpriseApplicationConfigFromEnv(env);
 	const wecomCallbackVerifier = weComCallbackVerifierFromEnv(env);
 	const wecomKfClient = weComKfClientFromEnv(env);
+	const wecomStaffConfig = staffConfigFromEnv(env);
 	const retrievalFactory = enterpriseVectorRetrievalFactoryFromEnv(env);
 	const runtimeFactory = await enterpriseRuntimeFactoryFromEnv(env);
 	const knowledgeEntries =
@@ -287,6 +309,7 @@ export async function startEnterpriseApplicationFromEnv(
 		...config,
 		wecomCallbackVerifier,
 		wecomKfClient,
+		wecomStaffConfig,
 		retrievalFactory,
 		runtimeFactory,
 		knowledgeEntries,

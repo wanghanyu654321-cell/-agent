@@ -11,6 +11,7 @@
 		"check": "biome check --error-on-warnings . && tsgo --noEmit",
 		"demo": "node src/portfolio-demo.ts",
 		"start:enterprise": "node src/enterprise/application.ts",
+		"provision:wecom-staff": "node --no-warnings --experimental-transform-types scripts/provision-wecom-staff.ts",
 		"eval:safety": "node evals/safety/runner.ts",
 		"eval:safety:holdout": "node evals/safety/holdout/runner.ts",
 		"eval:safety:robustness": "node evals/safety/robustness/runner.ts",
@@ -31,7 +32,7 @@
 		"test:postgres-application": "node -e \"if (!process.env.POSTGRES_TEST_URL) { throw new Error('POSTGRES_TEST_URL is required for the PostgreSQL application gate.') }\" && vitest --run tests/enterprise-application.integration.test.ts tests/harness/acceptance.test.ts",
 		"test": "vitest --run",
 		"test:job-ready": "vitest --run tests/job-ready-core-a tests/job-ready-rag tests/job-ready-integration tests/web-storeops evals/job-ready-rag",
-		"test:postgres-core-a": "node -e \"if (!process.env.POSTGRES_TEST_URL) throw new Error('POSTGRES_TEST_URL required')\" && vitest --run tests/job-ready-core-a/storeops-postgres.integration.test.ts tests/job-ready-core-a/wecom-postgres.integration.test.ts tests/job-ready-core-a/wecom-customer-postgres.integration.test.ts",
+		"test:postgres-core-a": "node -e \"if (!process.env.POSTGRES_TEST_URL) throw new Error('POSTGRES_TEST_URL required')\" && vitest --run tests/job-ready-core-a/storeops-postgres.integration.test.ts tests/job-ready-core-a/wecom-postgres.integration.test.ts tests/job-ready-core-a/wecom-customer-postgres.integration.test.ts tests/job-ready-core-a/wecom-staff-postgres.integration.test.ts",
 		"test:postgres-core-b": "node -e \"if (!process.env.POSTGRES_RAG_TEST_URL) throw new Error('POSTGRES_RAG_TEST_URL required')\" && vitest --run tests/job-ready-rag/postgres.integration.test.ts",
 		"test:postgres-job-ready": "node -e \"if (!process.env.POSTGRES_TEST_URL) throw new Error('POSTGRES_TEST_URL required')\" && vitest --run tests/job-ready-integration/application-postgres.integration.test.ts"
 	},

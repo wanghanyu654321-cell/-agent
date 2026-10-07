@@ -5,6 +5,8 @@ import { extname, resolve, sep } from "node:path";
 import { type WeComKfClient, WeComKfSendIndeterminateError } from "../channels/wecom/client.ts";
 import type { WeComCallbackVerifier, WeComKfMessageEvent } from "../channels/wecom/crypto.ts";
 import type { VerifiedWeComCustomerText, WeComCustomerRoute, WeComCustomerRouter } from "../channels/wecom/customer.ts";
+import type { WeComStaffService } from "../channels/wecom/staff.ts";
+import type { createStaffVerifier, StaffEvent } from "../channels/wecom/staff-protocol.ts";
 import type { SupportRuntimePort } from "../http-api.ts";
 import type { SupportResult } from "../index.ts";
 import {
@@ -34,6 +36,10 @@ export interface EnterpriseHttpServerOptions {
 	wecomCallbackVerifier?: WeComCallbackVerifier;
 	wecomKfClient?: WeComKfClient;
 	wecomCustomerRouter?: WeComCustomerRouter;
+	wecomStaff?: {
+		verifier: ReturnType<typeof createStaffVerifier>;
+		service: Pick<WeComStaffService, "handle" | "notify">;
+	};
 	runtime?: SupportRuntimePort;
 	supportService?: EnterpriseSupportPort;
 	storeOpsService?: Pick<
@@ -74,6 +80,27 @@ async function handleRequest(
 	const url = new URL(request.url ?? "/", "http://localhost");
 	const path = url.pathname;
 	try {
+		if (path === "/api/v1/channels/wecom/staff/callback") {
+			const staff = options.wecomStaff;
+			if (!staff) return sendJson(response, 404, { error: "not_found" });
+			if (request.method === "GET") {
+				try {
+					return sendText(response, 200, staff.verifier.verifyUrl(url));
+				} catch {
+					return sendJson(response, 400, { error: "invalid_request" });
+				}
+			}
+			if (request.method !== "POST")
+				return sendJson(response, 405, { error: "method_not_allowed" }, { Allow: "GET, POST" });
+			let event: StaffEvent;
+			try {
+				event = staff.verifier.verifyEvent(url, await readTextBody(request));
+			} catch {
+				return sendJson(response, 400, { error: "invalid_request" });
+			}
+			await staff.service.handle(event);
+			return sendText(response, 200, "success");
+		}
 		if (path === "/api/v1/channels/wecom/callback") {
 			if (request.method === "GET") return weComCallbackVerification(response, options, url);
 			if (request.method === "POST") return await weComCallbackEvent(request, response, options, url);
@@ -440,6 +467,13 @@ async function storeOps(
 		boundedId(request.headers["idempotency-key"]),
 		parseBookingCreate(body),
 	);
+	if (options.wecomStaff) {
+		try {
+			await options.wecomStaff.service.notify(context, result.intent.id);
+		} catch {
+			console.warn(JSON.stringify({ event: "wecom_staff_notification", status: "indeterminate" }));
+		}
+	}
 	return sendJson(response, result.duplicate ? 200 : 201, result.intent);
 }
 
