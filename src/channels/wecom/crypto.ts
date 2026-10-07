@@ -89,7 +89,7 @@ function parseVerificationQuery(url: URL): {
 	return { msgSignature, timestamp, nonce, echostr };
 }
 
-function parseEventQuery(url: URL): {
+export function parseEventQuery(url: URL): {
 	msgSignature: string;
 	timestamp: string;
 	nonce: string;
@@ -117,7 +117,7 @@ function boundedQueryValue(url: URL, field: (typeof CALLBACK_FIELDS)[number], ma
 	return value;
 }
 
-function validateTimestamp(timestamp: string, now: Date, maxClockSkewSeconds: number): void {
+export function validateTimestamp(timestamp: string, now: Date, maxClockSkewSeconds: number): void {
 	if (!Number.isFinite(now.getTime())) throw new Error("invalid_request");
 	const timestampSeconds = BigInt(timestamp);
 	const nowSeconds = BigInt(Math.floor(now.getTime() / 1000));
@@ -125,7 +125,7 @@ function validateTimestamp(timestamp: string, now: Date, maxClockSkewSeconds: nu
 	if (difference > BigInt(maxClockSkewSeconds)) throw new Error("invalid_request");
 }
 
-function verifySignature(
+export function verifySignature(
 	token: string,
 	timestamp: string,
 	nonce: string,
@@ -137,7 +137,7 @@ function verifySignature(
 	if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) throw new Error("invalid_request");
 }
 
-function encryptedXmlValue(body: string): string {
+export function encryptedXmlValue(body: string): string {
 	if (body.length === 0 || body.length > 64 * 1024 || body.includes("\0") || !body.isWellFormed()) {
 		throw new Error("invalid_request");
 	}
@@ -150,7 +150,7 @@ function encryptedXmlValue(body: string): string {
 	return encrypted;
 }
 
-function decryptMessage(encrypted: string, aesKey: Buffer, corpId: string): string {
+export function decryptMessage(encrypted: string, aesKey: Buffer, corpId: string): string {
 	const ciphertext = Buffer.from(encrypted, "base64");
 	if (ciphertext.length === 0 || ciphertext.length % 16 !== 0) throw new Error("invalid_request");
 	let padded: Buffer;
@@ -197,7 +197,7 @@ function parseKfMessageEvent(xml: string, corpId: string): WeComKfMessageEvent {
 	return { token, openKfId, createdAtUnix: Number(createdAtBigInt) };
 }
 
-function xmlField(xml: string, field: string, maxLength: number): string {
+export function xmlField(xml: string, field: string, maxLength: number): string {
 	const pattern = new RegExp(`<${field}>\\s*(?:<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>|([^<]*))\\s*</${field}>`, "g");
 	const matches = [...xml.matchAll(pattern)];
 	if (matches.length !== 1) throw new Error("invalid_request");
@@ -236,7 +236,7 @@ function validateToken(value: string): string {
 	return value;
 }
 
-function decodeEncodingAesKey(value: string): Buffer {
+export function decodeEncodingAesKey(value: string): Buffer {
 	if (!/^[A-Za-z0-9+/]{43}$/.test(value)) throw new Error("WECOM_CALLBACK_AES_KEY is invalid.");
 	const decoded = Buffer.from(`${value}=`, "base64");
 	if (decoded.length !== 32) throw new Error("WECOM_CALLBACK_AES_KEY is invalid.");

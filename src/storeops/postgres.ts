@@ -17,8 +17,14 @@ import {
 } from "./contracts.ts";
 
 export class PostgresStoreOpsRepository {
-	constructor(private readonly pool: Pool) {}
+	constructor(
+		private readonly pool: Pool,
+		private readonly transactionClient?: PoolClient,
+	) {}
 	async transaction<T>(operation: (client: PoolClient) => Promise<T>): Promise<T> {
+		// Staff ingress owns the outer transaction so event dedupe and the existing
+		// authorized Booking transition commit atomically on the same connection.
+		if (this.transactionClient) return operation(this.transactionClient);
 		const client = await this.pool.connect();
 		try {
 			await client.query("BEGIN");
